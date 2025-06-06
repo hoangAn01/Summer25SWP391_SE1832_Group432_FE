@@ -1,0 +1,183 @@
+.scrollableContent {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.scrollableContent::-webkit-scrollbar {
+  width: 8px;
+  background-color: #f5f5f5;
+}
+
+.scrollableContent::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background-color: #f5f5f5;
+}
+
+.scrollableContent::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #2196f3;
+}
+
+.scrollableContent::-webkit-scrollbar-thumb:hover {
+  background-color: #1976d2;
+}
+
+.heroSection {
+  background-color: #2196f3;
+  color: white;
+  padding: 64px 0;
+  text-align: center;
+  position: relative;
+  background-image: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+}
+
+.heroSection::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("/public/vi-tri-truong-hoc.webp");
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.heroTitle {
+  margin-bottom: 24px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.heroSubtitle {
+  margin-bottom: 32px;
+  opacity: 0.9;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.searchField {
+  width: 100%;
+  max-width: 600px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.infoCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.infoCard:hover {
+  transform: translateY(-4px);
+}
+
+.cardContent {
+  height: 100%;
+  padding: 24px;
+}
+
+.cardTitle {
+  margin-bottom: 16px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.cardButton {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.cardButton:hover {
+  border-color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sectionTitle {
+  margin-bottom: 48px;
+  font-weight: bold;
+  color: #2196f3;
+  text-align: center;
+}
+
+.footer {
+  background-color: #1976d2;
+  color: white;
+  padding: 48px 0;
+}
+
+.footerLinks {
+  display: block;
+  text-align: left;
+}
+
+.footerCopyright {
+  margin-top: 32px;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 32px;
+}
+
+.scrollTopButton {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #2196f3;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: background-color 0.2s ease;
+}
+
+.scrollTopButton:hover {
+  background-color: #1976d2;
+}
+
+.cardContainer {
+  display: flex;
+  gap: 24px;
+  padding: 32px 16px;
+}
+
+.viewAllButton {
+  text-align: center;
+  margin-top: 32px;
+  margin-bottom: 48px;
+}
+
+.viewAllButton button {
+  border-radius: 20px;
+  padding: 8px 32px;
+  border-width: 2px;
+}
+
+.viewAllButton button:hover {
+  border-width: 2px;
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+  .heroSection {
+    padding: 32px 16px;
+  }
+}
+
+/* Ensure content is scrollable */
+html, body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
+} 
