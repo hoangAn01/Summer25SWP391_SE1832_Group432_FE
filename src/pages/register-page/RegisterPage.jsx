@@ -7,13 +7,12 @@ import {
   Select,
   DatePicker,
 } from "antd";
-import axios from "axios";
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
 import "./RegisterPage.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import api from "../config/axios";
+import api from "../../config/axios";
 
 function RegisterPage() {
   const [form] = Form.useForm();

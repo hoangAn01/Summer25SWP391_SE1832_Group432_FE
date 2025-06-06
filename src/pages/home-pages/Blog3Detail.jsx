@@ -1,16 +1,9 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Grid,
-  Divider,
-} from "@mui/material";
-import Header from "../components/Header";
+import { Container, Typography, Box, Paper, Divider } from "@mui/material";
+import Header from "../../Header/Header";
 
-const Blog1Detail = () => {
+const Blog3Detail = () => {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -26,12 +19,12 @@ const Blog1Detail = () => {
             variant="h3"
             component="h1"
             gutterBottom
-            sx={{ fontWeight: 700, color: "#1976d2", mb: 2 }}
+            sx={{ fontWeight: 700, color: "#7b1fa2", mb: 2 }}
           >
-            Hoạt Động Ngoại Khóa Bổ Ích
+            Công Nghệ Trong Giáo Dục
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Ngày đăng: {new Date().toLocaleDateString("vi-VN")} | 15 phút đọc |
+            Ngày đăng: {new Date().toLocaleDateString("vi-VN")} | 12 phút đọc |
             Tác giả: Trường Tiểu học ABC
           </Typography>
 
@@ -40,11 +33,10 @@ const Blog1Detail = () => {
             paragraph
             sx={{ fontSize: "1.15rem", lineHeight: 1.8 }}
           >
-            Những buổi học ngoài trời tại vườn rau của Trường Tiểu học ABC không
-            chỉ giúp các em học sinh vận động thể chất mà còn rèn luyện tinh
-            thần trách nhiệm và kỹ năng làm việc nhóm. Mỗi bạn nhỏ được phân
-            công chăm sóc một luống rau nhỏ, học cách tưới nước đúng cách, nhổ
-            cỏ, bắt sâu và ghi lại sự phát triển của cây hằng tuần.
+            Tại Trường Tiểu học ABC, công nghệ hiện đại đang làm thay đổi hoàn
+            toàn cách dạy và học. Không còn những tiết học khô khan, giờ đây học
+            sinh được sử dụng máy chiếu, máy tính bảng, phần mềm học tập thông
+            minh để tiếp cận kiến thức một cách sinh động và trực quan.
           </Typography>
 
           {/* Đoạn văn + ảnh nhỏ: flexbox 2 cột, không float */}
@@ -63,10 +55,10 @@ const Blog1Detail = () => {
                 paragraph
                 sx={{ fontSize: "1.15rem", lineHeight: 1.8, m: 0 }}
               >
-                Ngoài việc học tập trên lớp, các hoạt động ngoại khóa như làm
-                vườn, tham quan, trải nghiệm thực tế giúp các em phát triển toàn
-                diện hơn. Các em được học cách quan sát thiên nhiên, yêu lao
-                động và biết trân trọng thành quả của mình.
+                Trong tiết học Khoa học, lớp 5C đã trải nghiệm kính thực tế ảo
+                (VR) để "tham quan" một nhà máy sữa và quan sát quy trình sản
+                xuất – tất cả ngay trong phòng học. Học sinh vô cùng thích thú
+                và ghi nhớ bài học nhanh hơn.
               </Typography>
             </Box>
             <Box
@@ -89,7 +81,7 @@ const Blog1Detail = () => {
             >
               {
                 <img
-                  src="/public/images/ngoai_khoa.webp"
+                  src="/public/images/blog4.png"
                   alt="Ảnh nhỏ bên phải"
                   style={{
                     width: "100%",
@@ -99,15 +91,14 @@ const Blog1Detail = () => {
                   }}
                 />
               }
-              <Typography color="text.secondary" align="center"></Typography>
             </Box>
           </Box>
 
           {/* Trích dẫn nổi bật */}
           <Box
             sx={{
-              bgcolor: "#e3f2fd",
-              borderLeft: "4px solid #1976d2",
+              bgcolor: "#ede7f6",
+              borderLeft: "4px solid #7b1fa2",
               p: 2,
               mb: 3,
               borderRadius: 1,
@@ -115,20 +106,19 @@ const Blog1Detail = () => {
           >
             <Typography
               variant="body1"
-              sx={{ fontStyle: "italic", color: "#1976d2" }}
+              sx={{ fontStyle: "italic", color: "#7b1fa2" }}
             >
-              "Các con rất hào hứng mỗi lần được ra vườn. Bạn nào cũng mong cây
-              mình trồng nhanh lớn. Từ đó, các con học được cách yêu thiên nhiên
-              và quý trọng sức lao động." <br />
+              "Công nghệ giúp các con không chỉ học tốt hơn mà còn rèn luyện tư
+              duy logic, khả năng tìm kiếm và xử lý thông tin." <br />
               <span style={{ fontWeight: 500 }}>
-                - Cô Hương, giáo viên chủ nhiệm lớp 4B
+                - Thầy Minh, giáo viên Tin học
               </span>
             </Typography>
           </Box>
 
           {/* Bullet points */}
-          <Typography variant="h6" sx={{ mt: 2, mb: 1, color: "#1976d2" }}>
-            Lợi ích của hoạt động ngoại khóa:
+          <Typography variant="h6" sx={{ mt: 2, mb: 1, color: "#7b1fa2" }}>
+            Lợi ích của việc ứng dụng công nghệ trong giáo dục:
           </Typography>
           <ul
             style={{
@@ -138,10 +128,10 @@ const Blog1Detail = () => {
               fontSize: "1.08rem",
             }}
           >
-            <li>Phát triển kỹ năng sống và làm việc nhóm</li>
-            <li>Tăng cường sức khỏe thể chất và tinh thần</li>
-            <li>Khơi dậy niềm yêu thiên nhiên, bảo vệ môi trường</li>
-            <li>Giúp học sinh tự tin, năng động hơn</li>
+            <li>Tiếp cận kiến thức sinh động, trực quan hơn</li>
+            <li>Phát triển tư duy logic, kỹ năng tìm kiếm thông tin</li>
+            <li>Tăng sự hứng thú, chủ động trong học tập</li>
+            <li>Chuẩn bị tốt cho tương lai số hóa</li>
           </ul>
 
           <Divider sx={{ my: 3 }} />
@@ -163,7 +153,7 @@ const Blog1Detail = () => {
           >
             {
               <img
-                src="/public/images/blog1.2.webp"
+                src="/public/images/blog3.2.jpg"
                 alt="Ảnh cuối bài"
                 style={{
                   width: "100%",
@@ -180,11 +170,9 @@ const Blog1Detail = () => {
             paragraph
             sx={{ fontSize: "1.12rem", lineHeight: 1.8 }}
           >
-            Không chỉ có hoạt động làm vườn, Trường Tiểu học ABC còn thường
-            xuyên tổ chức các buổi ngoại khóa như tham quan sở thú, học kỹ năng
-            thoát hiểm với đội PCCC, hay thi vẽ tranh bảo vệ môi trường. Những
-            hoạt động này giúp các em phát triển toàn diện về thể chất, tinh
-            thần và kỹ năng sống.
+            Trường Tiểu học ABC đang từng bước đưa công nghệ vào mọi hoạt động
+            học tập – tạo nên một môi trường giáo dục hiện đại, nơi học sinh
+            được truyền cảm hứng và phát triển toàn diện cho tương lai.
           </Typography>
         </Paper>
       </Container>
@@ -192,4 +180,4 @@ const Blog1Detail = () => {
   );
 };
 
-export default Blog1Detail;
+export default Blog3Detail;

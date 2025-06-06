@@ -10,6 +10,10 @@ import {
   MenuItem,
   InputBase,
   Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
@@ -26,6 +30,10 @@ const Header = ({ onScrollToSection }) => {
   const user = useSelector((state) => state.user).user;
   console.log(user);
   const dispatch = useDispatch();
+  const [showHealthForm, setShowHealthForm] = useState(false);
+  const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
+  // Giả lập kiểm tra có hồ sơ hay không (sau này thay bằng API hoặc redux)
+  const hasHealthProfile = false; // Đổi thành true nếu đã có hồ sơ
   useEffect(() => {
     if (user) {
       setIsParentLoggedIn(true);
@@ -227,7 +235,19 @@ const Header = ({ onScrollToSection }) => {
               {isParentLoggedIn ? (
                 <>
                   <MenuItem onClick={() => {}}>Thông báo</MenuItem>
-                  <MenuItem onClick={() => {}}>Hồ sơ sức khỏe của con</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      if (!hasHealthProfile) {
+                        setShowNoProfileDialog(true);
+                        handleUserClose();
+                      } else {
+                        setShowHealthForm(true);
+                        handleUserClose();
+                      }
+                    }}
+                  >
+                    Hồ sơ sức khỏe của con
+                  </MenuItem>
                   <MenuItem onClick={() => {}}>Gửi thuốc</MenuItem>
                   <MenuItem onClick={() => {}}>Sự kiện tiêm chủng</MenuItem>
                   <MenuItem onClick={() => {}}>
@@ -255,6 +275,33 @@ const Header = ({ onScrollToSection }) => {
           </Toolbar>
         </Container>
       </Box>
+      <Dialog
+        open={showNoProfileDialog}
+        onClose={() => setShowNoProfileDialog(false)}
+      >
+        <DialogTitle>Chưa có hồ sơ sức khỏe</DialogTitle>
+        <DialogContent>
+          Học sinh chưa có hồ sơ sức khỏe. Bấm "Tạo hồ sơ" để tiếp tục.
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowNoProfileDialog(false)}
+            color="secondary"
+          >
+            Đóng
+          </Button>
+          <Button
+            onClick={() => {
+              setShowNoProfileDialog(false);
+              setShowHealthForm(true);
+            }}
+            color="primary"
+            variant="contained"
+          >
+            Tạo hồ sơ
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AppBar>
   );
 };

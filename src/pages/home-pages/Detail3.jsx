@@ -12,7 +12,6 @@ import {
   Divider,
   Fade,
 } from "@mui/material";
-import Header from "../components/Header";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import SchoolIcon from "@mui/icons-material/School";
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
@@ -23,6 +22,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import MoodIcon from "@mui/icons-material/Mood";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import GroupsIcon from "@mui/icons-material/Groups";
+import Header from "../../Header/Header";
 
 const Detail3 = () => {
   const scrollToSection = (elementId) => {

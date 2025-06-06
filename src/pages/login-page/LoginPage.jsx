@@ -2,12 +2,11 @@ import { use, useState } from "react";
 import { Form, Input, Button, Checkbox, Select, Divider } from "antd";
 import { FaEye, FaEyeSlash, FaGoogle, FaMicrosoft } from "react-icons/fa";
 import "./LoginPage.css";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import api from "../config/axios";
 import { useDispatch } from "react-redux";
-import { login } from "../redux/features/userSlice";
+import api from "../../config/axios";
+import { login } from "../../redux/features/userSlice";
 
 const { Option } = Select;
 
