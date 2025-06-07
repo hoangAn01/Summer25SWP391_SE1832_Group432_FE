@@ -20,20 +20,18 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../redux/features/userSlice";
+import { logout } from "../../../redux/features/userSlice";
 
 const Header = ({ onScrollToSection }) => {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [isParentLoggedIn, setIsParentLoggedIn] = useState(false); // DEMO: sau này lấy từ context hoặc localStorage
+  const [isParentLoggedIn, setIsParentLoggedIn] = useState(false);
   const user = useSelector((state) => state.user).user;
-  console.log(user);
   const dispatch = useDispatch();
   const [showHealthForm, setShowHealthForm] = useState(false);
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
-  // Giả lập kiểm tra có hồ sơ hay không (sau này thay bằng API hoặc redux)
-  const hasHealthProfile = false; // Đổi thành true nếu đã có hồ sơ
+
   useEffect(() => {
     if (user) {
       setIsParentLoggedIn(true);
@@ -41,6 +39,7 @@ const Header = ({ onScrollToSection }) => {
       setIsParentLoggedIn(false);
     }
   }, [user]);
+
   const handleUserMenu = (event) => {
     setUserAnchorEl(event.currentTarget);
   };
@@ -50,22 +49,15 @@ const Header = ({ onScrollToSection }) => {
   };
 
   const handleMenuClick = (elementId) => {
-    if (location.pathname !== "/") {
-      // First navigate to home
-      navigate("/");
-      // Then set up a scroll handler that will run after navigation
-      const scrollAfterNav = () => {
+    if (location.pathname !== "/home") {
+      navigate("/home");
+      setTimeout(() => {
         const element = document.getElementById(elementId);
         if (element) {
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: "smooth" });
-          }, 300); // Increased delay to ensure DOM is ready
+          element.scrollIntoView({ behavior: "smooth" });
         }
-      };
-      // Execute scroll after a short delay to ensure navigation is complete
-      setTimeout(scrollAfterNav, 100);
+      }, 500);
     } else {
-      // If already on home page, just scroll
       const element = document.getElementById(elementId);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
@@ -76,7 +68,6 @@ const Header = ({ onScrollToSection }) => {
     }
   };
 
-  // Clean up scroll position when component unmounts
   useEffect(() => {
     return () => {
       window.scrollTo(0, 0);
@@ -90,6 +81,12 @@ const Header = ({ onScrollToSection }) => {
     { text: "BLOG", id: "blog" },
     { text: "LIÊN HỆ", id: "contact" },
   ];
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.clear();
+    navigate("/login");
+  };
 
   return (
     <AppBar
@@ -112,7 +109,6 @@ const Header = ({ onScrollToSection }) => {
           width: "100%",
         }}
       >
-        {/* Logo sát trái */}
         <Box
           component="img"
           src="/public/images/logo.png"
@@ -130,20 +126,16 @@ const Header = ({ onScrollToSection }) => {
             borderRadius: "16px",
             boxShadow: "0 2px 8px 0 rgba(33,150,243,0.10)",
           }}
-          onClick={() => navigate("/")}
         />
-        {/* Phần còn lại trong Container */}
         <Container maxWidth="lg" sx={{ pl: 0, pr: 0, flex: 1 }}>
           <Toolbar
             sx={{
               padding: { xs: 1, md: 0 },
               minHeight: "80px",
               alignItems: "center",
-
               pl: 0,
             }}
           >
-            {/* Search Bar */}
             <Box
               sx={{
                 display: "flex",
@@ -180,13 +172,12 @@ const Header = ({ onScrollToSection }) => {
               />
             </Box>
 
-            {/* Navigation Menu */}
             <Box sx={{ flexGrow: 1, display: "flex" }}>
               {menuItems.map((item) => (
                 <Button
                   key={item.text}
                   onClick={() =>
-                    item.isHome ? navigate("/") : handleMenuClick(item.id)
+                    item.isHome ? navigate("/home") : handleMenuClick(item.id)
                   }
                   sx={{
                     color: "white",
@@ -202,76 +193,118 @@ const Header = ({ onScrollToSection }) => {
               ))}
             </Box>
 
-            {/* User Menu */}
-            <IconButton
-              onClick={handleUserMenu}
-              sx={{
-                ml: 2,
-                p: 0.5,
-                "&:hover": {
-                  color: "#ffd600",
-                  background: "rgba(255,255,255,0.10)",
-                },
-              }}
-            >
-              <AccountCircleIcon sx={{ fontSize: 44 }} />
-            </IconButton>
-            <Typography sx={{ ml: 1, color: "white", fontWeight: 500 }}>
-              {user?.fullName}
-            </Typography>
-            <Menu
-              anchorEl={userAnchorEl}
-              open={Boolean(userAnchorEl)}
-              onClose={handleUserClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "right",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "right",
-              }}
-            >
-              {isParentLoggedIn ? (
-                <>
-                  <MenuItem onClick={() => {}}>Thông báo</MenuItem>
+            {user ? (
+              <>
+                <Typography sx={{ ml: 1, color: "white", fontWeight: 500 }}>
+                  {user.fullName}
+                </Typography>
+                <IconButton
+                  onClick={handleUserMenu}
+                  sx={{
+                    ml: 2,
+                    p: 0.5,
+                    "&:hover": {
+                      color: "#ffd600",
+                      background: "rgba(255,255,255,0.10)",
+                    },
+                  }}
+                >
+                  <AccountCircleIcon sx={{ fontSize: 44 }} />
+                </IconButton>
+                <Menu
+                  anchorEl={userAnchorEl}
+                  open={Boolean(userAnchorEl)}
+                  onClose={handleUserClose}
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                >
                   <MenuItem
                     onClick={() => {
-                      if (!hasHealthProfile) {
-                        setShowNoProfileDialog(true);
-                        handleUserClose();
-                      } else {
-                        setShowHealthForm(true);
-                        handleUserClose();
-                      }
+                      handleUserClose();
+                      navigate("/profile");
                     }}
                   >
-                    Hồ sơ sức khỏe của con
-                  </MenuItem>
-                  <MenuItem onClick={() => {}}>Gửi thuốc</MenuItem>
-                  <MenuItem onClick={() => {}}>Sự kiện tiêm chủng</MenuItem>
-                  <MenuItem onClick={() => {}}>
-                    Sự kiện kiểm tra sức khỏe định kì
+                    Thông tin cá nhân
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
-                      dispatch(logout());
+                      handleUserClose();
+                      navigate("/profile");
                     }}
                   >
-                    Đăng xuất
+                    Hồ sơ sức khỏe học sinh
                   </MenuItem>
-                </>
-              ) : (
-                <>
-                  <MenuItem onClick={() => navigate("/login")}>
-                    Đăng nhập
+                  <MenuItem
+                    onClick={() => {
+                      handleUserClose();
+                      navigate("/dashboard/parent_profile");
+                    }}
+                  >
+                    Thông báo tiêm chủng
                   </MenuItem>
-                  <MenuItem onClick={() => navigate("/register")}>
-                    Đăng ký
+                  <MenuItem
+                    onClick={() => {
+                      handleUserClose();
+                      navigate("/dashboard/parent_profile");
+                    }}
+                  >
+                    Gửi thuốc
                   </MenuItem>
-                </>
-              )}
-            </Menu>
+                  <MenuItem
+                    onClick={() => {
+                      handleUserClose();
+                      navigate("/dashboard");
+                    }}
+                  >
+                    Quản lý
+                  </MenuItem>
+                  <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Box sx={{ display: "flex", gap: 2, ml: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  sx={{
+                    borderRadius: 3,
+                    borderColor: "#fff",
+                    color: "#fff",
+                    fontWeight: 600,
+                    px: 2,
+                    "&:hover": {
+                      background: "rgba(255,255,255,0.15)",
+                      borderColor: "#ffd600",
+                      color: "#ffd600",
+                    },
+                  }}
+                  onClick={() => navigate("/login")}
+                >
+                  Đăng nhập
+                </Button>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  sx={{
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    px: 2,
+                    boxShadow: "0 2px 8px 0 rgba(255,214,0,0.15)",
+                    color: "#fff",
+                    "&:hover": { background: "#ffb300" },
+                  }}
+                  onClick={() => navigate("/register")}
+                >
+                  Đăng ký
+                </Button>
+              </Box>
+            )}
           </Toolbar>
         </Container>
       </Box>

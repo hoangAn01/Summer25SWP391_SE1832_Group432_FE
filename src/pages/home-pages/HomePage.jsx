@@ -11,7 +11,7 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
-import Header from "../../Header/Header";
+import Header from "./Header/Header";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import SearchIcon from "@mui/icons-material/Search";
 import FacebookIcon from "@mui/icons-material/Facebook";

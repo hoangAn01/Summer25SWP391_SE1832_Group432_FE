@@ -12,7 +12,7 @@ import {
   Divider,
   Fade,
 } from "@mui/material";
-import Header from "../../Header/Header";
+import Header from "../Header/Header";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 import NoFoodIcon from "@mui/icons-material/NoFood";

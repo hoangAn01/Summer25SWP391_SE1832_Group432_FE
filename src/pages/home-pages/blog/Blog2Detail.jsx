@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Container, Typography, Box, Paper } from "@mui/material";
-import Header from "../../Header/Header";
+import Header from "../Header/Header";
 
 const Blog2Detail = () => {
   useEffect(() => {

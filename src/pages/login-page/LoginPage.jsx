@@ -21,11 +21,17 @@ const LoginPage = () => {
     console.log("Form submitted:", values);
     try {
       const response = await api.post("Auth/login", values);
-      toast.success("Đăng nhập thành công!");
-      console.log("Login response:", response.data.user);
       dispatch(login(response.data.user));
       localStorage.setItem("token", response.data.token);
+      const user = response.data.user;
+      if (user.role === "ManagerAdmin") {
+        navigate("/dashboard");
+        toast.success("Đăng nhập thành công!");
+        return;
+      }
+
       navigate("/home");
+      toast.success("Đăng nhập thành công!");
     } catch (error) {
       toast.error(error.response.data.message);
     }
