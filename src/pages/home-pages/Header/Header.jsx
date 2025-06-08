@@ -15,6 +15,12 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import { Menu as AntdMenu, Modal, Alert } from "antd";
+import {
+  FacebookOutlined,
+  PhoneOutlined,
+  MessageOutlined,
+} from "@ant-design/icons";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import "./Header.css";
@@ -24,6 +30,8 @@ import { logout } from "../../../redux/features/userSlice";
 
 const Header = ({ onScrollToSection }) => {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [isParentLoggedIn, setIsParentLoggedIn] = useState(false);
@@ -49,6 +57,10 @@ const Header = ({ onScrollToSection }) => {
   };
 
   const handleMenuClick = (elementId) => {
+    if (elementId === "contact") {
+      setShowContactModal(true);
+      return;
+    }
     if (location.pathname !== "/home") {
       navigate("/home");
       setTimeout(() => {
@@ -86,6 +98,23 @@ const Header = ({ onScrollToSection }) => {
     dispatch(logout());
     localStorage.clear();
     navigate("/login");
+    setShowLogoutModal(false);
+  };
+
+  // Giả lập kiểm tra có hồ sơ hay không (bạn thay bằng logic thực tế)
+  const hasHealthProfile = false;
+
+  const handleHealthProfileMenuClick = () => {
+    if (!hasHealthProfile) {
+      setShowNoProfileDialog(true);
+    } else {
+      navigate("/health-profile");
+    }
+  };
+
+  const handleCreateProfile = () => {
+    setShowNoProfileDialog(false);
+    navigate("/create-health-profile");
   };
 
   return (
@@ -163,7 +192,7 @@ const Header = ({ onScrollToSection }) => {
                   "& input": {
                     padding: "8px 0",
                     color: "#2196f3",
-                    "::placeholder": {
+                    "::pl'cehold'r": {
                       color: "#bdbdbd",
                       opacity: 1,
                     },
@@ -173,24 +202,25 @@ const Header = ({ onScrollToSection }) => {
             </Box>
 
             <Box sx={{ flexGrow: 1, display: "flex" }}>
-              {menuItems.map((item) => (
-                <Button
-                  key={item.text}
-                  onClick={() =>
-                    item.isHome ? navigate("/home") : handleMenuClick(item.id)
-                  }
-                  sx={{
-                    color: "white",
-                    fontWeight: 500,
-                    textShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                    "&:hover": {
-                      color: "#ffd600",
-                    },
-                  }}
-                >
-                  {item.text}
-                </Button>
-              ))}
+              {menuItems.map(
+                (item) =>
+                  item.id !== "health-profile" && (
+                    <Button
+                      key={item.text}
+                      onClick={() => handleMenuClick(item.id)}
+                      sx={{
+                        color: item.id === "contact" ? "#ffd600" : "white",
+                        fontWeight: 500,
+                        textShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                        "&:hover": {
+                          color: "#ffd600",
+                        },
+                      }}
+                    >
+                      {item.text}
+                    </Button>
+                  )
+              )}
             </Box>
 
             {user ? (
@@ -205,7 +235,6 @@ const Header = ({ onScrollToSection }) => {
                     p: 0.5,
                     "&:hover": {
                       color: "#ffd600",
-                      background: "rgba(255,255,255,0.10)",
                     },
                   }}
                 >
@@ -232,12 +261,7 @@ const Header = ({ onScrollToSection }) => {
                   >
                     Thông tin cá nhân
                   </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      handleUserClose();
-                      navigate("/profile");
-                    }}
-                  >
+                  <MenuItem onClick={handleHealthProfileMenuClick}>
                     Hồ sơ sức khỏe học sinh
                   </MenuItem>
                   <MenuItem
@@ -259,12 +283,19 @@ const Header = ({ onScrollToSection }) => {
                   <MenuItem
                     onClick={() => {
                       handleUserClose();
-                      navigate("/dashboard");
+                      navigate("");
                     }}
                   >
                     Quản lý
                   </MenuItem>
-                  <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      handleUserClose();
+                      setShowLogoutModal(true);
+                    }}
+                  >
+                    Đăng xuất
+                  </MenuItem>
                 </Menu>
               </>
             ) : (
@@ -308,6 +339,7 @@ const Header = ({ onScrollToSection }) => {
           </Toolbar>
         </Container>
       </Box>
+
       <Dialog
         open={showNoProfileDialog}
         onClose={() => setShowNoProfileDialog(false)}
@@ -324,10 +356,7 @@ const Header = ({ onScrollToSection }) => {
             Đóng
           </Button>
           <Button
-            onClick={() => {
-              setShowNoProfileDialog(false);
-              setShowHealthForm(true);
-            }}
+            onClick={handleCreateProfile}
             color="primary"
             variant="contained"
           >
@@ -335,6 +364,60 @@ const Header = ({ onScrollToSection }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Modal
+        title="Xác nhận đăng xuất"
+        open={showLogoutModal}
+        onOk={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+        okText="Đăng xuất"
+        cancelText="Hủy"
+      >
+        <p>Bạn có chắc chắn muốn đăng xuất không?</p>
+      </Modal>
+
+      <Modal
+        open={showContactModal}
+        onCancel={() => setShowContactModal(false)}
+        footer={null}
+        title="Thông tin liên hệ"
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            fontSize: 16,
+          }}
+        >
+          <div>
+            <FacebookOutlined style={{ color: "#1877f3", marginRight: 8 }} />
+            Facebook:{" "}
+            <a
+              href="https://www.facebook.com/longg.nguyen.94695/?locale=vi_VN"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              facebook.com/longg.nguyen.94695
+            </a>
+          </div>
+          <div>
+            <PhoneOutlined style={{ color: "#25d366", marginRight: 8 }} />
+            Số điện thoại: <a href="tel:0123456789">0123 456 789</a>
+          </div>
+          <div>
+            <MessageOutlined style={{ color: "#06c", marginRight: 8 }} />
+            Zalo:{" "}
+            <a
+              href="https://zalo.me/0123456789"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              0123 456 789
+            </a>
+          </div>
+        </div>
+      </Modal>
     </AppBar>
   );
 };

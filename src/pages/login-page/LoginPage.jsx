@@ -21,8 +21,20 @@ const LoginPage = () => {
     console.log("Form submitted:", values);
     try {
       const response = await api.post("Auth/login", values);
-      dispatch(login(response.data.user));
+      // Lưu toàn bộ thông tin user vào Redux
+      const userData = {
+        ...response.data.user,
+        fullName: response.data.user.fullName,
+        username: response.data.user.username,
+        phone: response.data.user.phone,
+        dateOfBirth: response.data.user.dateOfBirth,
+        gender: response.data.user.gender,
+        address: response.data.user.address,
+        role: response.data.user.role,
+      };
+      dispatch(login(userData));
       localStorage.setItem("token", response.data.token);
+
       const user = response.data.user;
       if (user.role === "ManagerAdmin") {
         navigate("/dashboard");

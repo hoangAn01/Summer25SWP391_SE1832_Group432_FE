@@ -12,19 +12,20 @@ import RegisterPage from "./pages/register-page/RegisterPage";
 import HomePage from "./pages/home-pages/HomePage";
 
 import Header from "./pages/home-pages/Header/Header";
-import HealthProfilePage from "./pages/health_profile_pages/HealthProfilePage";
+
 import Dashboard from "./dashboard/dashboard";
 import Parent_profile from "./dashboard/dashboad_element/parent_profile";
 import Export_pdf from "./dashboard/dashboad_element/export_pdf";
 import Manage_account from "./dashboard/dashboad_element/manage_account";
 import Report from "./dashboard/dashboad_element/report";
-import CreateEvent from "./dashboard/dashboad_element/create_event";
+import CreateEvent from "./dashboard/dashboad_element/Create_event/Create_event";
 import Blog1Detail from "./pages/home-pages/blog/Blog1Detail";
 import Blog2Detail from "./pages/home-pages/blog/Blog2Detail";
 import Blog3Detail from "./pages/home-pages/blog/Blog3Detail";
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
+import HealthProfileCreatePage from "./pages/home-pages/ParentPage/HealthProfileCreatePage";
 
 function App() {
   const router = createBrowserRouter([
@@ -111,8 +112,8 @@ function App() {
     },
 
     {
-      path: "/health-profile",
-      element: <HealthProfilePage />,
+      path: "/create-health-profile",
+      element: <HealthProfileCreatePage />,
     },
     {
       path: "/dashboard",

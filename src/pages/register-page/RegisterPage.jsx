@@ -13,14 +13,23 @@ import "./RegisterPage.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/userSlice";
 
 function RegisterPage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      await api.post("Auth/register", values);
+      const response = await api.post("Auth/register", values);
+      if (response && response.data && response.data.user) {
+        dispatch(login(response.data.user)); // Lưu vào Redux
+      }
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
       toast.success("Đăng ký thành công!");
       navigate("/login");
     } catch (error) {
