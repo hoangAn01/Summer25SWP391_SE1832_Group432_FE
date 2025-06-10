@@ -5,46 +5,39 @@ import {
   Typography,
   Button,
   IconButton,
-  Box,
   Menu,
   MenuItem,
-  InputBase,
+  Box,
   Container,
+  InputBase,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import { Menu as AntdMenu, Modal, Alert } from "antd";
-import {
-  FacebookOutlined,
-  PhoneOutlined,
-  MessageOutlined,
-} from "@ant-design/icons";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../../redux/features/userSlice";
+import { Modal } from "antd";
 
-const Header = ({ onScrollToSection }) => {
+const Header = () => {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
   const [showContactModal, setShowContactModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [isParentLoggedIn, setIsParentLoggedIn] = useState(false);
   const user = useSelector((state) => state.user).user;
   const dispatch = useDispatch();
-  const [showHealthForm, setShowHealthForm] = useState(false);
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setIsParentLoggedIn(true);
+      // Logic for when user is logged in
     } else {
-      setIsParentLoggedIn(false);
+      // Logic for when user is not logged in
     }
   }, [user]);
 
@@ -61,7 +54,7 @@ const Header = ({ onScrollToSection }) => {
       setShowContactModal(true);
       return;
     }
-    if (location.pathname !== "/home") {
+    if (location.pathname !== "/home" && location.pathname !== "/") {
       navigate("/home");
       setTimeout(() => {
         const element = document.getElementById(elementId);
@@ -73,9 +66,6 @@ const Header = ({ onScrollToSection }) => {
       const element = document.getElementById(elementId);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
-      }
-      if (onScrollToSection) {
-        onScrollToSection(elementId);
       }
     }
   };
@@ -118,6 +108,7 @@ const Header = ({ onScrollToSection }) => {
   };
 
   return (
+    <>
     <AppBar
       position="fixed"
       sx={{
@@ -192,7 +183,7 @@ const Header = ({ onScrollToSection }) => {
                   "& input": {
                     padding: "8px 0",
                     color: "#2196f3",
-                    "::pl'cehold'r": {
+                      "::placeholder": {
                       color: "#bdbdbd",
                       opacity: 1,
                     },
@@ -267,10 +258,10 @@ const Header = ({ onScrollToSection }) => {
                   <MenuItem
                     onClick={() => {
                       handleUserClose();
-                      navigate("/dashboard/parent_profile");
+                        navigate("/event");
                     }}
                   >
-                    Thông báo tiêm chủng
+                    Thông báo sự kiện 
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
@@ -340,6 +331,28 @@ const Header = ({ onScrollToSection }) => {
         </Container>
       </Box>
 
+        <Modal
+          title="Đăng xuất"
+          open={showLogoutModal}
+          onOk={handleLogout}
+          onCancel={() => setShowLogoutModal(false)}
+          okText="Đăng xuất"
+          cancelText="Hủy"
+        >
+          <p>Bạn có chắc chắn muốn đăng xuất?</p>
+        </Modal>
+
+        <Modal
+          open={showContactModal}
+          onCancel={() => setShowContactModal(false)}
+          footer={null}
+          title="Thông tin liên hệ"
+        >
+          <p>Email: support@example.com</p>
+          <p>Phone: 123-456-7890</p>
+        </Modal>
+      </AppBar>
+
       <Dialog
         open={showNoProfileDialog}
         onClose={() => setShowNoProfileDialog(false)}
@@ -364,61 +377,7 @@ const Header = ({ onScrollToSection }) => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Modal
-        title="Xác nhận đăng xuất"
-        open={showLogoutModal}
-        onOk={handleLogout}
-        onCancel={() => setShowLogoutModal(false)}
-        okText="Đăng xuất"
-        cancelText="Hủy"
-      >
-        <p>Bạn có chắc chắn muốn đăng xuất không?</p>
-      </Modal>
-
-      <Modal
-        open={showContactModal}
-        onCancel={() => setShowContactModal(false)}
-        footer={null}
-        title="Thông tin liên hệ"
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            fontSize: 16,
-          }}
-        >
-          <div>
-            <FacebookOutlined style={{ color: "#1877f3", marginRight: 8 }} />
-            Facebook:{" "}
-            <a
-              href="https://www.facebook.com/longg.nguyen.94695/?locale=vi_VN"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              facebook.com/longg.nguyen.94695
-            </a>
-          </div>
-          <div>
-            <PhoneOutlined style={{ color: "#25d366", marginRight: 8 }} />
-            Số điện thoại: <a href="tel:0123456789">0123 456 789</a>
-          </div>
-          <div>
-            <MessageOutlined style={{ color: "#06c", marginRight: 8 }} />
-            Zalo:{" "}
-            <a
-              href="https://zalo.me/0123456789"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              0123 456 789
-            </a>
-          </div>
-        </div>
-      </Modal>
-    </AppBar>
+    </>
   );
 };
 

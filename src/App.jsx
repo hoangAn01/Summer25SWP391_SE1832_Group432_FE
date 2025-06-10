@@ -26,6 +26,7 @@ import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
 import HealthProfileCreatePage from "./pages/home-pages/ParentPage/HealthProfileCreatePage";
+import EventPage from "./pages/home-pages/ParentPage/Event";
 
 function App() {
   const router = createBrowserRouter([
@@ -140,6 +141,15 @@ function App() {
           element: <Report />,
         },
       ],
+    },
+    {
+      path: "/event",
+      element: (
+        <>
+          <Header />
+          <EventPage />
+        </>
+      ),
     },
   ]);
   return (

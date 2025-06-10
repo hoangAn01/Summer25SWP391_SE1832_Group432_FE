@@ -36,7 +36,7 @@ const LoginPage = () => {
       localStorage.setItem("token", response.data.token);
 
       const user = response.data.user;
-      if (user.role === "ManagerAdmin") {
+      if (user.role === "admin") {
         navigate("/dashboard");
         toast.success("Đăng nhập thành công!");
         return;
