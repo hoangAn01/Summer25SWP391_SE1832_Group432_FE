@@ -1,7 +1,7 @@
-import { use, useState } from "react";
+
 import { Form, Input, Button, Checkbox, Select, Divider } from "antd";
 import { FaEye, FaEyeSlash, FaGoogle, FaMicrosoft } from "react-icons/fa";
-import "./LoginPage.css";
+import "./LoginForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -10,7 +10,7 @@ import { login } from "../../redux/features/userSlice";
 
 const { Option } = Select;
 
-const LoginPage = () => {
+const LoginForm = () => {
   const [form] = Form.useForm();
 
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ const LoginPage = () => {
       localStorage.setItem("token", response.data.token);
 
       const user = response.data.user;
-      if (user.role === "admin") {
+      if (user.role === "Admin") {
         navigate("/dashboard");
         toast.success("Đăng nhập thành công!");
         return;
@@ -140,4 +140,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default LoginForm;

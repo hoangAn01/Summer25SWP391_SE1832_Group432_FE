@@ -24,12 +24,11 @@ function getItem(label, key, icon, children) {
   };
 }
 const items = [
-  getItem("Tìm kiếm phụ huynh", "parent_profile", <PieChartOutlined />),
-  getItem("Tìm kiếm học sinh", "parent_profile", <DesktopOutlined />),
+  getItem("Tìm kiếm học sinh", "student_profile", <DesktopOutlined />),
   getItem("Tạo sự kiện ", "create_event", <CalendarOutlined />, [
     getItem(
       "Tạo sự kiện tiêm chủng",
-      "create_vaccination",
+      "Vaccine_event",
       <MedicineBoxOutlined />
     ),
     getItem(
@@ -37,8 +36,13 @@ const items = [
       "create_health_check",
       <MedicineBoxOutlined />
     ),
+    getItem(
+      "Sự kiện khác",
+      "other_event",
+      <MedicineBoxOutlined />
+    ),
   ]),
-  getItem("Quản lí tài khoản ", "manage_account", <DesktopOutlined />),
+  getItem("Quản lí tài khoản phụ huynh ", "manage_account", <DesktopOutlined />),
   getItem("Xuất ra file PDF ", "export_pdf", <DesktopOutlined />),
   getItem("Báo cáo ", "report", <DesktopOutlined />),
   getItem("Đăng xuất ", "logout", <DesktopOutlined />),
@@ -80,6 +84,7 @@ const Dashboard = () => {
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
+        width={260}
       >
         <div className="demo-logo-vertical" />
         <Menu
@@ -122,11 +127,16 @@ const Dashboard = () => {
             >
               <span
                 style={{
-                  marginRight: 8,
-                  fontWeight: 500,
-                  fontSize: "14px",
+                  marginRight: 16,
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  color: "white",
+                  letterSpacing: 0.5,
                 }}
               >
+                <span style={{marginRight: 8}}>
+                  <strong>Xin chào! Admin</strong>
+                </span>
                 {user?.fullName}
               </span>
               <Avatar

@@ -20,7 +20,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../../../redux/features/userSlice";
+import { logout } from "../../redux/features/userSlice";
 import { Modal } from "antd";
 
 const Header = () => {
@@ -247,7 +247,7 @@ const Header = () => {
                   <MenuItem
                     onClick={() => {
                       handleUserClose();
-                      navigate("/profile");
+                      navigate("/parent-profile");
                     }}
                   >
                     Thông tin cá nhân

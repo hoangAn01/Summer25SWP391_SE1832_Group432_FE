@@ -7,23 +7,23 @@ import {
   Select,
   DatePicker,
 } from "antd";
-import React, { useState } from "react";
+
 import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
-import "./RegisterPage.css";
+import "./RegisterForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
 
-function RegisterPage() {
+function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const { confirmPassword, dateOfBirth, ...rest } = values;
+      const {  dateOfBirth, ...rest } = values;
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
@@ -213,4 +213,4 @@ function RegisterPage() {
   );
 }
 
-export default RegisterPage;
+export default RegisterForm;

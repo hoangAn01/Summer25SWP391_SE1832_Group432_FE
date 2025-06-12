@@ -181,13 +181,7 @@ function HealthProfileCreatePage() {
               >
                 <Input placeholder="Nhập thị lực" />
               </Form.Item>
-              <Form.Item
-                label="Thính lực"
-                name="hearing"
-                rules={[{ required: true, message: "Vui lòng nhập thính lực" }]}
-              >
-                <Input placeholder="Nhập thính lực" />
-              </Form.Item>
+
               <Form.Item
                 label="Tiêm chủng"
                 name="vaccination"
@@ -199,6 +193,30 @@ function HealthProfileCreatePage() {
                 ]}
               >
                 <Input placeholder="Nhập thông tin tiêm chủng" />
+              </Form.Item>
+              <Form.Item
+                label="Chiều cao "
+                name="height"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập thông tin chiều cao",
+                  },
+                ]}
+              >
+                <Input placeholder="Nhập thông tin chiều cao" />
+              </Form.Item>
+              <Form.Item
+                label="Cân nặng "
+                name="weight"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập thông tin Cân nặng ",
+                  },
+                ]}
+              >
+                <Input placeholder="Nhập thông tin cân nặng " />
               </Form.Item>
             </div>
           </div>
