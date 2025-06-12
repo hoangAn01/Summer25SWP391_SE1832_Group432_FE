@@ -1,16 +1,13 @@
-import { use, useState } from "react";
-import { Form, Input, Button, Checkbox, Select, Divider } from "antd";
-import { FaEye, FaEyeSlash, FaGoogle, FaMicrosoft } from "react-icons/fa";
-import "./LoginPage.css";
+import React from "react";
+import { Form, Input, Button, Checkbox } from "antd";
+import "./LoginForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import api from "../../config/axios";
 import { login } from "../../redux/features/userSlice";
 
-const { Option } = Select;
-
-const LoginPage = () => {
+const LoginForm = () => {
   const [form] = Form.useForm();
 
   const navigate = useNavigate();
@@ -22,10 +19,15 @@ const LoginPage = () => {
     try {
       const response = await api.post("Auth/login", values);
       toast.success("Đăng nhập thành công!");
-      console.log("Login response:", response.data.user);
       dispatch(login(response.data.user));
       localStorage.setItem("token", response.data.token);
-      navigate("/home");
+      if (response.data.user.role == "Admin") {
+        navigate("/dashboard");
+      } else if (response.data.user.role == "Nurse") {
+        navigate("/nurse");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -122,4 +124,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default LoginForm;

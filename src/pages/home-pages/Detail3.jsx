@@ -22,7 +22,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import MoodIcon from "@mui/icons-material/Mood";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import GroupsIcon from "@mui/icons-material/Groups";
-import Header from "../../Header/Header";
+import Header from "../../components/header/Header";
 
 const Detail3 = () => {
   const scrollToSection = (elementId) => {

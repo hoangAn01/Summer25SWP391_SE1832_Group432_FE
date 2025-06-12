@@ -8,7 +8,7 @@ import {
   Grid,
   Divider,
 } from "@mui/material";
-import Header from "../../Header/Header";
+import Header from "../../components/header/Header";
 
 const Blog1Detail = () => {
   const { pathname } = useLocation();

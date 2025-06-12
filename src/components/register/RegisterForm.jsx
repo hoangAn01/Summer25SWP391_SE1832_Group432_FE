@@ -7,14 +7,14 @@ import {
   Select,
   DatePicker,
 } from "antd";
-import React, { useState } from "react";
-import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
-import "./RegisterPage.css";
+import React from "react";
+import { FaGoogle } from "react-icons/fa";
+import "./RegisterForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 
-function RegisterPage() {
+function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const onFinish = async (values) => {
@@ -153,15 +153,6 @@ function RegisterPage() {
               </Select>
             </Form.Item>
 
-            {/* <div className="form-options">
-              <Form.Item name="rememberMe" valuePropName="checked" noStyle>
-                <Checkbox>Ghi nhớ đăng nhập</Checkbox>
-              </Form.Item>
-              <a href="#" className="forgot-password">
-                Quên mật khẩu?
-              </a>
-            </div> */}
-
             <Form.Item>
               <Button type="primary" htmlType="submit" block>
                 Đăng ký
@@ -182,4 +173,4 @@ function RegisterPage() {
   );
 }
 
-export default RegisterPage;
+export default RegisterForm;
