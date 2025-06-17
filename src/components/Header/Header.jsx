@@ -266,7 +266,7 @@ const Header = () => {
                   <MenuItem
                     onClick={() => {
                       handleUserClose();
-                      navigate("/dashboard/parent_profile");
+                      navigate("/medication_form");
                     }}
                   >
                     Gửi thuốc
