@@ -1,32 +1,68 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, List, Typography, Form, Input, Button, DatePicker, Row, Col, message, Select } from "antd";
-
-const mockEvents = [
-  {
-    id: 1,
-    content: "Tiêm chủng vaccine sởi cho học sinh lớp 1",
-    date: "2024-06-20 08:00",
-  },
-  {
-    id: 2,
-    content: "Tiêm chủng vaccine cúm mùa cho toàn trường",
-    date: "2024-05-15 09:00",
-  },
-];
+import api from "../../../config/axios";
 
 function Vaccine_event() {
-  const [events, setEvents] = useState(mockEvents);
+  const [events, setEvents] = useState([]);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  const onFinish = (values) => {
-    const newEvent = {
-      id: events.length + 1,
-      content: values.content,
-      date: values.date.format("YYYY-MM-DD HH:mm"),
-    };
-    setEvents([newEvent, ...events]);
-    form.resetFields();
-    message.success("Tạo sự kiện thành công!");
+  // Lấy danh sách sự kiện từ API
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/Notifications');
+      
+      // Lọc ra các sự kiện tiêm chủng
+      const vaccineEvents = response.data.filter(event => 
+        event.title.toLowerCase().includes('tiêm') || 
+        event.title.toLowerCase().includes('vaccine')
+      ).map(event => ({
+        id: event.notificationID,
+        content: event.content,
+        date: event.sentDate,
+        title: event.title,
+        status: event.status
+      }));
+
+      setEvents(vaccineEvents);
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách sự kiện:', error);
+      message.error('Không thể tải danh sách sự kiện');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const onFinish = async (values) => {
+    try {
+      // Chuẩn bị dữ liệu để gửi lên API
+      const newEvent = {
+        title: `Sự kiện tiêm chủng ${values.grade === 'all' ? 'toàn trường' : `khối ${values.grade}`}`,
+        content: values.content,
+        sentDate: values.date.format("YYYY-MM-DDTHH:mm:ss"),
+        status: "Published"
+      };
+
+      // Gửi sự kiện lên API
+      await api.post('/Notifications', newEvent);
+      
+      // Cập nhật danh sách sự kiện
+      message.success("Tạo sự kiện tiêm chủng thành công!");
+      
+      // Làm mới danh sách sự kiện
+      fetchEvents();
+      
+      // Đặt lại form
+      form.resetFields();
+    } catch (error) {
+      console.error('Lỗi khi tạo sự kiện:', error);
+      message.error('Không thể tạo sự kiện. Vui lòng thử lại.');
+    }
   };
 
   return (
@@ -34,13 +70,19 @@ function Vaccine_event() {
       <Col xs={24} md={8}>
         <Card title="Lịch sử sự kiện tiêm chủng" bordered={false}>
           <List
+            loading={loading}
             itemLayout="horizontal"
             dataSource={events}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  title={<Typography.Text strong>{item.content}</Typography.Text>}
-                  description={<span>Thời gian: {item.date}</span>}
+                  title={<Typography.Text strong>{item.title}</Typography.Text>}
+                  description={
+                    <>
+                      <span>Nội dung: {item.content}</span><br/>
+                      <span>Thời gian: {item.date}</span>
+                    </>
+                  }
                 />
               </List.Item>
             )}

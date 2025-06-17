@@ -22,22 +22,18 @@ const LoginForm = () => {
     try {
       const response = await api.post("Auth/login", values);
       // Lưu toàn bộ thông tin user vào Redux
-      const userData = {
-        ...response.data.user,
-        fullName: response.data.user.fullName,
-        username: response.data.user.username,
-        phone: response.data.user.phone,
-        dateOfBirth: response.data.user.dateOfBirth,
-        gender: response.data.user.gender,
-        address: response.data.user.address,
-        role: response.data.user.role,
-      };
-      dispatch(login(userData));
-      localStorage.setItem("token", response.data.token);
+  
 
       const user = response.data.user;
+      dispatch(login(response.data.user));
+      localStorage.setItem("token", response.data.token); //lấy cái token 
       if (user.role === "Admin") {
         navigate("/dashboard");
+        toast.success("Đăng nhập thành công!");
+        return;
+      }
+      if (user.role === "Nurse") {
+        navigate("/nurse");
         toast.success("Đăng nhập thành công!");
         return;
       }

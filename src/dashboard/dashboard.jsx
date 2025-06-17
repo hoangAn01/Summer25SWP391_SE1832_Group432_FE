@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import {
   DesktopOutlined,
-  FileOutlined,
-  PieChartOutlined,
-  TeamOutlined,
+
   UserOutlined,
   CalendarOutlined,
   MedicineBoxOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Layout, Menu, Modal, theme, Avatar, Dropdown } from "antd";
+import {  Layout, Menu, Modal, theme, Avatar, Dropdown } from "antd";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/features/userSlice";
@@ -26,6 +24,7 @@ function getItem(label, key, icon, children) {
 const items = [
   getItem("Tìm kiếm học sinh", "student_profile", <DesktopOutlined />),
   getItem("Tạo sự kiện ", "create_event", <CalendarOutlined />, [
+    
     getItem(
       "Tạo sự kiện tiêm chủng",
       "Vaccine_event",
@@ -42,9 +41,11 @@ const items = [
       <MedicineBoxOutlined />
     ),
   ]),
+  getItem("Sự kiện đã tạo  ", "created_event", <DesktopOutlined />),
   getItem("Quản lí tài khoản phụ huynh ", "manage_account", <DesktopOutlined />),
-  getItem("Xuất ra file PDF ", "export_pdf", <DesktopOutlined />),
+ 
   getItem("Báo cáo ", "report", <DesktopOutlined />),
+
   getItem("Đăng xuất ", "logout", <DesktopOutlined />),
 ];
 const Dashboard = () => {

@@ -6,29 +6,56 @@ import {
   Input,
   Select,
   DatePicker,
+  Space
 } from "antd";
 
-import { FaEye, FaEyeSlash, FaGoogle } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle, FaArrowLeft } from "react-icons/fa";
 import "./RegisterForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
+import { AddressSelector } from "./AddressSelector";
+import provinces from '../../hanhchinhvn-master/dist/tinh_tp.json';
+import districts from '../../hanhchinhvn-master/dist/quan_huyen.json';
+import wards from '../../hanhchinhvn-master/dist/xa_phuong.json';
 
 function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const {  dateOfBirth, ...rest } = values;
+      const { dateOfBirth, addressDetails, province, district, ward, ...rest } = values;
+      
+      // In ra thông tin chi tiết để debug
+      console.log('Province code:', province);
+      console.log('District code:', district);
+      console.log('Ward code:', ward);
+
+      // Kiểm tra dữ liệu tỉnh/huyện/xã
+      console.log('Province data:', provinces[province]);
+      console.log('District data:', districts[district]);
+      console.log('Ward data:', wards[ward]);
+
+      // Lấy tên tỉnh, huyện, xã
+      const provinceName = provinces[province]?.name_with_type || '';
+      const districtName = districts[district]?.name_with_type || '';
+      const wardName = wards[ward]?.name_with_type || '';
+
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
+        address: `Số ${addressDetails}, ${wardName}, ${districtName}, ${provinceName}`,
+        province,
+        district,
+        ward
       };
-      console.log("Payload gửi lên backend:", payload);
+
+      console.log("Payload địa chỉ:", payload.address);
       const response = await api.post("Auth/register", payload);
       if (response && response.data && response.data.user) {
         dispatch(login(response.data.user)); // Lưu vào Redux
@@ -45,6 +72,10 @@ function RegisterForm() {
 
   const onFinishFailed = (errorInfo) => {
     console.log("Validation Failed:", errorInfo);
+  };
+
+  const handleBackToLogin = () => {
+    navigate("/login");
   };
 
   return (
@@ -124,7 +155,7 @@ function RegisterForm() {
                       new Error("Mật khẩu xác nhận không khớp")
                     );
                   },
-                }),
+                })
               ]}
             >
               <Input.Password placeholder="Xác nhận mật khẩu" />
@@ -166,11 +197,42 @@ function RegisterForm() {
               />
             </Form.Item>
 
+            <AddressSelector 
+              onChange={(addressData) => {
+                form.setFieldsValue({
+                  province: addressData.province,
+                  district: addressData.district,
+                  ward: addressData.ward
+                });
+              }}
+            />
+
             <Form.Item
-              name="address"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
+              name="province"
+              hidden
             >
-              <Input.TextArea placeholder="Địa chỉ" rows={2} />
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="district"
+              hidden
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="ward"
+              hidden
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item
+              name="addressDetails"
+              rules={[{ required: true, message: "Vui lòng nhập số nhà, đường" }]}
+            >
+              <Input.TextArea placeholder="Số nhà, đường" rows={2} />
             </Form.Item>
 
             <Form.Item
@@ -184,20 +246,19 @@ function RegisterForm() {
               </Select>
             </Form.Item>
 
-            {/* <div className="form-options">
-              <Form.Item name="rememberMe" valuePropName="checked" noStyle>
-                <Checkbox>Ghi nhớ đăng nhập</Checkbox>
-              </Form.Item>
-              <a href="#" className="forgot-password">
-                Quên mật khẩu?
-              </a>
-            </div> */}
-
-            <Form.Item>
+            <Space direction="vertical" style={{ width: '100%' }}>
               <Button type="primary" htmlType="submit" block>
                 Đăng ký
               </Button>
-            </Form.Item>
+              <Button 
+                icon={<FaArrowLeft />} 
+                onClick={handleBackToLogin} 
+                block
+                type="default"
+              >
+                Quay lại trang đăng nhập
+              </Button>
+            </Space>
 
             <Divider>Hoặc đăng nhập với</Divider>
 

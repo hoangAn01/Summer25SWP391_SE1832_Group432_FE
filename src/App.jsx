@@ -23,7 +23,7 @@ import Blog3Detail from "./pages/home-pages/blog/Blog3Detail";
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
-import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreatePage";
+import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreate";
 import EventPage from "./pages/home-pages/ParentForm/Event";
 import Vaccine_event from "./dashboard/dashboad_element/Create_event/Vaccine_event";
 
@@ -32,6 +32,16 @@ import LoginForm from "./components/login-form/LoginForm";
 
 import Header from "./components/Header/Header";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile";
+import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
+
+import Health_check from "./dashboard/dashboad_element/Create_event/create_health_check";
+import Nurse from "./nurse";
+import MedicalEvent from "./nurse/medical-event";
+import Created_event from "./dashboard/dashboad_element/Created_event";
+
+
+
+
 
 function App() {
   const router = createBrowserRouter([
@@ -122,10 +132,32 @@ function App() {
       element: <HealthProfileCreatePage />,
     },
     {
+      path: "/medication_form",
+      element: <MedicationForm />,
+    },
+    // {
+    //   path: "/student_profile",
+    //   element: <StudentProfile />,
+    // },
+    {
+      path: "/nurse",
+      element: <Nurse />,
+      children: [
+        {
+          path: "/nurse/medical-event",
+          element: <MedicalEvent />,
+        },
+      ],
+    },
+    {
       path: "/dashboard",
       element: <Dashboard />,
       children: [
   
+        {
+          path: "create_health_check",
+          element: <Health_check />,
+        },
         {
           path: "vaccine_event",
           element: <Vaccine_event />,
@@ -141,6 +173,10 @@ function App() {
         {
           path: "report",
           element: <Report />,
+        },
+        {
+          path: "created_event",
+          element: <Created_event />,
         },
       ],
     },
