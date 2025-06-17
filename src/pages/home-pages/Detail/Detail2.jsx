@@ -12,19 +12,17 @@ import {
   Divider,
   Fade,
 } from "@mui/material";
-import PsychologyIcon from "@mui/icons-material/Psychology";
-import SchoolIcon from "@mui/icons-material/School";
-import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
-import SentimentSatisfiedIcon from "@mui/icons-material/SentimentSatisfied";
+import Header from "../../../components/Header/Header";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import RestaurantIcon from "@mui/icons-material/Restaurant";
+import NoFoodIcon from "@mui/icons-material/NoFood";
+import WatchLaterIcon from "@mui/icons-material/WatchLater";
+import LocalDiningIcon from "@mui/icons-material/LocalDining";
 import TimerIcon from "@mui/icons-material/Timer";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PersonIcon from "@mui/icons-material/Person";
-import MoodIcon from "@mui/icons-material/Mood";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import GroupsIcon from "@mui/icons-material/Groups";
-import Header from "../../components/header/Header";
 
-const Detail3 = () => {
+const Detail2 = () => {
   const scrollToSection = (elementId) => {
     const element = document.getElementById(elementId);
     if (element) {
@@ -57,7 +55,7 @@ const Detail3 = () => {
               textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
             }}
           >
-            Sức Khỏe Tâm Thần Ở Tuổi Học Đường
+            Hướng Dẫn Chế Độ Dinh Dưỡng Cho Học Sinh Tiểu Học
           </Typography>
 
           {/* Article Meta Info */}
@@ -84,7 +82,7 @@ const Detail3 = () => {
               }}
             >
               <TimerIcon sx={{ fontSize: 20, mr: 1 }} />
-              <Typography variant="body2">8 phút đọc</Typography>
+              <Typography variant="body2">10 phút đọc</Typography>
             </Box>
             <Box
               sx={{
@@ -95,7 +93,7 @@ const Detail3 = () => {
             >
               <PersonIcon sx={{ fontSize: 20, mr: 1 }} />
               <Typography variant="body2">
-                Tác giả: Chuyên gia tâm lý học đường
+                Tác giả: Chuyên gia dinh dưỡng
               </Typography>
             </Box>
           </Box>
@@ -113,8 +111,8 @@ const Detail3 = () => {
           >
             <Box
               component="img"
-              src="/images/details3.png"
-              alt="Mental health in schools"
+              src="/images/detail2.jpg"
+              alt="Healthy eating for students"
               sx={{
                 width: "100%",
                 height: "100%",
@@ -137,11 +135,11 @@ const Detail3 = () => {
               }}
             >
               <Typography variant="h5" sx={{ fontWeight: "bold", mb: 1 }}>
-                Nhận Biết và Hỗ Trợ Sức Khỏe Tâm Thần Học Đường
+                Dinh dưỡng - Nền tảng cho sự phát triển toàn diện
               </Typography>
               <Typography variant="body1">
-                Hướng dẫn cho phụ huynh và giáo viên về cách quan tâm đến sức
-                khỏe tinh thần của học sinh
+                Khám phá cách xây dựng thực đơn cân bằng và lành mạnh cho học
+                sinh tiểu học
               </Typography>
             </Box>
           </Box>
@@ -159,12 +157,10 @@ const Detail3 = () => {
             fontFamily: "'Roboto', sans-serif",
           }}
         >
-          Ở lứa tuổi học đường, học sinh không chỉ đối mặt với bài vở mà còn
-          phải vượt qua nhiều áp lực tâm lý như thi cử, kỳ vọng từ người lớn,
-          mâu thuẫn bạn bè và thay đổi tâm sinh lý. Nếu không được quan tâm đúng
-          cách, các em rất dễ rơi vào trạng thái căng thẳng (stress), lo âu, mất
-          ngủ hoặc thậm chí là trầm cảm nhẹ – những dấu hiệu thường bị bỏ qua vì
-          tưởng là "tính cách trẻ con".
+          Giai đoạn tiểu học là thời kỳ vàng để trẻ phát triển thể chất, trí tuệ
+          và hình thành thói quen sinh hoạt lành mạnh. Một chế độ dinh dưỡng đầy
+          đủ và cân bằng sẽ giúp các em tăng trưởng tốt, có đủ năng lượng học
+          tập, vui chơi và phòng tránh được nhiều bệnh tật.
         </Typography>
 
         <Grid container spacing={4}>
@@ -174,9 +170,9 @@ const Detail3 = () => {
               sx={{
                 p: 4,
                 mb: 4,
-                bgcolor: "#e3f2fd",
+                bgcolor: "#f8f9fa",
                 borderRadius: 4,
-                border: "1px solid #90caf9",
+                border: "1px solid #e0e0e0",
                 transition:
                   "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                 "&:hover": {
@@ -189,50 +185,54 @@ const Detail3 = () => {
                 variant="h5"
                 gutterBottom
                 sx={{
-                  color: "#1976d2",
+                  color: "primary.main",
                   fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
                 }}
               >
-                <FamilyRestroomIcon fontSize="large" />
-                Đối với phụ huynh
+                <LocalDiningIcon fontSize="large" />4 Nhóm Chất Thiết Yếu
               </Typography>
               <List>
                 <ListItem>
                   <ListItemIcon>
-                    <MoodIcon color="primary" />
+                    <LocalDiningIcon color="primary" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={
-                      <Typography variant="h6">Kết nối hàng ngày</Typography>
-                    }
-                    secondary="Duy trì những cuộc trò chuyện nhẹ nhàng với con"
+                    primary={<Typography variant="h6">Tinh bột</Typography>}
+                    secondary="Cơm, bún, bánh mì, khoai..."
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemIcon>
-                    <FavoriteIcon color="primary" />
+                    <LocalDiningIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={<Typography variant="h6">Chất đạm</Typography>}
+                    secondary="Thịt, cá, trứng, đậu hũ, sữa..."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <LocalDiningIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={<Typography variant="h6">Chất béo</Typography>}
+                    secondary="Dầu ăn, mỡ cá, bơ thực vật..."
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <LocalDiningIcon color="primary" />
                   </ListItemIcon>
                   <ListItemText
                     primary={
                       <Typography variant="h6">
-                        Lắng nghe không phán xét
+                        Vitamin và khoáng chất
                       </Typography>
                     }
-                    secondary="Tôn trọng và thấu hiểu cảm xúc của con"
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <PsychologyIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Typography variant="h6">Quan sát thay đổi</Typography>
-                    }
-                    secondary="Chú ý đến những biểu hiện bất thường của con"
+                    secondary="Rau củ, trái cây, nước, sữa..."
                   />
                 </ListItem>
               </List>
@@ -245,9 +245,9 @@ const Detail3 = () => {
               sx={{
                 p: 4,
                 mb: 4,
-                bgcolor: "#f3e5f5",
+                bgcolor: "#fff3e0",
                 borderRadius: 4,
-                border: "1px solid #ce93d8",
+                border: "1px solid #ffe0b2",
                 transition:
                   "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
                 "&:hover": {
@@ -260,50 +260,46 @@ const Detail3 = () => {
                 variant="h5"
                 gutterBottom
                 sx={{
-                  color: "#7b1fa2",
+                  color: "#ed6c02",
                   fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
                   gap: 2,
                 }}
               >
-                <SchoolIcon fontSize="large" />
-                Đối với giáo viên
+                <RestaurantIcon />
+                Gợi Ý Một Ngày Ăn Uống Hợp Lý
               </Typography>
               <List>
                 <ListItem>
                   <ListItemIcon>
-                    <GroupsIcon sx={{ color: "#7b1fa2" }} />
+                    <CheckCircleOutlineIcon color="warning" />
                   </ListItemIcon>
                   <ListItemText
                     primary={
                       <Typography variant="h6">
-                        Môi trường thân thiện
+                        3 bữa chính: sáng, trưa, tối
                       </Typography>
                     }
-                    secondary="Tạo không gian an toàn cho học sinh"
+                    secondary="Đảm bảo đủ chất và đa dạng món ăn"
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemIcon>
-                    <SentimentSatisfiedIcon sx={{ color: "#7b1fa2" }} />
+                    <CheckCircleOutlineIcon color="warning" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={
-                      <Typography variant="h6">Nhận diện dấu hiệu</Typography>
-                    }
-                    secondary="Theo dõi thái độ và hành vi của học sinh"
+                    primary={<Typography variant="h6">1–2 bữa phụ</Typography>}
+                    secondary="Sữa, trái cây, bánh ít ngọt hoặc ngũ cốc"
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemIcon>
-                    <PsychologyIcon sx={{ color: "#7b1fa2" }} />
+                    <CheckCircleOutlineIcon color="warning" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={
-                      <Typography variant="h6">Hoạt động thư giãn</Typography>
-                    }
-                    secondary="Tổ chức các hoạt động giảm stress"
+                    primary={<Typography variant="h6">Uống đủ nước</Typography>}
+                    secondary="1–1,5 lít/ngày, tăng cường vận động thể chất"
                   />
                 </ListItem>
               </List>
@@ -318,7 +314,7 @@ const Detail3 = () => {
             mb: 6,
             bgcolor: "#e8f5e9",
             borderRadius: 4,
-            border: "1px solid #a5d6a7",
+            border: "1px solid #c8e6c9",
             transition:
               "transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out",
             "&:hover": {
@@ -336,43 +332,42 @@ const Detail3 = () => {
               display: "flex",
               alignItems: "center",
               gap: 2,
-              mb: 4,
             }}
           >
-            <FavoriteIcon />
-            Dấu hiệu cần chú ý
+            <NoFoodIcon />
+            Lưu Ý Cho Phụ Huynh
           </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: "center", p: 2 }}>
-                <MoodIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
+                <NoFoodIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
-                  Thay đổi tâm trạng
+                  Hạn chế thực phẩm không có lợi
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Dễ cáu gắt, buồn bã kéo dài
+                  Đồ chiên, nước ngọt, bánh kẹo
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: "center", p: 2 }}>
-                <GroupsIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
+                <RestaurantIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
-                  Thu mình
+                  Khuyến khích ăn rau xanh
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Tránh giao tiếp, không muốn tham gia hoạt động
+                  Mỗi ngày và không bỏ bữa sáng
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: "center", p: 2 }}>
-                <PsychologyIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
+                <WatchLaterIcon color="success" sx={{ fontSize: 40, mb: 2 }} />
                 <Typography variant="h6" gutterBottom>
-                  Suy giảm học tập
+                  Tạo thói quen ăn uống đúng giờ
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Khó tập trung, kết quả học tập giảm sút
+                  Không vừa ăn vừa chơi điện thoại hay xem tivi
                 </Typography>
               </Box>
             </Grid>
@@ -397,7 +392,7 @@ const Detail3 = () => {
               mb: 3,
             }}
           >
-            Thông điệp cuối cùng
+            Kết Luận
           </Typography>
           <Typography
             variant="body1"
@@ -409,15 +404,16 @@ const Detail3 = () => {
               lineHeight: 1.8,
             }}
           >
-            Một học sinh khỏe mạnh không chỉ là khỏe về thể chất mà còn là người
-            biết quản lý cảm xúc, biết chia sẻ khi cần giúp đỡ, và có một tâm
-            hồn tích cực. Việc chăm sóc sức khỏe tâm thần học đường là trách
-            nhiệm chung tay của cả gia đình và nhà trường.
+            Dinh dưỡng tốt là nền tảng cho một cơ thể khỏe mạnh và một tinh thần
+            sẵn sàng học hỏi. Hãy cùng nhau chăm sóc bữa ăn hàng ngày cho các em
+            thật đầy đủ và yêu thương!
           </Typography>
         </Box>
       </Container>
+      <Footer />
     </Box>
+     
   );
 };
 
-export default Detail3;
+export default Detail2;

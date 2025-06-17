@@ -11,11 +11,12 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import Header from "../../components/header/Header";
+import Header from "../../../components/Header/Header";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import TimerIcon from "@mui/icons-material/Timer";
 import PersonIcon from "@mui/icons-material/Person";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import { Footer } from "../../../components/Footer/Footer";
 
 const BlogDetail = () => {
   const { pathname } = useLocation();
@@ -208,7 +209,9 @@ const BlogDetail = () => {
           </Box>
         </Paper>
       </Container>
+      <Footer />
     </Box>
+   
   );
 };
 

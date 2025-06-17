@@ -5,7 +5,8 @@
   max-width: 500px;
   border: 1px solid #e0e0e0;
 }
-vv .search:hover {
+vv
+.search:hover {
   background-color: rgba(255, 255, 255, 0.25);
 }
 
@@ -73,4 +74,4 @@ vv .search:hover {
 
 .loginButton {
   margin-left: 16px;
-}
+} 

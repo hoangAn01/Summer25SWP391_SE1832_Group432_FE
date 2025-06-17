@@ -29,11 +29,17 @@ const Header = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const user = useSelector((state) => state.user).user;
+  const user = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
 
-  useEffect(() => {}, [user]);
+  useEffect(() => {
+    if (user) {
+      // Logic for when user is logged in
+    } else {
+      // Logic for when user is not logged in
+    }
+  }, [user]);
 
   const handleUserMenu = (event) => {
     setUserAnchorEl(event.currentTarget);
@@ -241,7 +247,7 @@ const Header = () => {
                     <MenuItem
                       onClick={() => {
                         handleUserClose();
-                        navigate("/profile");
+                        navigate("/parent-profile");
                       }}
                     >
                       Thông tin cá nhân
@@ -260,12 +266,19 @@ const Header = () => {
                     <MenuItem
                       onClick={() => {
                         handleUserClose();
-                        navigate("/dashboard/parent_profile");
+                        navigate("/medication_form");
                       }}
                     >
                       Gửi thuốc
                     </MenuItem>
-
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        navigate("");
+                      }}
+                    >
+                      Quản lý
+                    </MenuItem>
                     <MenuItem
                       onClick={() => {
                         handleUserClose();

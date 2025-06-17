@@ -6,30 +6,53 @@ import {
   Input,
   Select,
   DatePicker,
+  Space
 } from "antd";
-import React from "react";
-import { FaGoogle } from "react-icons/fa";
+
+import { FaEye, FaEyeSlash, FaGoogle, FaArrowLeft } from "react-icons/fa";
 import "./RegisterForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
+import { useDispatch } from "react-redux";
+import { login } from "../../redux/features/userSlice";
+
 
 function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      await api.post("Auth/register", values);
+      const { dateOfBirth, address, ...rest } = values;
+      const payload = {
+        ...rest,
+        dateOfBirth: dateOfBirth.toISOString(),
+        address: address
+      };
+      console.log("Payload địa chỉ:", payload.address);
+      const response = await api.post("Auth/register", payload);
+      if (response && response.data && response.data.user) {
+        dispatch(login(response.data.user)); // Lưu vào Redux
+      }
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
       toast.success("Đăng ký thành công!");
       navigate("/login");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Đăng ký thất bại!");
     }
   };
 
   const onFinishFailed = (errorInfo) => {
     console.log("Validation Failed:", errorInfo);
+  };
+
+  const handleBackToLogin = () => {
+    navigate("/login");
   };
 
   return (
@@ -86,6 +109,10 @@ function RegisterForm() {
               rules={[
                 { required: true, message: "Vui lòng nhập mật khẩu" },
                 { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" },
+                {
+                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/,
+                  message: "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt"
+                }
               ]}
             >
               <Input.Password placeholder="Mật khẩu" />
@@ -105,7 +132,7 @@ function RegisterForm() {
                       new Error("Mật khẩu xác nhận không khớp")
                     );
                   },
-                }),
+                })
               ]}
             >
               <Input.Password placeholder="Xác nhận mật khẩu" />
@@ -126,7 +153,19 @@ function RegisterForm() {
 
             <Form.Item
               name="dateOfBirth"
-              rules={[{ required: true, message: "Vui lòng chọn ngày sinh" }]}
+              rules={[
+                { required: true, message: "Vui lòng chọn ngày sinh" },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value) return Promise.resolve();
+                    const year = value.year();
+                    if (year >= 1960 && year <= 2006) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."));
+                  },
+                })
+              ]}
             >
               <DatePicker
                 placeholder="Ngày sinh"
@@ -139,7 +178,7 @@ function RegisterForm() {
               name="address"
               rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
             >
-              <Input.TextArea placeholder="Địa chỉ" rows={2} />
+              <Input placeholder="Địa chỉ" />
             </Form.Item>
 
             <Form.Item
@@ -153,11 +192,19 @@ function RegisterForm() {
               </Select>
             </Form.Item>
 
-            <Form.Item>
+            <Space direction="vertical" style={{ width: '100%' }}>
               <Button type="primary" htmlType="submit" block>
                 Đăng ký
               </Button>
-            </Form.Item>
+              <Button 
+                icon={<FaArrowLeft />} 
+                onClick={handleBackToLogin} 
+                block
+                type="default"
+              >
+                Quay lại trang đăng nhập
+              </Button>
+            </Space>
 
             <Divider>Hoặc đăng nhập với</Divider>
 

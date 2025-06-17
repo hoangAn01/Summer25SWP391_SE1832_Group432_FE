@@ -8,7 +8,7 @@ import {
   Grid,
   Divider,
 } from "@mui/material";
-import Header from "../../components/header/Header";
+import Header from "../../../components/Header/Header";
 
 const Blog1Detail = () => {
   const { pathname } = useLocation();
@@ -188,6 +188,7 @@ const Blog1Detail = () => {
           </Typography>
         </Paper>
       </Container>
+      <Footer />
     </Box>
   );
 };

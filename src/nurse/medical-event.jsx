@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   DatePicker,
@@ -16,6 +16,11 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import api from "../config/axios";
+
+dayjs.extend(utc);
 
 const formItemLayout = {
   labelCol: {
@@ -28,107 +33,133 @@ const formItemLayout = {
   },
 };
 
-const columns = [
-  {
-    title: "ID học sinh",
-    dataIndex: "studentId",
-    key: "studentId",
-  },
-  {
-    title: "Họ và tên học sinh",
-    dataIndex: "studentName",
-    key: "studentName",
-  },
-  {
-    title: "Loại sự kiện",
-    dataIndex: "eventType",
-    key: "eventType",
-  },
-  {
-    title: "Thời gian xảy ra",
-    dataIndex: "eventDateTime",
-    key: "eventDateTime",
-  },
-  {
-    title: "Mô tả",
-    dataIndex: "description",
-    key: "description",
-  },
-  {
-    title: "Thao tác",
-    key: "action",
-    render: () => (
-      <Space size="middle">
-        <a>Chi tiết</a>
-        <a>Xóa</a>
-      </Space>
-    ),
-  },
-];
-
-const initialData = [
-  {
-    key: "1",
-    studentId: "HS001",
-    studentName: "Nguyễn Văn A",
-    eventType: "Tai nạn",
-    eventDateTime: "01/01/2024 08:00",
-    description: "Ngã cầu thang",
-  },
-  {
-    key: "2",
-    studentId: "HS002",
-    studentName: "Trần Thị B",
-    eventType: "Bệnh",
-    eventDateTime: "02/01/2024 09:30",
-    description: "Sốt cao",
-  },
-];
-
 const MedicalEvent = () => {
   const [form] = Form.useForm();
   const [showForm, setShowForm] = useState(false);
   const [searchForm] = Form.useForm();
   const [searchType, setSearchType] = useState("studentId");
-  const [tableData, setTableData] = useState(initialData);
+  const [tableData, setTableData] = useState();
+
+  const columns = [
+    {
+      title: "ID sự kiện",
+      dataIndex: "eventID",
+      key: "eventID",
+    },
+    {
+      title: "ID học sinh",
+      dataIndex: "studentID",
+      key: "studentID",
+    },
+    {
+      title: "Họ và tên học sinh",
+      dataIndex: "studentName",
+      key: "studentName",
+    },
+    {
+      title: "Loại sự kiện",
+      dataIndex: "eventType",
+      key: "eventType",
+    },
+    {
+      title: "Thời gian xảy ra",
+      dataIndex: "eventTime",
+      key: "eventTime",
+      render: (date) => {
+        console.log(date);
+        return dayjs(date).format("DD/MM/YYYY HH:mm");
+      },
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+    },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <>
+          <Button
+            onClick={() => {
+              setShowForm(true);
+              form.setFieldsValue({
+                ...record,
+                eventTime: dayjs(record.eventTime),
+              });
+            }}
+          >
+            Chỉnh sửa
+          </Button>
+          <Button onClick={() => handleDelete(record.eventID)}>Xóa</Button>
+        </>
+      ),
+    },
+  ];
+
+  const fetchProducts = async () => {
+    try {
+      const response = await api.get("MedicalEvents");
+      console.log(response.data);
+      setTableData(response.data);
+    } catch (error) {
+      toast.error("Lỗi khi tải dữ liệu: " + error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleFinish = async (values) => {
-    console.log("Form submitted:", values);
     try {
-      await axios.post("/api/chua-co-back-end", values);
-      toast.success("Sự kiện y tế đã được ghi nhận!");
-      setShowForm(false);
-      // Thêm dữ liệu mới vào bảng
-      const newData = {
-        key: String(tableData.length + 1),
+      console.log("Raw date value:", values.eventTime);
+      const formattedValues = {
         ...values,
-        eventDateTime: values.eventDateTime.format("DD/MM/YYYY HH:mm"),
+        eventTime: dayjs(values.eventTime).format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+        studentID: parseInt(values.studentID),
+        nurseID: 1,
       };
-      setTableData([...tableData, newData]);
+      console.log("Formatted values:", formattedValues);
+
+      if (form.getFieldValue("eventID")) {
+        // If eventID exists, it's an edit operation
+        const { studentName, ...updateData } = formattedValues;
+        await api.put(
+          `MedicalEvents/${form.getFieldValue("eventID")}`,
+          updateData
+        );
+        toast.success("Cập nhật sự kiện thành công!");
+      } else {
+        // If no eventID, it's a new record
+        await api.post("MedicalEvents", formattedValues);
+        toast.success("Thêm sự kiện thành công!");
+      }
+      form.resetFields();
+      setShowForm(false);
+      fetchProducts();
     } catch (error) {
-      toast.success(error.data);
+      console.log(error);
+      toast.error("Lỗi: " + error.message);
     }
-    form.resetFields();
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`MedicalEvents/${id}`);
+      toast.success("Xóa sự kiện thành công!");
+      fetchProducts();
+    } catch (error) {
+      toast.error("Lỗi khi xóa: " + error.message);
+    }
   };
 
   const handleBack = () => {
+    form.resetFields();
     setShowForm(false);
   };
 
-  const handleSearch = (values) => {
-    const { searchType, searchValue } = values;
-    if (!searchValue) {
-      setTableData(initialData);
-      return;
-    }
-
-    const filteredData = initialData.filter((item) => {
-      const searchField = item[searchType];
-      return searchField.toLowerCase().includes(searchValue.toLowerCase());
-    });
-
-    setTableData(filteredData);
-  };
+  const handleSearch = (values) => {};
 
   if (!showForm) {
     return (
@@ -218,6 +249,9 @@ const MedicalEvent = () => {
         }}
         onFinish={handleFinish}
         layout="horizontal"
+        initialValues={{
+          date: dayjs(),
+        }}
       >
         <h2
           style={{
@@ -228,14 +262,22 @@ const MedicalEvent = () => {
             marginBottom: 32,
           }}
         >
-          Ghi nhận sự kiện y tế
+          {form.getFieldValue("eventID")
+            ? "Chỉnh sửa sự kiện y tế"
+            : "Thêm sự kiện y tế"}
         </h2>
+        <Form.Item name="eventID" hidden>
+          <Input />
+        </Form.Item>
         <Form.Item
           label="ID học sinh"
-          name="studentId"
+          name="studentID"
           rules={[{ required: true, message: "Vui lòng nhập ID học sinh!" }]}
         >
-          <Input placeholder="Nhập ID học sinh" />
+          <Input
+            placeholder="Nhập ID học sinh"
+            disabled={!!form.getFieldValue("eventID")}
+          />
         </Form.Item>
         <Form.Item
           label="Họ và tên học sinh"
@@ -244,7 +286,10 @@ const MedicalEvent = () => {
             { required: true, message: "Vui lòng nhập họ và tên học sinh!" },
           ]}
         >
-          <Input placeholder="Nhập họ và tên học sinh" />
+          <Input
+            placeholder="Nhập họ và tên học sinh"
+            disabled={!!form.getFieldValue("eventID")}
+          />
         </Form.Item>
         <Form.Item
           label="Loại sự kiện"
@@ -255,11 +300,11 @@ const MedicalEvent = () => {
         </Form.Item>
         <Form.Item
           label="Thời gian xảy ra"
-          name="eventDateTime"
+          name="eventTime"
           rules={[{ required: true, message: "Vui lòng chọn thời gian!" }]}
         >
           <DatePicker
-            showTime
+            showTime={{ format: "HH:mm" }}
             format="DD/MM/YYYY HH:mm"
             style={{ width: "100%" }}
             placeholder="Chọn thời gian"
