@@ -16,10 +16,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
-import { AddressSelector } from "./AddressSelector";
-import provinces from '../../hanhchinhvn-master/dist/tinh_tp.json';
-import districts from '../../hanhchinhvn-master/dist/quan_huyen.json';
-import wards from '../../hanhchinhvn-master/dist/xa_phuong.json';
+
 
 function RegisterForm() {
   const [form] = Form.useForm();
@@ -29,32 +26,12 @@ function RegisterForm() {
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const { dateOfBirth, addressDetails, province, district, ward, ...rest } = values;
-      
-      // In ra thông tin chi tiết để debug
-      console.log('Province code:', province);
-      console.log('District code:', district);
-      console.log('Ward code:', ward);
-
-      // Kiểm tra dữ liệu tỉnh/huyện/xã
-      console.log('Province data:', provinces[province]);
-      console.log('District data:', districts[district]);
-      console.log('Ward data:', wards[ward]);
-
-      // Lấy tên tỉnh, huyện, xã
-      const provinceName = provinces[province]?.name_with_type || '';
-      const districtName = districts[district]?.name_with_type || '';
-      const wardName = wards[ward]?.name_with_type || '';
-
+      const { dateOfBirth, address, ...rest } = values;
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
-        address: `Số ${addressDetails}, ${wardName}, ${districtName}, ${provinceName}`,
-        province,
-        district,
-        ward
+        address: address
       };
-
       console.log("Payload địa chỉ:", payload.address);
       const response = await api.post("Auth/register", payload);
       if (response && response.data && response.data.user) {
@@ -197,42 +174,11 @@ function RegisterForm() {
               />
             </Form.Item>
 
-            <AddressSelector 
-              onChange={(addressData) => {
-                form.setFieldsValue({
-                  province: addressData.province,
-                  district: addressData.district,
-                  ward: addressData.ward
-                });
-              }}
-            />
-
             <Form.Item
-              name="province"
-              hidden
+              name="address"
+              rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
             >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              name="district"
-              hidden
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              name="ward"
-              hidden
-            >
-              <Input />
-            </Form.Item>
-
-            <Form.Item
-              name="addressDetails"
-              rules={[{ required: true, message: "Vui lòng nhập số nhà, đường" }]}
-            >
-              <Input.TextArea placeholder="Số nhà, đường" rows={2} />
+              <Input placeholder="Địa chỉ" />
             </Form.Item>
 
             <Form.Item
