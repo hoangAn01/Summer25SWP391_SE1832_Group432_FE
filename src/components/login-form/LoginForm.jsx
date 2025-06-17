@@ -1,7 +1,7 @@
-import { use, useState } from "react";
+
 import { Form, Input, Button, Checkbox, Select, Divider } from "antd";
 import { FaEye, FaEyeSlash, FaGoogle, FaMicrosoft } from "react-icons/fa";
-import "./LoginPage.css";
+import "./LoginForm.css";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -10,7 +10,7 @@ import { login } from "../../redux/features/userSlice";
 
 const { Option } = Select;
 
-const LoginPage = () => {
+const LoginForm = () => {
   const [form] = Form.useForm();
 
   const navigate = useNavigate();
@@ -21,11 +21,29 @@ const LoginPage = () => {
     console.log("Form submitted:", values);
     try {
       const response = await api.post("Auth/login", values);
-      toast.success("Đăng nhập thành công!");
-      console.log("Login response:", response.data.user);
-      dispatch(login(response.data.user));
+      // Lưu toàn bộ thông tin user vào Redux
+      const userData = {
+        ...response.data.user,
+        fullName: response.data.user.fullName,
+        username: response.data.user.username,
+        phone: response.data.user.phone,
+        dateOfBirth: response.data.user.dateOfBirth,
+        gender: response.data.user.gender,
+        address: response.data.user.address,
+        role: response.data.user.role,
+      };
+      dispatch(login(userData));
       localStorage.setItem("token", response.data.token);
+
+      const user = response.data.user;
+      if (user.role === "Admin") {
+        navigate("/dashboard");
+        toast.success("Đăng nhập thành công!");
+        return;
+      }
+
       navigate("/home");
+      toast.success("Đăng nhập thành công!");
     } catch (error) {
       toast.error(error.response.data.message);
     }
@@ -122,4 +140,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default LoginForm;

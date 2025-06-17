@@ -12,7 +12,7 @@ import {
   Divider,
   Fade,
 } from "@mui/material";
-import Header from "../../Header/Header";
+import Header from "../../../components/Header/Header";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 import NoFoodIcon from "@mui/icons-material/NoFood";
@@ -410,7 +410,9 @@ const Detail2 = () => {
           </Typography>
         </Box>
       </Container>
+      <Footer />
     </Box>
+     
   );
 };
 

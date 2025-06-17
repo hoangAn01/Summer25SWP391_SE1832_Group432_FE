@@ -5,19 +5,33 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { persistor, store } from "./redux/store";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import ScrollToTop from "./Header/ScrollToTop";
 
-import LoginPage from "./pages/login-page/LoginPage";
-import RegisterPage from "./pages/register-page/RegisterPage";
+
+
 import HomePage from "./pages/home-pages/HomePage";
-import Blog1Detail from "./pages/home-pages/Blog1Detail";
-import Blog2Detail from "./pages/home-pages/Blog2Detail";
-import Blog3Detail from "./pages/home-pages/Blog3Detail";
-import BlogDetail from "./pages/home-pages/Detail1";
-import Detail2 from "./pages/home-pages/Detail2";
-import Detail3 from "./pages/home-pages/Detail3";
-import Header from "./Header/Header";
-import HealthProfilePage from "./pages/health_profile_pages/HealthProfilePage";
+
+
+
+import Dashboard from "./dashboard/dashboard";
+
+import Export_pdf from "./dashboard/dashboad_element/export_pdf";
+import Manage_account from "./dashboard/dashboad_element/Manager_Account/Manage_account";
+import Report from "./dashboard/dashboad_element/report";
+import Blog1Detail from "./pages/home-pages/blog/Blog1Detail";
+import Blog2Detail from "./pages/home-pages/blog/Blog2Detail";
+import Blog3Detail from "./pages/home-pages/blog/Blog3Detail";
+import BlogDetail from "./pages/home-pages/Detail/Detail1";
+import Detail3 from "./pages/home-pages/Detail/Detail3";
+import Detail2 from "./pages/home-pages/Detail/Detail2";
+import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreatePage";
+import EventPage from "./pages/home-pages/ParentForm/Event";
+import Vaccine_event from "./dashboard/dashboad_element/Create_event/Vaccine_event";
+
+import RegisterForm from "./components/register-form/RegisterForm";
+import LoginForm from "./components/login-form/LoginForm";
+
+import Header from "./components/Header/Header";
+import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile";
 
 function App() {
   const router = createBrowserRouter([
@@ -31,12 +45,22 @@ function App() {
       ),
     },
     {
+      path: "/home",
+      element: (
+        <>
+          <Header />
+          <HomePage />
+        </>
+      ),
+    },
+
+    {
       path: "/login",
-      element: <LoginPage />,
+      element: <LoginForm />,
     },
     {
       path: "/register",
-      element: <RegisterPage />,
+      element: <RegisterForm />,
     },
     {
       path: "/blog/hoat-dong-ngoai-khoa",
@@ -94,15 +118,56 @@ function App() {
     },
 
     {
-      path: "/health-profile",
-      element: <HealthProfilePage />,
+      path: "/create-health-profile",
+      element: <HealthProfileCreatePage />,
+    },
+    {
+      path: "/dashboard",
+      element: <Dashboard />,
+      children: [
+  
+        {
+          path: "vaccine_event",
+          element: <Vaccine_event />,
+        },
+        {
+          path: "manage_account",
+          element: <Manage_account />,
+        },
+        {
+          path: "export_pdf",
+          element: <Export_pdf />,
+        },
+        {
+          path: "report",
+          element: <Report />,
+        },
+      ],
+    },
+    {
+      path: "/event",
+      element: (
+        <>
+          <Header />
+          <EventPage />
+        </>
+      ),
+    },
+    {
+      path: "/parent-profile",
+      element: (
+        <>
+          <Header />
+          <ParentProfile />
+        </>
+      ),
     },
   ]);
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <RouterProvider router={router}>
-          <ScrollToTop />
+        
         </RouterProvider>
       </PersistGate>
     </Provider>
