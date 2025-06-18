@@ -263,8 +263,8 @@ const MedicalEvent = () => {
           }}
         >
           {form.getFieldValue("eventID")
-            ? "Chỉnh sửa sự kiện y tế"
-            : "Thêm sự kiện y tế"}
+            ? "Chỉnh sửa sự cố y tế"
+            : "Thêm sự cố y tế"}
         </h2>
         <Form.Item name="eventID" hidden>
           <Input />
@@ -294,9 +294,9 @@ const MedicalEvent = () => {
         <Form.Item
           label="Loại sự kiện"
           name="eventType"
-          rules={[{ required: true, message: "Vui lòng nhập loại sự kiện!" }]}
+          rules={[{ required: true, message: "Vui lòng nhập loại sự cố!" }]}
         >
-          <Input placeholder="Nhập loại sự kiện" />
+          <Input placeholder="Nhập loại sự cố" />
         </Form.Item>
         <Form.Item
           label="Thời gian xảy ra"
@@ -315,10 +315,7 @@ const MedicalEvent = () => {
           name="description"
           rules={[{ required: true, message: "Vui lòng nhập mô tả!" }]}
         >
-          <Input.TextArea
-            placeholder="Nhập mô tả chi tiết về sự kiện"
-            rows={4}
-          />
+          <Input.TextArea placeholder="Nhập mô tả chi tiết về sự cố" rows={4} />
         </Form.Item>
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
           <Button

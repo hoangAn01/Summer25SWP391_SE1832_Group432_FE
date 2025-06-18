@@ -79,7 +79,12 @@ const Nurse = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ color: "#666" }}>Xin chào, {user?.fullName}</span>
+            <span style={{ color: "#666" }}>
+              Xin chào{" "}
+              <span style={{ color: "#1677ff", fontWeight: 600 }}>
+                {user?.fullName || "Y tá"}
+              </span>
+            </span>
             <NotificationDropdown />
             <Dropdown
               menu={{
