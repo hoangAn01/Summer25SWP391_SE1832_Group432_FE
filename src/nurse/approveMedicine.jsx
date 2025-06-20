@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tag, message, Popconfirm, Modal, Descriptions } from "antd";
+import { Table, Button, Tag, message, Popconfirm, Modal, Descriptions, Input } from "antd";
 import api from "../config/axios";
 import { useSelector } from "react-redux";
 
@@ -8,6 +8,7 @@ const ApproveMedicine = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [detailModal, setDetailModal] = useState({ open: false, record: null });
+  const [rejectModal, setRejectModal] = useState({ open: false, reason: "", requestID: null });
   console.log("user", user)
   const fetchData = async () => {
     setLoading(true);
@@ -33,6 +34,22 @@ const ApproveMedicine = () => {
       fetchData();
     } catch {
       message.error("Duyệt thất bại!");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal.reason.trim()) {
+      message.warning("Vui lòng nhập lý do không duyệt!");
+      return;
+    }
+    try {
+      await api.put(`/MedicineRequest/${rejectModal.requestID}/reject`, { reason: rejectModal.reason });
+      message.success("Đã gửi lý do không duyệt đơn thuốc cho phụ huynh!");
+      setRejectModal({ open: false, reason: "", requestID: null });
+      setDetailModal({ open: false, record: null });
+      fetchData();
+    } catch {
+      message.error("Không thể gửi lý do không duyệt!");
     }
   };
 
@@ -70,7 +87,7 @@ const ApproveMedicine = () => {
       dataIndex: "requestStatus",
       key: "requestStatus",
       render: (status) => (
-        <Tag color={status === "Đã duyệt" ? "green" : "orange"}>{(status === "Approved" ? ("Đã duyệt") : ("Đang chờ"))}</Tag>
+        <Tag color={status === "Approved" ? "green" : status === "Rejected" ? "red" : "orange"}>{statusVN(status)}</Tag>
       ),
     },
     {
@@ -104,13 +121,31 @@ const ApproveMedicine = () => {
         { title: "Tên thuốc", dataIndex: "itemName", key: "itemName" },
         { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
         { title: "Liều dùng", dataIndex: "dosageInstructions", key: "dosageInstructions" },
-        { title: "Thời điểm", dataIndex: "time", key: "time" },
+        { title: "Thời điểm", dataIndex: "time", key: "time", render: timeVN },
       ]}
       dataSource={record.medicineDetails}
       pagination={false}
       rowKey="requestDetailID"
     />
   );
+
+  const timeVN = (val) => {
+    if (!val) return '';
+    return val
+      .split(',')
+      .map((t) =>
+        t.trim() === 'morning' ? 'Sáng' :
+        t.trim() === 'noon' ? 'Trưa' :
+        t.trim() === 'evening' ? 'Tối' : t
+      )
+      .join(', ');
+  };
+
+  const statusVN = (status) => {
+    if (status === 'Approved') return 'Đã duyệt';
+    if (status === 'Rejected') return 'Không duyệt';
+    return 'Đang chờ';
+  };
 
   return (
     <div>
@@ -139,7 +174,12 @@ const ApproveMedicine = () => {
               <Descriptions.Item label="Phụ huynh">{detailModal.record.parentName}</Descriptions.Item>
               <Descriptions.Item label="Ghi chú">{detailModal.record.note}</Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
-                <Tag color={detailModal.record.requestStatus === "Đã duyệt" ? "green" : "orange"}>{detailModal.record.requestStatus}</Tag>
+                <Tag color={
+                  detailModal.record.requestStatus === "Approved" ? "green" :
+                  detailModal.record.requestStatus === "Rejected" ? "red" : "orange"
+                }>
+                  {statusVN(detailModal.record.requestStatus)}
+                </Tag>
               </Descriptions.Item>
 
             </Descriptions>
@@ -149,7 +189,7 @@ const ApproveMedicine = () => {
                   { title: "Tên thuốc", dataIndex: "itemName", key: "itemName" },
                   { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
                   { title: "Liều dùng", dataIndex: "dosageInstructions", key: "dosageInstructions" },
-                  { title: "Thời điểm", dataIndex: "time", key: "time" },
+                  { title: "Thời điểm", dataIndex: "time", key: "time", render: timeVN },
                 ]}
                 dataSource={detailModal.record.medicineDetails}
                 pagination={false}
@@ -166,12 +206,27 @@ const ApproveMedicine = () => {
               <Button onClick={() => handleApprove(detailModal.record.requestID)}>
                 Duyệt đơn thuốc
               </Button>
-              <Button danger>
-                Hủy
+              <Button danger onClick={() => setRejectModal({ open: true, reason: "", requestID: detailModal.record.requestID })}>
+                Không duyệt đơn thuốc
               </Button>
             </div>
           </>
         )}
+      </Modal>
+      <Modal
+        open={rejectModal.open}
+        onCancel={() => setRejectModal({ open: false, reason: "", requestID: null })}
+        onOk={handleReject}
+        title="Lý do không duyệt đơn thuốc"
+        okText="Gửi lý do"
+        cancelText="Hủy"
+      >
+        <Input.TextArea
+          rows={3}
+          placeholder="Nhập lý do không duyệt đơn thuốc..."
+          value={rejectModal.reason}
+          onChange={e => setRejectModal(r => ({ ...r, reason: e.target.value }))}
+        />
       </Modal>
     </div>
   );

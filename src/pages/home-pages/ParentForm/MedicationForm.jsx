@@ -81,7 +81,7 @@ const MedicationForm = () => {
       };
       console.log("Payload", payload);
       await api.post("/MedicineRequest", payload);
-      message.success("Gửi đơn thuốc thành công");
+      message.success("Đơn gửi thuốc đã được gửi cho nhân viên y tá.");
       setTimeout(() => {
         form.resetFields();
       }, 1000);
