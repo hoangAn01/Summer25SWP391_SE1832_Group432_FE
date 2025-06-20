@@ -7,6 +7,7 @@ import {
   UserOutlined,
   SettingOutlined,
   LogoutOutlined,
+  PropertySafetyOutlined,
 } from "@ant-design/icons";
 import { Breadcrumb, Layout, Menu, theme, Avatar, Dropdown } from "antd";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ const items = [
   getItem("Báo cáo sự kiện y tế", "medical-event", <PieChartOutlined />),
   getItem("Danh sách học sinh", "student-profile-list", <DesktopOutlined />),
   getItem("User", "sub1", <UserOutlined />),
+  getItem("Duyệt thuốc", "approve-medicine", <PropertySafetyOutlined />),
 ];
 
 const Nurse = () => {

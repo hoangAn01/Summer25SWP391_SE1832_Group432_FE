@@ -21,7 +21,7 @@ const LoginForm = () => {
     try {
       const response = await api.post("Auth/login", values);
       // Lưu toàn bộ thông tin user vào Redux
-
+        
       dispatch(login(response.data.user));
       localStorage.setItem("token", response.data.token); //lấy cái token
       if (response.data.user.role === "Admin") {

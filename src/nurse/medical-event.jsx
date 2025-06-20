@@ -5,12 +5,12 @@ import {
   Form,
   Input,
   Select,
-  Space,
+  
   Table,
-  Tag,
+ 
 } from "antd";
 import { toast } from "react-toastify";
-import axios from "axios";
+
 import {
   ArrowLeftOutlined,
   PlusOutlined,
@@ -124,7 +124,7 @@ const MedicalEvent = () => {
 
       if (form.getFieldValue("eventID")) {
         // If eventID exists, it's an edit operation
-        const { studentName, ...updateData } = formattedValues;
+        const { updateData } = formattedValues;
         await api.put(
           `MedicalEvents/${form.getFieldValue("eventID")}`,
           updateData
@@ -159,7 +159,7 @@ const MedicalEvent = () => {
     setShowForm(false);
   };
 
-  const handleSearch = (values) => {};
+  const handleSearch = () => {};
 
   if (!showForm) {
     return (

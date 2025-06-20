@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -165,8 +166,8 @@ const Header = () => {
                   padding: "4px 16px",
                   width: "100%",
                   maxWidth: "400px",
-                  marginLeft: { xs: 1, md: 4 },
-                  marginRight: { xs: 1, md: 4 },
+                  marginLeft: 0,
+                  marginRight: 1,
                   boxShadow: "0 1px 6px 0 rgba(33,150,243,0.08)",
                   "&:hover": {
                     backgroundColor: "#e3f2fd",
@@ -221,28 +222,22 @@ const Header = () => {
                   </Typography>
                   <IconButton
                     onClick={handleUserMenu}
-                    sx={{
-                      ml: 2,
-                      p: 0.5,
-                      "&:hover": {
-                        color: "#ffd600",
-                      },
-                    }}
+                    sx={{ ml: 1, p: 0.5, "&:hover": { color: "#ffd600" } }}
                   >
                     <AccountCircleIcon sx={{ fontSize: 44 }} />
+                  </IconButton>
+                  <IconButton
+                    sx={{ ml: 2, p: 0.5, "&:hover": { color: "#ffd600" } }}
+                    onClick={() => navigate("/event")}
+                  >
+                    <NotificationsIcon sx={{ fontSize: 32 }} />
                   </IconButton>
                   <Menu
                     anchorEl={userAnchorEl}
                     open={Boolean(userAnchorEl)}
                     onClose={handleUserClose}
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "right",
-                    }}
-                    transformOrigin={{
-                      vertical: "top",
-                      horizontal: "right",
-                    }}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
                   >
                     <MenuItem
                       onClick={() => {
@@ -254,14 +249,6 @@ const Header = () => {
                     </MenuItem>
                     <MenuItem onClick={handleHealthProfileMenuClick}>
                       Hồ sơ sức khỏe học sinh
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleUserClose();
-                        navigate("/event");
-                      }}
-                    >
-                      Thông báo sự kiện
                     </MenuItem>
                     <MenuItem
                       onClick={() => {
