@@ -220,18 +220,7 @@ function HealthProfileCreatePage() {
                 <Input placeholder="Nhập thị lực" />
               </Form.Item>
 
-              <Form.Item
-                label="Tiêm chủng"
-                name="vaccination"
-                rules={[
-                  {
-                    required: true,
-                    message: "Vui lòng nhập thông tin tiêm chủng",
-                  },
-                ]}
-              >
-                <Input placeholder="Nhập thông tin tiêm chủng" />
-              </Form.Item>
+              
               <Form.Item
                 label="Chiều cao "
                 name="height"

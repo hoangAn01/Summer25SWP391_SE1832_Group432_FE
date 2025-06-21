@@ -7,6 +7,7 @@ import {
   UserOutlined,
   SettingOutlined,
   LogoutOutlined,
+  PropertySafetyOutlined,
 } from "@ant-design/icons";
 import { Breadcrumb, Layout, Menu, theme, Avatar, Dropdown } from "antd";
 import { Link, Outlet, useNavigate } from "react-router-dom";
@@ -14,6 +15,7 @@ import { FiMenu, FiSearch, FiUser } from "react-icons/fi";
 import { HiOutlineLogout } from "react-icons/hi";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/features/userSlice";
+import NotificationDropdown from "./NotificationDropdown";
 
 const { Header, Content, Footer, Sider } = Layout;
 function getItem(label, key, icon, children) {
@@ -25,24 +27,28 @@ function getItem(label, key, icon, children) {
   };
 }
 const items = [
-  getItem("Báo cáo sự kiện y tế", "/nurse/medical-event", <PieChartOutlined />),
-  getItem("Option 2", "2", <DesktopOutlined />),
+  getItem("Báo cáo sự kiện y tế", "medical-event", <PieChartOutlined />),
+  getItem("Danh sách học sinh", "student-profile-list", <DesktopOutlined />),
   getItem("User", "sub1", <UserOutlined />),
+  getItem("Duyệt thuốc", "approve-medicine", <PropertySafetyOutlined />),
 ];
 
 const Nurse = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const user = useSelector((state) => state.user);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const handleMenuClick = (e) => {
+    if (e.key == "1") {
+      navigate("profile");
+    }
     if (e.key == "3") {
       // key '3' là đăng xuất
+      console.log("Đăng xuất", e.key);
       dispatch(logout());
       localStorage.removeItem("token");
       navigate("/login");
@@ -75,7 +81,13 @@ const Nurse = () => {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ color: "#666" }}>Xin chào, {user?.fullName}</span>
+            <span style={{ color: "#666" }}>
+              Xin chào{" "}
+              <span style={{ color: "#1677ff", fontWeight: 600 }}>
+                {user?.fullName || "Y tá"}
+              </span>
+            </span>
+            <NotificationDropdown />
             <Dropdown
               menu={{
                 items: [

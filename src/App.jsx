@@ -6,11 +6,7 @@ import { persistor, store } from "./redux/store";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 
-
-
 import HomePage from "./pages/home-pages/HomePage";
-
-
 
 import Dashboard from "./dashboard/dashboard";
 
@@ -38,8 +34,10 @@ import Health_check from "./dashboard/dashboad_element/Create_event/create_healt
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
 import Created_event from "./dashboard/dashboad_element/Created_event";
-
-
+import StudentProfileList from "./nurse/StudentProfileList";
+import NurseProfile from "./nurse/NurseProfile";
+import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
+import ApproveMedicine from "./nurse/approveMedicine";
 
 
 
@@ -135,10 +133,6 @@ function App() {
       path: "/medication_form",
       element: <MedicationForm />,
     },
-    // {
-    //   path: "/student_profile",
-    //   element: <StudentProfile />,
-    // },
     {
       path: "/nurse",
       element: <Nurse />,
@@ -147,13 +141,52 @@ function App() {
           path: "/nurse/medical-event",
           element: <MedicalEvent />,
         },
+        {
+          path: "/nurse/student-profile-list",
+          element: <StudentProfileList />,
+        },
+        {
+          path: "/nurse/profile",
+          element: <NurseProfile />,
+        },
+        {
+          path: "/nurse/approve-medicine",
+          element: <ApproveMedicine />,
+        },
+        {
+          path: "/nurse/medicine-receive",
+          element: (
+            <MedicineReceiveForm
+              medicineRequest={{
+                studentName: "Nguyễn Văn A",
+                className: "1A",
+                parentName: "Trần Thị B",
+                phone: "0123456789",
+                medicineDetails: [
+                  {
+                    medicineName: "Paracetamol",
+                    dosage: "1 viên/lần",
+                    time: "Sáng, Trưa",
+                    note: "Uống sau ăn"
+                  },
+                  {
+                    medicineName: "Amoxicillin",
+                    dosage: "2 viên/lần",
+                    time: "Tối",
+                    note: "Không dùng nếu dị ứng penicillin"
+                  }
+                ]
+              }}
+              onConfirm={() => {}}
+            />
+          ),
+        },
       ],
     },
     {
       path: "/dashboard",
       element: <Dashboard />,
       children: [
-  
         {
           path: "create_health_check",
           element: <Health_check />,
@@ -202,9 +235,7 @@ function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <RouterProvider router={router}>
-        
-        </RouterProvider>
+        <RouterProvider router={router}></RouterProvider>
       </PersistGate>
     </Provider>
   );

@@ -1,4 +1,3 @@
-
 import { Form, Input, Button, Checkbox, Select, Divider } from "antd";
 import { FaEye, FaEyeSlash, FaGoogle, FaMicrosoft } from "react-icons/fa";
 import "./LoginForm.css";
@@ -22,17 +21,15 @@ const LoginForm = () => {
     try {
       const response = await api.post("Auth/login", values);
       // Lưu toàn bộ thông tin user vào Redux
-  
-
-      const user = response.data.user;
+        
       dispatch(login(response.data.user));
-      localStorage.setItem("token", response.data.token); //lấy cái token 
-      if (user.role === "Admin") {
+      localStorage.setItem("token", response.data.token); //lấy cái token
+      if (response.data.user.role === "Admin") {
         navigate("/dashboard");
         toast.success("Đăng nhập thành công!");
         return;
       }
-      if (user.role === "Nurse") {
+      if (response.data.user.role === "Nurse") {
         navigate("/nurse");
         toast.success("Đăng nhập thành công!");
         return;
