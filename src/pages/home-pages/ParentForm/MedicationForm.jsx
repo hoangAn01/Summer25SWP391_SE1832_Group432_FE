@@ -11,12 +11,14 @@ import {
   Col,
   DatePicker,
   InputNumber,
+  Tag,
 } from "antd";
 import { PhoneOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import "./MedicationForm.css";
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -27,25 +29,55 @@ const MedicationForm = () => {
   const [students, setStudents] = useState([]);
   const [medicinePages, setMedicinePages] = useState(["1"]); // Track medicine pages
   const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [medicineList, setMedicineList] = useState([]); // Danh sách thuốc và vật tư
+  const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.user); // Lấy user từ Redux
 
   const fetchStudents = async () => {
     try {
-      // API 2 lần hơi lỏ, fix sau
-      const response = await api.get(`/Parent/user/${user.userID}`); // gọi api lấy id phụ huynh
-      const response2 = await api.get(`/Student/${response.data.parentID}`);
-      console.log(response2.data);
-      setStudents(response2.data);
+      // Lấy thông tin phụ huynh trước
+      const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+      const parentID = parentResponse.data.parentID;
+
+      // Sau đó lấy danh sách học sinh theo parentID
+      const studentsResponse = await api.get(`/Student/${parentID}`);
+
+      // Xử lý response với cấu trúc mới có $values
+      const studentsData =
+        studentsResponse.data.$values || studentsResponse.data;
+      console.log("Students data:", studentsData);
+      setStudents(studentsData);
     } catch (error) {
-      console.log(error);
+      console.error("Lỗi lấy danh sách học sinh:", error);
+      message.error("Không thể tải danh sách học sinh");
+    }
+  };
+
+  // Lấy danh sách thuốc và vật tư y tế từ MedicalInventory
+  const fetchMedicineList = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/MedicalInventory");
+
+      // Xử lý response với cấu trúc mới có $values
+      const medicineData = res.data.$values || [];
+      console.log("Medical inventory data:", medicineData);
+      setMedicineList(medicineData);
+    } catch (error) {
+      console.error("Lỗi lấy danh sách thuốc và vật tư:", error);
+      message.error("Không thể tải danh sách thuốc và vật tư");
+      setMedicineList([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
+    if (user?.userID) {
       fetchStudents();
+      fetchMedicineList();
     }
-  }, []);
+  }, [user]);
 
   const handleAddMedicinePage = () => {
     const newPageNumber = String(medicinePages.length + 1);
@@ -66,35 +98,81 @@ const MedicationForm = () => {
   };
 
   const handleSubmit = async (values) => {
-    console.log(values);
+    console.log("Form values:", values);
+    console.log("Medicine list:", medicineList);
+    setLoading(true);
+
     try {
+      // Lấy parentID từ thông tin phụ huynh
+      const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+      const parentID = parentResponse.data.parentID;
+
       const payload = {
         studentID: values.studentID,
-        parentID: user.userID,
+        parentID: parentID,
         note: values.note || "",
-        medicineDetails: medicinePages.map((_, idx) => ({
-          itemName: values.itemName?.[idx]?.medicineName || "",
-          quantity: values.quantity?.[idx]?.quantity || 1,
-          dosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
-          time: (values.medicines?.[idx]?.time || []).join(", ")
-        }))
+        medicineDetails: medicinePages.map((_, idx) => {
+          const selectedItemName = values.itemName?.[idx]?.medicineName;
+          console.log(
+            `Page ${idx + 1} - Selected item name:`,
+            selectedItemName
+          );
+
+          // Tìm item trong danh sách để lấy requestItemID
+          const selectedItem = medicineList.find(
+            (item) => item.itemName === selectedItemName
+          );
+          console.log(`Page ${idx + 1} - Found item:`, selectedItem);
+
+          const result = {
+            requestItemID: selectedItem
+              ? selectedItem.$id || selectedItem.id
+              : 0,
+            quantity: values.quantity?.[idx]?.quantity || 1,
+            dosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
+            time: (values.medicines?.[idx]?.time || []).join(", "),
+          };
+
+          console.log(`Page ${idx + 1} - Final result:`, result);
+          return result;
+        }),
       };
-      console.log("Payload", payload);
+
+      console.log("Final payload:", payload);
       await api.post("/MedicineRequest", payload);
-      message.success("Đơn gửi thuốc đã được gửi cho nhân viên y tá.");
+      toast.success("Đơn gửi thuốc đã được gửi cho nhân viên y tá.");
+
+      // Reset form sau khi gửi thành công
       setTimeout(() => {
         form.resetFields();
+        setMedicinePages(["1"]);
+        setCurrentPage(1);
       }, 1000);
     } catch (error) {
+      console.error("Lỗi gửi đơn thuốc:", error);
       message.error(
         error.response?.data?.message ||
-        "Không thể gửi đơn thuốc. Vui lòng thử lại."
+          "Không thể gửi đơn thuốc. Vui lòng thử lại."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoBack = () => {
     navigate("/home");
+  };
+
+  // Lấy màu cho category
+  const getCategoryColor = (category) => {
+    switch (category) {
+      case "Thuốc":
+        return "blue";
+      case "Vật tư":
+        return "green";
+      default:
+        return "default";
+    }
   };
 
   return (
@@ -204,19 +282,13 @@ const MedicationForm = () => {
                 <Input disabled />
               </Form.Item>
 
-
-                {/* NOTE  */}
-
-              <Form.Item
-                  name="note"
-                  label="Ghi chú"
-                >
-                  <TextArea
-                    rows={2}
-                    placeholder="Nhập các lưu ý đặc biệt (nếu có)"
-                  />
+              {/* NOTE */}
+              <Form.Item name="note" label="Ghi chú">
+                <TextArea
+                  rows={2}
+                  placeholder="Nhập các lưu ý đặc biệt (nếu có)"
+                />
               </Form.Item>
-
             </div>
           </Col>
 
@@ -247,7 +319,7 @@ const MedicationForm = () => {
                     paddingBottom: "10px",
                   }}
                 >
-                  Thông tin thuốc
+                  Thông tin thuốc và vật tư
                 </h3>
                 <div>
                   <Button
@@ -272,7 +344,9 @@ const MedicationForm = () => {
                 <div
                   key={idx}
                   className="medicine-box"
-                  style={{ display: idx + 1 === currentPage ? "block" : "none" }}
+                  style={{
+                    display: idx + 1 === currentPage ? "block" : "none",
+                  }}
                 >
                   <div
                     style={{
@@ -294,19 +368,90 @@ const MedicationForm = () => {
 
                   <Form.Item
                     name={["itemName", idx, "medicineName"]}
-                    label="Tên thuốc"
+                    label="Tên thuốc/vật tư"
                     rules={[
-                      { required: true, message: "Vui lòng nhập tên thuốc" },
+                      {
+                        required: true,
+                        message: "Vui lòng chọn hoặc nhập tên thuốc/vật tư",
+                      },
                     ]}
                   >
-                    <Input placeholder="Nhập tên thuốc" />
+                    <Select
+                      showSearch
+                      placeholder="Chọn từ danh sách hoặc nhập tên thuốc/vật tư"
+                      filterOption={(input, option) => {
+                        const item = option?.data;
+                        if (!item) return false;
+                        return (
+                          item.itemName
+                            .toLowerCase()
+                            .includes(input.toLowerCase()) ||
+                          item.description
+                            .toLowerCase()
+                            .includes(input.toLowerCase()) ||
+                          item.category
+                            .toLowerCase()
+                            .includes(input.toLowerCase())
+                        );
+                      }}
+                      allowClear
+                      loading={loading}
+                      optionLabelProp="label"
+                      showArrow={true}
+                      notFoundContent={
+                        <div
+                          style={{
+                            padding: "8px",
+                            textAlign: "center",
+                            color: "#666",
+                          }}
+                        >
+                          Không tìm thấy trong danh sách. Bạn có thể nhập tên
+                          thuốc/vật tư trực tiếp.
+                        </div>
+                      }
+                    >
+                      {medicineList.map((item) => (
+                        <Option
+                          key={item.$id || item.id}
+                          value={item.itemName}
+                          data={item}
+                          label={item.itemName}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: "bold" }}>
+                                {item.itemName}
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#666" }}>
+                                {item.description}
+                              </div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <Tag
+                                color={getCategoryColor(item.category)}
+                                size="small"
+                              >
+                                {item.category}
+                              </Tag>
+                            </div>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
 
                   <Form.Item
                     name={["quantity", idx, "quantity"]}
                     label="Số lượng"
                     rules={[
-                      { required: true, message: "Vui lòng nhập số lượng" }
+                      { required: true, message: "Vui lòng nhập số lượng" },
                     ]}
                   >
                     <InputNumber
@@ -318,29 +463,34 @@ const MedicationForm = () => {
 
                   <Form.Item
                     name={["dosageIntructions", idx, "dosage"]}
-                    label="Liều lượng"
+                    label="Liều lượng/Hướng dẫn sử dụng"
                     rules={[
-                      { required: true, message: "Vui lòng nhập liều lượng" },
+                      {
+                        required: true,
+                        message: "Vui lòng nhập liều lượng hoặc hướng dẫn",
+                      },
                     ]}
                   >
-                    <Input placeholder="VD: 1 viên/1 lần uống" />
+                    <Input placeholder="VD: 1 viên/1 lần uống hoặc hướng dẫn sử dụng" />
                   </Form.Item>
 
                   <Form.Item
                     name={["medicines", idx, "time"]}
-                    label="Thời điểm uống"
+                    label="Thời điểm sử dụng"
                     rules={[
-                      { required: true, message: "Vui lòng chọn thời điểm uống" },
+                      {
+                        required: true,
+                        message: "Vui lòng chọn thời điểm sử dụng",
+                      },
                     ]}
                   >
                     <Select
                       mode="multiple"
-                      placeholder="Chọn thời điểm uống thuốc"
+                      placeholder="Chọn thời điểm sử dụng"
                       allowClear
                     >
                       <Option value="morning">Sáng</Option>
                       <Option value="noon">Trưa</Option>
-                      <Option value="evening">Tối</Option>
                     </Select>
                   </Form.Item>
                 </div>
@@ -361,11 +511,20 @@ const MedicationForm = () => {
             <Button
               type="default"
               size="large"
-              onClick={() => form.resetFields()}
+              onClick={() => {
+                form.resetFields();
+                setMedicinePages(["1"]);
+                setCurrentPage(1);
+              }}
             >
               Nhập lại
             </Button>
-            <Button type="primary" htmlType="submit" size="large">
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={loading}
+            >
               Xác nhận
             </Button>
           </Space>

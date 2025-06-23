@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Typography,
@@ -9,107 +9,203 @@ import {
   Alert,
   Space,
   Divider,
+  Select,
+  message,
 } from "antd";
 import {
   CalendarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import api from "../../../config/axios";
+import { useSelector } from "react-redux";
 
 const { Title, Text, Paragraph } = Typography;
 
-const eventData = {
-  title: "Chương Trình Tiêm Chủng Vaccine Mùa Hè 2024",
-  date: "2024-07-15",
-  time: "08:00 AM - 11:00 AM",
-  location: "Hội trường trung tâm y tế quận",
-  description:
-    "Nhằm nâng cao sức khỏe cộng đồng cho các em học sinh, nhà trường phối hợp cùng trung tâm y tế quận tổ chức chương trình tiêm chủng vaccine phòng các bệnh mùa hè. Các loại vaccine bao gồm sởi, quai bị, rubella. Phụ huynh vui lòng xác nhận tham gia để công tác chuẩn bị được chu đáo.",
-};
-
 function Event() {
-  const [confirmation, setConfirmation] = useState(null);
-  const [showAlert, setShowAlert] = useState(false);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const parent = useSelector((state) => state.parent);
+  const [typeFilter, setTypeFilter] = useState("ALL");
 
-  const handleConfirm = () => {
-    setConfirmation("confirmed");
-    setShowAlert(true);
+  const fetchDataNotificationOfParent = async (idParent) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/ParentNotifications/parent/${idParent}`);
+
+      // Xử lý response với cấu trúc mới có $values
+      const notificationsData = response.data.$values || [];
+      console.log("Parent notifications data:", notificationsData);
+      setData(notificationsData);
+    } catch (error) {
+      console.error("Lỗi khi tải thông báo:", error);
+      message.error("Không thể tải danh sách thông báo");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDecline = () => {
-    setConfirmation("declined");
-    setShowAlert(true);
+  useEffect(() => {
+    if (parent?.parent?.parentID) {
+      console.log("Parent ID:", parent.parent.parentID);
+      fetchDataNotificationOfParent(parent.parent.parentID);
+    }
+  }, [parent?.parent?.parentID]);
+
+  const filteredData =
+    typeFilter === "ALL"
+      ? data
+      : typeFilter === "OTHER"
+      ? data.filter((item) => !item.notificationType)
+      : data.filter((item) => item.notificationType === typeFilter);
+
+  const handleJoin = async (notificationId) => {
+    try {
+      // TODO: Uncomment when API is ready
+      // await api.put(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
+      console.log("Joining notification:", notificationId); // eslint-disable-line no-unused-vars
+      message.success("Bạn đã xác nhận tham gia sự kiện!");
+      fetchDataNotificationOfParent(parent.parent.parentID);
+    } catch (error) {
+      console.error("Lỗi khi xác nhận tham gia:", error);
+      message.error("Không thể xác nhận tham gia!");
+    }
   };
 
-  const getAlertMessage = () => {
-    if (confirmation === "confirmed") {
-      return "Cảm ơn bạn đã xác nhận tham gia! Vui lòng kiểm tra email để biết thêm chi tiết.";
+  const handleDecline = async (notificationId) => {
+    try {
+      // TODO: Uncomment when API is ready
+      // await api.delete(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
+      console.log("Declining notification:", notificationId); // eslint-disable-line no-unused-vars
+      message.success("Bạn đã từ chối tham gia sự kiện!");
+      fetchDataNotificationOfParent(parent.parent.parentID);
+    } catch (error) {
+      console.error("Lỗi khi từ chối sự kiện:", error);
+      message.error("Không thể từ chối sự kiện!");
     }
-    if (confirmation === "declined") {
-      return "Chúng tôi đã ghi nhận bạn không tham gia. Cảm ơn đã phản hồi.";
-    }
-    return "";
   };
 
   return (
-    <div style={{ padding: 24, background: "#f0f2f5", minHeight: "calc(100vh - 64px)", marginTop: '64px' }}>
-      <Title level={2} style={{ marginBottom: 24, textAlign: 'center' }}>
+    <div
+      style={{
+        padding: 24,
+        background: "#f0f2f5",
+        minHeight: "calc(100vh - 64px)",
+        marginTop: "64px",
+      }}
+    >
+      <Title level={2} style={{ marginBottom: 24, textAlign: "center" }}>
         Thông Báo Sự Kiện
       </Title>
-      <Card bordered={false} style={{ borderRadius: 8, maxWidth: 900, margin: '0 auto' }}>
-        <Row gutter={[32, 16]} align="middle">
-          <Col xs={24} md={4} style={{ textAlign: "center" }}>
-            <CalendarOutlined style={{ fontSize: 60, color: "#1890ff" }} />
-          </Col>
-          <Col xs={24} md={20}>
-            <Title level={4}>{eventData.title}</Title>
-            <Space wrap style={{ marginBottom: 16 }}>
-              <Tag color="blue">Ngày: {eventData.date}</Tag>
-              <Tag color="purple">Thời gian: {eventData.time}</Tag>
-            </Space>
-            <Text strong>Địa điểm: {eventData.location}</Text>
-            <Paragraph type="secondary" style={{ marginTop: 8 }}>
-              {eventData.description}
-            </Paragraph>
-          </Col>
-        </Row>
 
-        <Divider dashed />
+      {/* Bộ lọc loại thông báo */}
+      <Select
+        value={typeFilter}
+        onChange={setTypeFilter}
+        style={{ width: 220, marginBottom: 24 }}
+        placeholder="Chọn loại thông báo"
+      >
+        <Select.Option value="ALL">Tất cả</Select.Option>
+        <Select.Option value="VACCINATION">Tiêm chủng</Select.Option>
+        <Select.Option value="CHECKUP">Khám sức khỏe</Select.Option>
+        <Select.Option value="OTHER">Khác</Select.Option>
+      </Select>
 
-        <div style={{ textAlign: "center" }}>
-          <Title level={5}>Xác nhận tham gia</Title>
-          {showAlert ? (
-            <Alert
-              message={getAlertMessage()}
-              type={confirmation === "confirmed" ? "success" : "info"}
-              showIcon
-              closable
-              onClose={() => setShowAlert(false)}
-              style={{ marginBottom: 16 }}
-            />
-          ) : (
-            <Space size="large">
-              <Button
-                type="primary"
-                icon={<CheckCircleOutlined />}
-                size="large"
-                onClick={handleConfirm}
-              >
-                Đồng ý tham gia
-              </Button>
-              <Button
-                type="default"
-                danger
-                icon={<CloseCircleOutlined />}
-                size="large"
-                onClick={handleDecline}
-              >
-                Từ chối
-              </Button>
-            </Space>
-          )}
+      {/* Loading state */}
+      {loading && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <Text type="secondary">Đang tải thông báo...</Text>
         </div>
-      </Card>
+      )}
+
+      {/* Danh sách thông báo đã lọc */}
+      {!loading && filteredData.length > 0 ? (
+        filteredData.map((item) => (
+          <Card
+            key={item.notificationID}
+            style={{
+              marginBottom: 16,
+              background: "#f8faff",
+              borderRadius: 8,
+              maxWidth: 900,
+              margin: "0 auto 16px auto",
+            }}
+            type="inner"
+            title={item.title}
+            extra={
+              <Tag
+                color={
+                  item.notificationType === "VACCINATION"
+                    ? "blue"
+                    : item.notificationType === "CHECKUP"
+                    ? "purple"
+                    : "default"
+                }
+              >
+                {item.notificationType || "Khác"}
+              </Tag>
+            }
+          >
+            <Space direction="vertical" size={8} style={{ width: "100%" }}>
+              <Text type="secondary">
+                <CalendarOutlined style={{ marginRight: 8 }} />
+                {new Date(item.sentDate).toLocaleString("vi-VN")}
+              </Text>
+
+              <Paragraph style={{ margin: "8px 0" }}>{item.content}</Paragraph>
+
+              <Tag
+                color={
+                  item.status === "Sent"
+                    ? "green"
+                    : item.status === "Delivered"
+                    ? "purple"
+                    : "default"
+                }
+              >
+                {item.status}
+              </Tag>
+
+              {/* Hiển thị parentNotifications nếu có */}
+              {item.parentNotifications &&
+                item.parentNotifications.length > 0 && (
+                  <Paragraph type="secondary" style={{ marginTop: 8 }}>
+                    Phụ huynh nhận:{" "}
+                    {item.parentNotifications.map((p) => p.parentID).join(", ")}
+                  </Paragraph>
+                )}
+
+              <Divider style={{ margin: "16px 0" }} />
+
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => handleJoin(item.notificationID)}
+                >
+                  Tham gia
+                </Button>
+
+                <Button
+                  danger
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => handleDecline(item.notificationID)}
+                >
+                  Từ chối
+                </Button>
+              </Space>
+            </Space>
+          </Card>
+        ))
+      ) : !loading ? (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <Text type="secondary">
+            {typeFilter === "ALL"
+              ? "Không có thông báo nào."
+              : `Không có thông báo loại "${typeFilter}" nào.`}
+          </Text>
+        </div>
+      ) : null}
     </div>
   );
 }

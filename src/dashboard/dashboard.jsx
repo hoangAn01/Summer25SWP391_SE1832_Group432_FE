@@ -37,6 +37,7 @@ const items = [
     "manage_account",
     <DesktopOutlined />
   ),
+  getItem("Sự kiện đang diển ra", "event_now", <DesktopOutlined />),
 
   getItem("Báo cáo ", "report", <DesktopOutlined />),
 

@@ -3,15 +3,12 @@ import {
   Avatar,
   Typography,
   Card,
-  Row,
-  Col,
   Button,
   Form,
   Input,
   Modal,
   message,
   DatePicker,
-  Upload,
   Select,
   Descriptions,
   Spin,
@@ -22,19 +19,17 @@ import {
   UserOutlined,
   ArrowLeftOutlined,
   EditOutlined,
-  MailOutlined,
   PhoneOutlined,
   HomeOutlined,
   CalendarOutlined,
   ManOutlined,
-  WomanOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const ParentProfile = () => {
   const navigate = useNavigate();
@@ -44,7 +39,6 @@ const ParentProfile = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [parentInfo, setParentInfo] = useState(null);
   const [students, setStudents] = useState([]);
 
   // Lấy ID người dùng từ Redux store
@@ -52,29 +46,39 @@ const ParentProfile = () => {
   const userId = user?.userID;
 
   useEffect(() => {
-    const fetchParentProfile = async () => {
+    const fetchParentAndStudentInfo = async () => {
       try {
         // Kiểm tra nếu không có userId
         if (!userId) {
           throw new Error("Không tìm thấy ID người dùng");
         }
 
-        // Gọi API với endpoint mới
-        const [parentResponse, studentsResponse] = await Promise.all([
-          api.get(`/Parent/user/${userId}`),
-          api.get(`/Student`),
-        ]);
-
+        // Gọi API lấy thông tin phụ huynh
+        const parentResponse = await api.get(`/Parent/user/${userId}`);
         console.log("Parent Response:", parentResponse);
-        console.log("Students Response:", studentsResponse);
 
         setParentProfile(parentResponse.data);
 
-        // Lọc học sinh thuộc phụ huynh này
-        const parentStudents = studentsResponse.data.filter(
-          (student) => student.parentID === parentResponse.data.parentID
-        );
-        setStudentList(parentStudents);
+        // Lấy parentID để gọi API học sinh
+        const parentID = parentResponse.data.parentID;
+
+        // Gọi API lấy danh sách học sinh với parentID
+        const studentsResponse = await api.get(`/Student/${parentID}`);
+        console.log("Students Response:", studentsResponse);
+
+        // Lấy danh sách học sinh từ $values
+        const studentsData =
+          studentsResponse.data.$values || studentsResponse.data;
+        setStudentList(studentsData);
+
+        // Mapping danh sách học sinh cho form select
+        const mappedStudents = studentsData.map((student) => ({
+          value: student.studentID.toString(),
+          label: student.fullName,
+          studentName: student.fullName,
+          className: student.className,
+        }));
+        setStudents(mappedStudents);
 
         // Điền thông tin vào form chỉnh sửa
         form.setFieldsValue({
@@ -99,7 +103,7 @@ const ParentProfile = () => {
           message:
             err.response?.data?.message ||
             err.message ||
-            "Không thể tải thông tin học sinh",
+            "Không thể tải thông tin",
           status: err.response?.status,
         });
         setLoading(false);
@@ -109,44 +113,8 @@ const ParentProfile = () => {
       }
     };
 
-    fetchParentProfile();
-  }, [userId, form]);
-
-  useEffect(() => {
-    const fetchParentAndStudentInfo = async () => {
-      try {
-        // Lấy userId từ localStorage
-        const userId = localStorage.getItem("userId");
-
-        // Gọi API lấy thông tin phụ huynh
-        const parentResponse = await api.get(`/Parent/user/${userId}`);
-
-        // Lưu thông tin phụ huynh
-        setParentInfo({
-          id: parentResponse.data.id,
-          fullName: parentResponse.data.fullName,
-          phone: parentResponse.data.phone,
-        });
-
-        // Gọi API lấy danh sách học sinh
-        const studentsResponse = await api.get(`/Student`);
-
-        // Mapping danh sách học sinh
-        const mappedStudents = studentsResponse.data.map((student) => ({
-          value: student.id.toString(),
-          label: student.name,
-          studentName: student.name,
-          className: student.className,
-        }));
-
-        setStudents(mappedStudents);
-      } catch (error) {
-        console.error("Lỗi lấy thông tin", error);
-      }
-    };
-
     fetchParentAndStudentInfo();
-  }, []);
+  }, [userId, form]);
 
   const handleGoBack = () => {
     navigate("/home");
@@ -160,8 +128,8 @@ const ParentProfile = () => {
     try {
       setLoading(true);
 
-      // Chuẩn bị dữ liệu cập nhật
-      const updateData = {
+      // Gọi API cập nhật - sử dụng PUT thay vì GET
+      const response = await api.put(`/Parent/${values.parentID}`, {
         parentID: values.parentID,
         fullName: values.fullName,
         gender: values.gender,
@@ -170,10 +138,7 @@ const ParentProfile = () => {
           : null,
         address: values.address,
         phone: values.phone,
-      };
-
-      // Gọi API cập nhật
-      const response = await api.get(`/Parent/user/${userId}`);
+      });
 
       message.success("Cập nhật thông tin thành công");
 
@@ -193,10 +158,10 @@ const ParentProfile = () => {
   };
 
   const handleStudentSelect = (studentID) => {
-    const student = students.find((s) => s.studentID === studentID);
+    const student = students.find((s) => s.value === studentID);
     if (student) {
       form.setFieldsValue({
-        studentName: student.fullName,
+        studentName: student.studentName,
         className: student.className,
       });
     }
@@ -507,11 +472,8 @@ const ParentProfile = () => {
                 optionFilterProp="children"
               >
                 {students.map((student) => (
-                  <Select.Option
-                    key={student.studentID}
-                    value={student.studentID}
-                  >
-                    {student.fullName}
+                  <Select.Option key={student.value} value={student.value}>
+                    {student.label}
                   </Select.Option>
                 ))}
               </Select>

@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { Card, List, Button, Descriptions, message, Modal, Input, Space } from "antd";
+import {
+  Card,
+  List,
+  Button,
+  Descriptions,
+  message,
+  Modal,
+  Input,
+  Space,
+} from "antd";
 
 // Component xác nhận đã nhận thuốc
 const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
@@ -44,7 +53,14 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
   return (
     <Card style={{ maxWidth: 700, margin: "0 auto", marginTop: 32 }}>
       {/* PHẦN TRÊN: THÔNG BÁO */}
-      <div style={{ marginBottom: 24, fontWeight: 600, color: "#1677ff", fontSize: 18 }}>
+      <div
+        style={{
+          marginBottom: 24,
+          fontWeight: 600,
+          color: "#1677ff",
+          fontSize: 18,
+        }}
+      >
         Xác nhận đã nhận thuốc từ phụ huynh
       </div>
 
@@ -55,10 +71,18 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
         column={1}
         style={{ marginBottom: 24 }}
       >
-        <Descriptions.Item label="Họ tên">{medicineRequest.studentName}</Descriptions.Item>
-        <Descriptions.Item label="Lớp">{medicineRequest.className}</Descriptions.Item>
-        <Descriptions.Item label="Phụ huynh">{medicineRequest.parentName}</Descriptions.Item>
-        <Descriptions.Item label="Số điện thoại">{medicineRequest.phone}</Descriptions.Item>
+        <Descriptions.Item label="Họ tên">
+          {medicineRequest.studentName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Lớp">
+          {medicineRequest.className}
+        </Descriptions.Item>
+        <Descriptions.Item label="Phụ huynh">
+          {medicineRequest.parentName}
+        </Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">
+          {medicineRequest.phone}
+        </Descriptions.Item>
       </Descriptions>
 
       <List
@@ -104,7 +128,7 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
         <Input.TextArea
           rows={4}
           value={rejectReason}
-          onChange={e => setRejectReason(e.target.value)}
+          onChange={(e) => setRejectReason(e.target.value)}
           placeholder="Nhập lý do từ chối để gửi cho phụ huynh"
         />
       </Modal>
@@ -112,4 +136,4 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
   );
 };
 
-export default MedicineReceiveForm; 
+export default MedicineReceiveForm;

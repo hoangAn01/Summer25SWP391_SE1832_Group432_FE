@@ -38,6 +38,8 @@ import StudentProfileList from "./nurse/StudentProfileList";
 import NurseProfile from "./nurse/NurseProfile";
 import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
 import ApproveMedicine from "./nurse/approveMedicine";
+import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
+import EventNow from "./dashboard/dashboad_element/Event_now";
 
 
 
@@ -211,6 +213,10 @@ function App() {
           path: "created_event",
           element: <Created_event />,
         },
+        {
+          path: "event_now",
+          element: <EventNow />,
+        }
       ],
     },
     {
@@ -230,6 +236,10 @@ function App() {
           <ParentProfile />
         </>
       ),
+    },
+    {
+      path: "/student-health-profile/:studentId",
+      element: <StudentHealthProfile />,
     },
   ]);
   return (

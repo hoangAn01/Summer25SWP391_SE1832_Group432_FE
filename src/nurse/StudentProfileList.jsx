@@ -54,7 +54,8 @@ const StudentProfileList = () => {
     const fetchProfiles = async () => {
       try {
         const res = await api.get("HealthProfile");
-        setData(res.data);
+        const data = res.data.$values;
+        setData(data);
       } catch {
         setError("Không thể tải danh sách hồ sơ học sinh!");
       } finally {

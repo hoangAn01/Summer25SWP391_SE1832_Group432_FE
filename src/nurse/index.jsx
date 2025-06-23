@@ -29,8 +29,8 @@ function getItem(label, key, icon, children) {
 const items = [
   getItem("Báo cáo sự kiện y tế", "medical-event", <PieChartOutlined />),
   getItem("Danh sách học sinh", "student-profile-list", <DesktopOutlined />),
-  getItem("User", "sub1", <UserOutlined />),
   getItem("Duyệt thuốc", "approve-medicine", <PropertySafetyOutlined />),
+  getItem("User", "sub1", <UserOutlined />),
 ];
 
 const Nurse = () => {
