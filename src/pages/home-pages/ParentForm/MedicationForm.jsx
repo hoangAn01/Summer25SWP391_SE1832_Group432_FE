@@ -112,28 +112,17 @@ const MedicationForm = () => {
         parentID: parentID,
         note: values.note || "",
         medicineDetails: medicinePages.map((_, idx) => {
-          const selectedItemName = values.itemName?.[idx]?.medicineName;
-          console.log(
-            `Page ${idx + 1} - Selected item name:`,
-            selectedItemName
-          );
-
-          // Tìm item trong danh sách để lấy requestItemID
+          const selectedItemID = values.itemName?.[idx]?.medicineName;
           const selectedItem = medicineList.find(
-            (item) => item.itemName === selectedItemName
+            (item) => item.requestItemID === selectedItemID
           );
-          console.log(`Page ${idx + 1} - Found item:`, selectedItem);
-
           const result = {
-            requestItemID: selectedItem
-              ? selectedItem.$id || selectedItem.id
-              : 0,
+            requestItemID: selectedItemID,
+            medicineName: selectedItem ? selectedItem.requestItemName : '',
             quantity: values.quantity?.[idx]?.quantity || 1,
             dosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
             time: (values.medicines?.[idx]?.time || []).join(", "),
           };
-
-          console.log(`Page ${idx + 1} - Final result:`, result);
           return result;
         }),
       };
@@ -161,18 +150,6 @@ const MedicationForm = () => {
 
   const handleGoBack = () => {
     navigate("/home");
-  };
-
-  // Lấy màu cho category
-  const getCategoryColor = (category) => {
-    switch (category) {
-      case "Thuốc":
-        return "blue";
-      case "Vật tư":
-        return "green";
-      default:
-        return "default";
-    }
   };
 
   return (
@@ -395,7 +372,7 @@ const MedicationForm = () => {
                       {medicineList.map((item) => (
                         <Select.Option
                           key={item.requestItemID}
-                          value={item.requestItemName}
+                          value={item.requestItemID}
                           data={item}
                           label={item.requestItemName}
                         >

@@ -274,7 +274,7 @@ const HealthProfileEdit = () => {
                     ]}
                   >
                     <Input
-                      disabled={!isEdit}
+                      disabled
                       placeholder="Tên học sinh"
                       style={{ width: "100%", fontSize: 16, color: "#222", borderRadius: 8 }}
                     />
@@ -284,7 +284,7 @@ const HealthProfileEdit = () => {
                     <Input
                       name="className"
                       value={selectedStudent?.className || ""}
-                      disabled={!isEdit}
+                      disabled
                       placeholder="Chưa có thông tin"
                       style={{ borderRadius: 8, fontSize: 16, color: "#222" }}
                     />
@@ -293,7 +293,7 @@ const HealthProfileEdit = () => {
                   <Form.Item name="dob" label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Ngày tháng năm sinh</span>}>
                     <DatePicker
                       format="DD/MM/YYYY"
-                      disabled={!isEdit}
+                      disabled
                       style={{ width: "100%", borderRadius: 8, fontSize: 16, color: "#222" }}
                       placeholder="Chưa có thông tin"
                     />
@@ -314,78 +314,6 @@ const HealthProfileEdit = () => {
                       placeholder="Nhập dị ứng (nếu có)"
                     />
                   </Form.Item>
-                </Card>
-                <Card
-                  title={<span><HistoryOutlined /> Tiền sử điều trị</span>}
-                  style={{ borderRadius: 12, background: "#fffbe6" }}
-                  bodyStyle={{ padding: 24 }}
-                >
-                  <Form.List name="treatmentHistory">
-                    {(fields, { add, remove }) => (
-                      <div>
-                        {fields.length === 0 && (
-                          <div style={{ color: '#888', fontStyle: 'italic', marginBottom: 16, fontSize: 20, fontWeight: 600, textAlign: 'center' }}>
-                            Không có tiền sử điều trị
-                          </div>
-                        )}
-                        {fields.map((field, idx) => (
-                          <Space
-                            key={field.key}
-                            align="baseline"
-                            style={{ display: "flex", marginBottom: 16 }}
-                          >
-                            <Form.Item
-                              name={[field.name, "date"]}
-                              fieldKey={[field.fieldKey, "date"]}
-                              rules={[{ required: true, message: "Chọn ngày" }]}
-                              style={{ marginBottom: 0 }}
-                            >
-                              <DatePicker
-                                disabled={!isEdit}
-                                format="DD/MM/YYYY"
-                                placeholder="Ngày"
-                                style={{ width: 120, borderRadius: 8, fontSize: 16, color: "#222" }}
-                              />
-                            </Form.Item>
-                            <Form.Item
-                              name={[field.name, "desc"]}
-                              fieldKey={[field.fieldKey, "desc"]}
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "Nhập nội dung điều trị",
-                                },
-                              ]}
-                              style={{ marginBottom: 0 }}
-                            >
-                              <Input
-                                disabled={!isEdit}
-                                placeholder={`Tiền sử điều trị ${idx + 1}`}
-                                style={{ width: 220, borderRadius: 8, fontSize: 16, color: "#222" }}
-                              />
-                            </Form.Item>
-                            {fields.length > 1 && (
-                              <MinusCircleOutlined
-                                onClick={() => remove(field.name)}
-                                style={{ color: "#ff4d4f", cursor: "pointer" }}
-                              />
-                            )}
-                          </Space>
-                        ))}
-                        {isEdit && (
-                          <Button
-                            disabled={!isEdit}
-                            type="dashed"
-                            onClick={() => add()}
-                            icon={<PlusOutlined />}
-                            style={{ width: "100%", borderRadius: 8, fontSize: 16 }}
-                          >
-                            Thêm tiền sử điều trị
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </Form.List>
                 </Card>
               </div>
               <div style={{ flex: 1, minWidth: 340 }}>
