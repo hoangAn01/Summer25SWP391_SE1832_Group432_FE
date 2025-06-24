@@ -45,14 +45,20 @@ function HealthProfileCreatePage() {
         const parentID = parentResponse.data.parentID;
 
         // Sau đó lấy danh sách học sinh theo parentID
-        const studentsResponse = await api.get(`/Student/${parentID}`);
+        // const studentsResponse = await api.get(`/Student/${parentID}`);
+
+        // Lấy danh sách học sinh chưa được tạo profile
+        const studentsResponse = await api.get(
+          `/HealthProfile/students-without-profile?parentId=${parentID}`
+        );
 
         // Xử lý response với cấu trúc mới có $values
-        const studentsData =
-          studentsResponse.data.$values || studentsResponse.data;
-        console.log("Students data:", studentsData);
+        if (studentsResponse.status === 200) {
+          const studentsData =
+            studentsResponse.data.$values || studentsResponse.data;
+          setStudents(studentsData);
+        }
 
-        setStudents(studentsData);
         setLoading(false);
       } catch (error) {
         console.error("Lỗi khi tải danh sách học sinh:", error);
@@ -94,12 +100,13 @@ function HealthProfileCreatePage() {
       const res = await api.post(`/HealthProfile`, data);
 
       message.success("Tạo hồ sơ thành công! Mã hồ sơ: " + res.data.profileID);
+      navigate(`/student-health-profile/${res.data.studentID}`);
 
       // Reset form sau khi tạo thành công
-      setTimeout(() => {
-        form.resetFields();
-        setSelectedStudent(null);
-      }, 2000);
+      // setTimeout(() => {
+      //   form.resetFields();
+      //   setSelectedStudent(null);
+      // }, 2000);
     } catch (error) {
       console.error("Lỗi tạo hồ sơ sức khỏe:", error);
       message.error(
@@ -296,7 +303,7 @@ function HealthProfileCreatePage() {
               </Form.Item>
 
               <Form.Item
-                label="Chiều cao"
+                label="Chiều cao(Cm)"
                 name="height"
                 rules={[
                   {
@@ -309,7 +316,7 @@ function HealthProfileCreatePage() {
               </Form.Item>
 
               <Form.Item
-                label="Cân nặng"
+                label="Cân nặng(Kg)"
                 name="weight"
                 rules={[
                   {

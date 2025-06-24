@@ -23,6 +23,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/features/userSlice";
 import { Modal } from "antd";
+import api from "../../config/axios";
 
 const Header = () => {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
@@ -33,6 +34,7 @@ const Header = () => {
   const user = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
+  const [hasHealthProfile, setHasHealthProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -93,14 +95,15 @@ const Header = () => {
   };
 
   // Giả lập kiểm tra có hồ sơ hay không (bạn thay bằng logic thực tế)
-  const hasHealthProfile = false;
+  // const hasHealthProfile = false;
 
   const handleHealthProfileMenuClick = () => {
-    if (!hasHealthProfile) {
-      setShowNoProfileDialog(true);
-    } else {
-      navigate("/health-profile");
-    }
+    navigate("/student-health-profile/edit");
+    // if (!hasHealthProfile) {
+    //   setShowNoProfileDialog(true);
+    // } else {
+    //   navigate("/health-profile");
+    // }
   };
 
   const handleCreateProfile = () => {

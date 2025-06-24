@@ -488,9 +488,36 @@ const MedicationForm = () => {
                       mode="multiple"
                       placeholder="Chọn thời điểm sử dụng"
                       allowClear
+                      value={form.getFieldValue(["medicines", idx, "time"])}
+                      onChange={(value) => {
+                        // Đảm bảo mỗi thời điểm chỉ được chọn 1 lần
+                        form.setFieldsValue({
+                          medicines: {
+                            ...form.getFieldValue("medicines"),
+                            [idx]: {
+                              ...form.getFieldValue(["medicines", idx]),
+                              time: value,
+                            },
+                          },
+                        });
+                      }}
                     >
-                      <Option value="morning">Sáng</Option>
-                      <Option value="noon">Trưa</Option>
+                      <Option
+                        value="morning"
+                        disabled={
+                          (form.getFieldValue(["medicines", idx, "time"]) || []).includes("morning")
+                        }
+                      >
+                        Sáng
+                      </Option>
+                      <Option
+                        value="noon"
+                        disabled={
+                          (form.getFieldValue(["medicines", idx, "time"]) || []).includes("noon")
+                        }
+                      >
+                        Trưa
+                      </Option>
                     </Select>
                   </Form.Item>
                 </div>

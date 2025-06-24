@@ -40,6 +40,7 @@ import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveFor
 import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event_now";
+import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
 
 
 
@@ -240,6 +241,10 @@ function App() {
     {
       path: "/student-health-profile/:studentId",
       element: <StudentHealthProfile />,
+    },
+    {
+      path: "/student-health-profile/edit",
+      element: <HealthProfileEdit />,
     },
   ]);
   return (

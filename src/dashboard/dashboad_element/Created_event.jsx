@@ -17,10 +17,12 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
+import { useSelector } from "react-redux";
 
 const { Title, Text, Paragraph } = Typography;
 
 function Created_event() {
+  const user = useSelector((state) => state.user);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -37,10 +39,23 @@ function Created_event() {
 
       // Xử lý response với cấu trúc mới có $values
       const notificationsData = response.data.$values || [];
+      console.log("User role:", user?.role);
+      console.log("Dữ liệu thông báo từ API:", notificationsData);
 
-      if (Array.isArray(notificationsData)) {
+      let filteredNotifications = notificationsData;
+      if (user?.role?.toLowerCase() === "admin") {
+        filteredNotifications = notificationsData.filter(
+          notif => notif.notificationType !== "MEDICAL_REQUEST"
+        );
+        console.log("Sau khi lọc MEDICAL_REQUEST cho admin:", filteredNotifications);
+        filteredNotifications.forEach((notif, idx) => {
+          console.log(`Thông báo còn lại [${idx}]:`, notif.title, notif.notificationType);
+        });
+      }
+
+      if (Array.isArray(filteredNotifications)) {
         // Transform notifications to match existing component structure
-        const transformedNotifications = notificationsData.map(
+        const transformedNotifications = filteredNotifications.map(
           (notification) => ({
             id: notification.notificationID,
             title: notification.title,
@@ -50,8 +65,12 @@ function Created_event() {
               notification.status === "Published" ? "created" : "in_progress",
             type: "notification", // Default type
             grade: "Toàn trường", // Default grade
+            notificationType: notification.notificationType
           })
         );
+
+        // Sắp xếp theo thời gian mới nhất lên đầu
+        transformedNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         setNotifications(transformedNotifications);
       } else {
