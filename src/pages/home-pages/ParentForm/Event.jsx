@@ -236,18 +236,7 @@ function Event() {
                   Thu gọn
                 </Button>
                 {renderNotificationContent(item)}
-                <Tag
-                  color={
-                    item.status === "Sent"
-                      ? "green"
-                      : item.status === "Delivered"
-                      ? "purple"
-                      : "default"
-                  }
-                  style={{ marginTop: 8 }}
-                >
-                  {item.status}
-                </Tag>
+              
                 {/* Hiển thị parentNotifications nếu có */}
                 {item.parentNotifications &&
                   item.parentNotifications.length > 0 && (

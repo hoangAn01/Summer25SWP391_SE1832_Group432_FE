@@ -57,7 +57,7 @@ const MedicationForm = () => {
   const fetchMedicineList = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/MedicalInventory");
+      const res = await api.get("/MedicineRequest/items");
 
       // Xử lý response với cấu trúc mới có $values
       const medicineData = res.data.$values || [];
@@ -383,66 +383,29 @@ const MedicationForm = () => {
                         const item = option?.data;
                         if (!item) return false;
                         return (
-                          item.itemName
-                            .toLowerCase()
-                            .includes(input.toLowerCase()) ||
-                          item.description
-                            .toLowerCase()
-                            .includes(input.toLowerCase()) ||
-                          item.category
-                            .toLowerCase()
-                            .includes(input.toLowerCase())
+                          item.requestItemName.toLowerCase().includes(input.toLowerCase()) ||
+                          item.description.toLowerCase().includes(input.toLowerCase())
                         );
                       }}
                       allowClear
                       loading={loading}
                       optionLabelProp="label"
                       showArrow={true}
-                      notFoundContent={
-                        <div
-                          style={{
-                            padding: "8px",
-                            textAlign: "center",
-                            color: "#666",
-                          }}
-                        >
-                          Không tìm thấy trong danh sách. Bạn có thể nhập tên
-                          thuốc/vật tư trực tiếp.
-                        </div>
-                      }
                     >
                       {medicineList.map((item) => (
-                        <Option
-                          key={item.$id || item.id}
-                          value={item.itemName}
+                        <Select.Option
+                          key={item.requestItemID}
+                          value={item.requestItemName}
                           data={item}
-                          label={item.itemName}
+                          label={item.requestItemName}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontWeight: "bold" }}>
-                                {item.itemName}
-                              </div>
-                              <div style={{ fontSize: "12px", color: "#666" }}>
-                                {item.description}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                              <Tag
-                                color={getCategoryColor(item.category)}
-                                size="small"
-                              >
-                                {item.category}
-                              </Tag>
+                          <div>
+                            <div style={{ fontWeight: "bold" }}>{item.requestItemName}</div>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              {item.description}
                             </div>
                           </div>
-                        </Option>
+                        </Select.Option>
                       ))}
                     </Select>
                   </Form.Item>
