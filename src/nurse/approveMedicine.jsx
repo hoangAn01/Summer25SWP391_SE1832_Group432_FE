@@ -33,16 +33,13 @@ const ApproveMedicine = () => {
     try {
       const res = await api.get("/MedicineRequest/getAll");
 
-      // Xử lý response với cấu trúc mới có $values
       let medicineRequestsData = res.data.$values || [];
 
-      // Đảm bảo dữ liệu là array và có cấu trúc đúng
       if (!Array.isArray(medicineRequestsData)) {
         console.warn("API response không phải array:", medicineRequestsData);
         medicineRequestsData = [];
       }
 
-      // Đảm bảo mỗi record có medicineDetails là array từ $values
       const processedData = medicineRequestsData.map((record) => ({
         ...record,
         medicineDetails:
@@ -73,7 +70,7 @@ const ApproveMedicine = () => {
       console.log(noteNurse);
       await api.put(`/MedicineRequest/${requestID}/approve`, {
         approvedBy: user.userID,
-        nurseNote: noteNurse
+        nurseNote: noteNurse,
       });
       message.success("Đã duyệt đơn thuốc thành công!");
       setNoteNurse("");
@@ -157,13 +154,13 @@ const ApproveMedicine = () => {
             style: {
               fontWeight: 600,
               fontSize: 15,
-              padding: '4px 18px',
+              padding: "4px 18px",
               borderRadius: 16,
-              background: '#e6fffb',
-              color: '#389e0d',
-              border: '1px solid #b7eb8f',
-              letterSpacing: 1
-            }
+              background: "#e6fffb",
+              color: "#389e0d",
+              border: "1px solid #b7eb8f",
+              letterSpacing: 1,
+            },
           };
         } else if (vnStatus === "Chờ duyệt") {
           tagProps = {
@@ -171,13 +168,13 @@ const ApproveMedicine = () => {
             style: {
               fontWeight: 600,
               fontSize: 15,
-              padding: '4px 18px',
+              padding: "4px 18px",
               borderRadius: 16,
-              background: '#fffbe6',
-              color: '#d48806',
-              border: '1px solid #ffe58f',
-              letterSpacing: 1
-            }
+              background: "#fffbe6",
+              color: "#d48806",
+              border: "1px solid #ffe58f",
+              letterSpacing: 1,
+            },
           };
         } else if (vnStatus === "Không duyệt") {
           tagProps = {
@@ -185,18 +182,16 @@ const ApproveMedicine = () => {
             style: {
               fontWeight: 600,
               fontSize: 15,
-              padding: '4px 18px',
+              padding: "4px 18px",
               borderRadius: 16,
-              background: '#fff1f0',
-              color: '#cf1322',
-              border: '1px solid #ffa39e',
-              letterSpacing: 1
-            }
+              background: "#fff1f0",
+              color: "#cf1322",
+              border: "1px solid #ffa39e",
+              letterSpacing: 1,
+            },
           };
         }
-        return (
-          <Tag {...tagProps}>{vnStatus}</Tag>
-        );
+        return <Tag {...tagProps}>{vnStatus}</Tag>;
       },
     },
     {
@@ -277,7 +272,8 @@ const ApproveMedicine = () => {
 
   const statusVN = (status) => {
     const s = (status || "").toLowerCase();
-    if (s === "đã duyệt" || s === "approve" || s === "approved") return "Đã duyệt";
+    if (s === "đã duyệt" || s === "approve" || s === "approved")
+      return "Đã duyệt";
     if (s === "không duyệt") return "Không duyệt";
     if (s === "chờ duyệt" || s === "pending") return "Chờ duyệt";
     return status || "Không rõ";
@@ -344,7 +340,10 @@ const ApproveMedicine = () => {
 
             <div style={{ marginTop: 24 }}>
               <h4>Chi tiết thuốc:</h4>
-              {console.log("Chi tiết thuốc:", detailModal.record.medicineDetails)}
+              {console.log(
+                "Chi tiết thuốc:",
+                detailModal.record.medicineDetails
+              )}
               <Table
                 columns={[
                   {
@@ -388,7 +387,8 @@ const ApproveMedicine = () => {
                 }}
               />
               {/* Nếu đang chờ duyệt thì cho nhập ghi chú, nếu đã duyệt thì chỉ hiển thị ghi chú */}
-              {(detailModal.record.requestStatus === "Chờ duyệt" || detailModal.record.requestStatus === "Pending") ? (
+              {detailModal.record.requestStatus === "Chờ duyệt" ||
+              detailModal.record.requestStatus === "Pending" ? (
                 <div style={{ marginTop: 16 }}>
                   <b>Ghi chú của nhân viên y tế:</b>
                   <Input.TextArea
@@ -402,7 +402,8 @@ const ApproveMedicine = () => {
               ) : (
                 detailModal.record.nurseNote && (
                   <div style={{ marginTop: 16 }}>
-                    <b>Ghi chú của nhân viên y tế:</b> {detailModal.record.nurseNote}
+                    <b>Ghi chú của nhân viên y tế:</b>{" "}
+                    {detailModal.record.nurseNote}
                   </div>
                 )
               )}
@@ -416,7 +417,7 @@ const ApproveMedicine = () => {
                 gap: 8,
               }}
             >
-              {(statusVN(detailModal.record.requestStatus) === "Chờ duyệt") && (
+              {statusVN(detailModal.record.requestStatus) === "Chờ duyệt" && (
                 <Button
                   type="primary"
                   loading={approving}

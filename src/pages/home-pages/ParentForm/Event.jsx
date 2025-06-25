@@ -32,7 +32,6 @@ function Event() {
     const saved = localStorage.getItem("readNotificationIds");
     return saved ? JSON.parse(saved) : [];
   });
-  const [readFilter, setReadFilter] = useState("ALL"); // ALL | READ | UNREAD
 
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
@@ -70,39 +69,7 @@ function Event() {
         )
       : data.filter((item) => item.notificationType === typeFilter)
   )
-  .filter(item => {
-    if (readFilter === "ALL") return true;
-    if (readFilter === "UNREAD") return !readIds.includes(item.notificationID);
-    if (readFilter === "READ") return readIds.includes(item.notificationID);
-    return true;
-  })
   .sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
-
-  const handleJoin = async (notificationId) => {
-    try {
-      // TODO: Uncomment when API is ready
-      // await api.put(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
-      console.log("Joining notification:", notificationId); // eslint-disable-line no-unused-vars
-      message.success("Bạn đã xác nhận tham gia sự kiện!");
-      fetchDataNotificationOfParent(parent.parent.parentID);
-    } catch (error) {
-      console.error("Lỗi khi xác nhận tham gia:", error);
-      message.error("Không thể xác nhận tham gia!");
-    }
-  };
-
-  const handleDecline = async (notificationId) => {
-    try {
-      // TODO: Uncomment when API is ready
-      // await api.delete(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
-      console.log("Declining notification:", notificationId); // eslint-disable-line no-unused-vars
-      message.success("Bạn đã từ chối tham gia sự kiện!");
-      fetchDataNotificationOfParent(parent.parent.parentID);
-    } catch (error) {
-      console.error("Lỗi khi từ chối sự kiện:", error);
-      message.error("Không thể từ chối sự kiện!");
-    }
-  };
 
   const handleOpen = (item) => {
     setOpenedId(item.notificationID);
@@ -178,19 +145,6 @@ function Event() {
             <Select.Option value="CHECKUP">Khám sức khỏe</Select.Option>
             <Select.Option value="MEDICAL_REQUEST">Gửi thuốc</Select.Option>
             <Select.Option value="OTHER">Khác</Select.Option>
-          </Select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontWeight: 500, marginBottom: 4 }}>Trạng thái đọc</span>
-          <Select
-            value={readFilter}
-            onChange={setReadFilter}
-            style={{ width: 160 }}
-            placeholder="Lọc trạng thái đọc"
-          >
-            <Select.Option value="ALL">Tất cả</Select.Option>
-            <Select.Option value="UNREAD">Chưa đọc</Select.Option>
-            <Select.Option value="READ">Đã đọc</Select.Option>
           </Select>
         </div>
       </div>
