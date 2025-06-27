@@ -117,11 +117,22 @@ const ApproveMedicine = () => {
     //   defaultSortOrder: "descend",
     // },
     {
-      title: "Ngày tạo",
-      dataIndex: "date",
-      key: "date",
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString("vi-VN") : "Không có",
+      title: "Thời gian nhận đơn  ",
+      key: "approvalDate",
+      render: (_, record) => {
+        const d = record.approvalDate || record.date;
+        if (!d) return "Không có";
+        const utc = new Date(d);
+        const vietnamTime = new Date(utc.getTime() + 7 * 60 * 60 * 1000);
+        return vietnamTime.toLocaleString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+      },
     },
     {
       title: "Học sinh",
@@ -148,13 +159,12 @@ const ApproveMedicine = () => {
       render: (status) => {
         const vnStatus = statusVN(status);
         let tagProps = {};
-        if (vnStatus === "Đã duyệt") {
+        if (vnStatus === "Hoàn thành") {
           tagProps = {
-            color: "green",
             style: {
               fontWeight: 600,
-              fontSize: 15,
-              padding: "4px 18px",
+              fontSize: 14,
+              padding: "2px 12px",
               borderRadius: 16,
               background: "#e6fffb",
               color: "#389e0d",
@@ -162,27 +172,25 @@ const ApproveMedicine = () => {
               letterSpacing: 1,
             },
           };
-        } else if (vnStatus === "Chờ duyệt") {
+        } else if (vnStatus === "Đã nhận đơn thuốc") {
           tagProps = {
-            color: "orange",
             style: {
               fontWeight: 600,
-              fontSize: 15,
-              padding: "4px 18px",
+              fontSize: 14,
+              padding: "2px 12px",
               borderRadius: 16,
-              background: "#fffbe6",
-              color: "#d48806",
-              border: "1px solid #ffe58f",
+              background: "#e6f4ff",
+              color: "#1677ff",
+              border: "1px solid #91caff",
               letterSpacing: 1,
             },
           };
         } else if (vnStatus === "Không duyệt") {
           tagProps = {
-            color: "red",
             style: {
               fontWeight: 600,
-              fontSize: 15,
-              padding: "4px 18px",
+              fontSize: 14,
+              padding: "2px 12px",
               borderRadius: 16,
               background: "#fff1f0",
               color: "#cf1322",
@@ -241,7 +249,7 @@ const ApproveMedicine = () => {
             title: "Thời điểm",
             dataIndex: "time",
             key: "time",
-            render: timeVN,
+            render: timeToVN,
           },
         ]}
         dataSource={medicineDetails}
@@ -254,28 +262,20 @@ const ApproveMedicine = () => {
     );
   };
 
-  const timeVN = (val) => {
-    if (!val) return "Không có";
+  const timeToVN = (val) => {
+    if (!val) return "";
     return val
       .split(",")
-      .map((t) =>
-        t.trim() === "morning"
-          ? "Sáng"
-          : t.trim() === "noon"
-          ? "Trưa"
-          : t.trim() === "evening"
-          ? "Tối"
-          : t
-      )
+      .map(t => t.trim() === "morning" ? "Sáng" : t.trim() === "noon" ? "Trưa" : t.trim() === "evening" ? "Tối" : t.trim())
       .join(", ");
   };
 
   const statusVN = (status) => {
     const s = (status || "").toLowerCase();
     if (s === "đã duyệt" || s === "approve" || s === "approved")
-      return "Đã duyệt";
+      return "Hoàn thành";
     if (s === "không duyệt") return "Không duyệt";
-    if (s === "chờ duyệt" || s === "pending") return "Chờ duyệt";
+    if (s === "chờ duyệt" || s === "pending") return "Đã nhận đơn thuốc";
     return status || "Không rõ";
   };
 
@@ -298,7 +298,7 @@ const ApproveMedicine = () => {
         open={detailModal.open}
         onCancel={() => setDetailModal({ open: false, record: null })}
         footer={null}
-        title="Chi tiết đơn thuốc"
+        title="Duyệt đơn thuốc gửi phụ huynh"
         width={700}
       >
         {detailModal.record && (
@@ -359,7 +359,7 @@ const ApproveMedicine = () => {
                     render: (qty) => qty || "Không có",
                   },
                   {
-                    title: "Liều dùng",
+                    title: "Liều dùng/Cách sử dụng",
                     dataIndex: "dosageInstructions",
                     key: "dosageInstructions",
                     render: (dosage) => dosage || "Không có",
@@ -368,10 +368,7 @@ const ApproveMedicine = () => {
                     title: "Thời điểm",
                     dataIndex: "time",
                     key: "time",
-                    render: (val) => {
-                      console.log("timeVN input:", val);
-                      return timeVN(val);
-                    },
+                    render: timeToVN
                   },
                 ]}
                 dataSource={
@@ -417,13 +414,13 @@ const ApproveMedicine = () => {
                 gap: 8,
               }}
             >
-              {statusVN(detailModal.record.requestStatus) === "Chờ duyệt" && (
+              {statusVN(detailModal.record.requestStatus) === "Đã nhận đơn thuốc" && (
                 <Button
                   type="primary"
                   loading={approving}
                   onClick={() => handleApprove(detailModal.record.requestID)}
                 >
-                  {approving ? "Đang duyệt..." : "Duyệt đơn thuốc"}
+                  {approving ? "Đang gửi..." : "Gửi phụ huynh"}
                 </Button>
               )}
             </div>

@@ -96,7 +96,7 @@ function Event() {
 
       // Việt hóa thời gian uống thuốc
       const viLines = filteredLines.map(line => {
-        if (line.toLowerCase().startsWith('thời gian uống thuốc:')) {
+        if (line.toLowerCase().includes('thời gian uống thuốc')) {
           return line.replace(/morning/gi, 'Sáng')
                      .replace(/noon/gi, 'Trưa')
                      .replace(/evening/gi, 'Tối');
@@ -172,7 +172,14 @@ function Event() {
             onClick={() => handleOpen(item)}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <b style={{ flex: 1 }}>{item.title}</b>
+              <b style={{ flex: 1 }}>
+                {(item.notificationType === "MEDICAL_REQUEST" || item.title?.toLowerCase().includes("yêu cầu thuốc"))
+                  ? `Học sinh ${
+                      item.studentName ||
+                      (item.title?.match(/học sinh (.+?) đã/i)?.[1] || "")
+                    } đã được nhân viên y tế của trường cho sử dụng thuốc/vật tư y tế.`
+                  : item.title}
+              </b>
               <Tag color={readIds.includes(item.notificationID) ? "default" : "blue"}>
                 {readIds.includes(item.notificationID) ? "Đã đọc" : "Chưa đọc"}
               </Tag>

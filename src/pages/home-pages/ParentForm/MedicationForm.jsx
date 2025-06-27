@@ -12,6 +12,8 @@ import {
   DatePicker,
   InputNumber,
   Tag,
+  Modal,
+  Table,
 } from "antd";
 import { PhoneOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +34,15 @@ const MedicationForm = () => {
   const [medicineList, setMedicineList] = useState([]); // Danh sách thuốc và vật tư
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.user); // Lấy user từ Redux
+  const [otherMedicineNames, setOtherMedicineNames] = useState({}); // Lưu tên thuốc khác cho từng trang
+  const [forceUpdate, setForceUpdate] = useState(false); // ép re-render khi chọn 'Khác'
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [createMedicineModal, setCreateMedicineModal] = useState(false);
+  const [newMedicineName, setNewMedicineName] = useState("");
+  const [newMedicineDesc, setNewMedicineDesc] = useState("");
+  const [creatingMedicine, setCreatingMedicine] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -72,6 +83,22 @@ const MedicationForm = () => {
     }
   };
 
+  const fetchHistory = async (parentID) => {
+    setHistoryLoading(true);
+    try {
+      const res = await api.get(`/MedicineRequest/sent/${parentID}`);
+      console.log("Lịch sử đơn thuốc trả về:", res.data);
+      let rawHistory = res.data.$values || [];
+      // Lọc lại chỉ lấy đơn thuốc của các học sinh thuộc parentID này
+      const studentIDs = students.map(s => s.studentID);
+      rawHistory = rawHistory.filter(item => studentIDs.includes(item.studentID));
+      setHistoryData(rawHistory);
+    } catch (e) {
+      setHistoryData([]);
+    }
+    setHistoryLoading(false);
+  };
+
   useEffect(() => {
     if (user?.userID) {
       fetchStudents();
@@ -97,6 +124,12 @@ const MedicationForm = () => {
     setCurrentPage(page);
   };
 
+  const handleOtherMedicineChange = (idx, value) => {
+    setOtherMedicineNames((prev) => ({ ...prev, [idx]: value }));
+    // Gán giá trị vào form để validate
+    form.setFieldsValue({ [`otherMedicineName_${idx}`]: value });
+  };
+
   const handleSubmit = async (values) => {
     console.log("Form values:", values);
     console.log("Medicine list:", medicineList);
@@ -111,32 +144,38 @@ const MedicationForm = () => {
         studentID: values.studentID,
         parentID: parentID,
         note: values.note || "",
+        approvalDate: new Date().toISOString(),
         medicineDetails: medicinePages.map((_, idx) => {
-          const selectedItemID = values.itemName?.[idx]?.medicineName;
-          const selectedItem = medicineList.find(
-            (item) => item.requestItemID === selectedItemID
-          );
-          const result = {
-            requestItemID: selectedItemID,
-            medicineName: selectedItem ? selectedItem.requestItemName : '',
+          const otherName = values[`otherMedicineName_${idx}`];
+          let medicineName = '';
+          let requestItemID = null;
+          if (otherName) {
+            medicineName = otherName;
+            requestItemID = null;
+          } else {
+            const selectedItemID = values.itemName?.[idx]?.medicineName;
+            requestItemID = selectedItemID;
+            const selectedItem = medicineList.find(
+              (item) => item.requestItemID === selectedItemID
+            );
+            medicineName = selectedItem ? selectedItem.requestItemName : '';
+          }
+          return {
+            requestItemID: requestItemID,
+            medicineName: medicineName,
             quantity: values.quantity?.[idx]?.quantity || 1,
             dosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
             time: (values.medicines?.[idx]?.time || []).join(", "),
           };
-          return result;
         }),
       };
 
       console.log("Final payload:", payload);
       await api.post("/MedicineRequest", payload);
       toast.success("Đơn gửi thuốc đã được gửi cho nhân viên y tá.");
-
-      // Reset form sau khi gửi thành công
-      setTimeout(() => {
-        form.resetFields();
-        setMedicinePages(["1"]);
-        setCurrentPage(1);
-      }, 1000);
+      // Sau khi gửi thành công, tự động mở modal lịch sử và reload
+      fetchHistory(parentID);
+      setHistoryVisible(true);
     } catch (error) {
       console.error("Lỗi gửi đơn thuốc:", error);
       message.error(
@@ -150,6 +189,15 @@ const MedicationForm = () => {
 
   const handleGoBack = () => {
     navigate("/home");
+  };
+
+  // Helper chuyển time sang tiếng Việt
+  const timeToVN = (val) => {
+    if (!val) return "";
+    return val
+      .split(",")
+      .map(t => t.trim() === "morning" ? "Sáng" : t.trim() === "noon" ? "Trưa" : t.trim() === "evening" ? "Tối" : t.trim())
+      .join(", ");
   };
 
   return (
@@ -255,7 +303,7 @@ const MedicationForm = () => {
                 <Input disabled />
               </Form.Item>
 
-              <Form.Item name="className" label="Lớp">
+              <Form.Item name="className" label="Lớp ">
                 <Input disabled />
               </Form.Item>
 
@@ -317,151 +365,167 @@ const MedicationForm = () => {
                 </div>
               </div>
 
-              {medicinePages.map((_, idx) => (
-                <div
-                  key={idx}
-                  className="medicine-box"
-                  style={{
-                    display: idx + 1 === currentPage ? "block" : "none",
-                  }}
-                >
+              {medicinePages.map((_, idx) => {
+                // ép sử dụng forceUpdate để tránh linter warning
+                void forceUpdate;
+                return (
                   <div
+                    key={idx}
+                    className="medicine-box"
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "15px",
+                      display: idx + 1 === currentPage ? "block" : "none",
                     }}
                   >
-                    <span>Trang {idx + 1}</span>
-                    <Pagination
-                      simple
-                      current={currentPage}
-                      total={medicinePages.length * 10}
-                      pageSize={10}
-                      onChange={handlePageChange}
-                    />
-                  </div>
-
-                  <Form.Item
-                    name={["itemName", idx, "medicineName"]}
-                    label="Tên thuốc/vật tư"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng chọn hoặc nhập tên thuốc/vật tư",
-                      },
-                    ]}
-                  >
-                    <Select
-                      showSearch
-                      placeholder="Chọn từ danh sách hoặc nhập tên thuốc/vật tư"
-                      filterOption={(input, option) => {
-                        const item = option?.data;
-                        if (!item) return false;
-                        return (
-                          item.requestItemName.toLowerCase().includes(input.toLowerCase()) ||
-                          item.description.toLowerCase().includes(input.toLowerCase())
-                        );
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "15px",
                       }}
-                      allowClear
-                      loading={loading}
-                      optionLabelProp="label"
-                      showArrow={true}
                     >
-                      {medicineList.map((item) => (
-                        <Select.Option
-                          key={item.requestItemID}
-                          value={item.requestItemID}
-                          data={item}
-                          label={item.requestItemName}
+                      <span>Trang {idx + 1}</span>
+                      <Pagination
+                        simple
+                        current={currentPage}
+                        total={medicinePages.length * 10}
+                        pageSize={10}
+                        onChange={handlePageChange}
+                      />
+                    </div>
+
+                    <Form.Item
+                      name={["itemName", idx, "medicineName"]}
+                      label="Tên thuốc/vật tư"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng chọn tên thuốc/vật tư",
+                        },
+                      ]}
+                    >
+                      <Input.Group compact>
+                        <Select
+                          showSearch
+                          placeholder="Chọn từ danh sách thuốc/vật tư"
+                          filterOption={(input, option) => {
+                            const item = option?.data;
+                            if (!item) return false;
+                            return (
+                              item.requestItemName.toLowerCase().includes(input.toLowerCase()) ||
+                              item.description.toLowerCase().includes(input.toLowerCase())
+                            );
+                          }}
+                          allowClear
+                          loading={loading}
+                          optionLabelProp="label"
+                          showArrow={true}
+                          style={{ width: 'calc(100% - 140px)' }}
+                          value={form.getFieldValue(["itemName", idx, "medicineName"])}
+                          onChange={value => {
+                            // Cập nhật giá trị vào form khi chọn thuốc
+                            const itemName = [...(form.getFieldValue("itemName") || [])];
+                            itemName[idx] = { medicineName: value };
+                            form.setFieldsValue({ itemName });
+                          }}
                         >
-                          <div>
-                            <div style={{ fontWeight: "bold" }}>{item.requestItemName}</div>
-                            <div style={{ fontSize: "12px", color: "#666" }}>
-                              {item.description}
-                            </div>
-                          </div>
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
+                          {medicineList.map((item) => (
+                            <Select.Option
+                              key={item.requestItemID}
+                              value={item.requestItemID}
+                              data={item}
+                              label={item.requestItemName}
+                            >
+                              <div>
+                                <div style={{ fontWeight: "bold" }}>{item.requestItemName}</div>
+                                <div style={{ fontSize: "12px", color: "#666" }}>
+                                  {item.description}
+                                </div>
+                              </div>
+                            </Select.Option>
+                          ))}
+                        </Select>
+                        <Button type="dashed" onClick={() => setCreateMedicineModal(true)} style={{ width: 130, marginLeft: 8 }}>
+                          Phụ huynh tạo thuốc
+                        </Button>
+                      </Input.Group>
+                    </Form.Item>
 
-                  <Form.Item
-                    name={["quantity", idx, "quantity"]}
-                    label="Số lượng"
-                    rules={[
-                      { required: true, message: "Vui lòng nhập số lượng" },
-                    ]}
-                  >
-                    <InputNumber
-                      placeholder="Nhập số lượng"
-                      min={1}
-                      max={100}
-                    />
-                  </Form.Item>
-
-                  <Form.Item
-                    name={["dosageIntructions", idx, "dosage"]}
-                    label="Liều lượng/Hướng dẫn sử dụng"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng nhập liều lượng hoặc hướng dẫn",
-                      },
-                    ]}
-                  >
-                    <Input placeholder="VD: 1 viên/1 lần uống hoặc hướng dẫn sử dụng" />
-                  </Form.Item>
-
-                  <Form.Item
-                    name={["medicines", idx, "time"]}
-                    label="Thời điểm sử dụng"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng chọn thời điểm sử dụng",
-                      },
-                    ]}
-                  >
-                    <Select
-                      mode="multiple"
-                      placeholder="Chọn thời điểm sử dụng"
-                      allowClear
-                      value={form.getFieldValue(["medicines", idx, "time"])}
-                      onChange={(value) => {
-                        // Đảm bảo mỗi thời điểm chỉ được chọn 1 lần
-                        form.setFieldsValue({
-                          medicines: {
-                            ...form.getFieldValue("medicines"),
-                            [idx]: {
-                              ...form.getFieldValue(["medicines", idx]),
-                              time: value,
-                            },
-                          },
-                        });
-                      }}
+                    <Form.Item
+                      name={["quantity", idx, "quantity"]}
+                      label="Số lượng"
+                      rules={[
+                        { required: true, message: "Vui lòng nhập số lượng" },
+                      ]}
                     >
-                      <Option
-                        value="morning"
-                        disabled={
-                          (form.getFieldValue(["medicines", idx, "time"]) || []).includes("morning")
-                        }
+                      <InputNumber
+                        placeholder="Nhập số lượng"
+                        min={1}
+                        max={100}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      name={["dosageIntructions", idx, "dosage"]}
+                      label="Liều lượng/Hướng dẫn sử dụng"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập liều lượng hoặc hướng dẫn",
+                        },
+                      ]}
+                    >
+                      <Input placeholder="VD: 1 viên/1 lần uống hoặc hướng dẫn sử dụng" />
+                    </Form.Item>
+
+                    <Form.Item
+                      name={["medicines", idx, "time"]}
+                      label="Thời điểm sử dụng"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng chọn thời điểm sử dụng",
+                        },
+                      ]}
+                    >
+                      <Select
+                        mode="multiple"
+                        placeholder="Chọn thời điểm sử dụng"
+                        allowClear
+                        value={form.getFieldValue(["medicines", idx, "time"])}
+                        onChange={(value) => {
+                          form.setFieldsValue({
+                            medicines: {
+                              ...form.getFieldValue("medicines"),
+                              [idx]: {
+                                ...form.getFieldValue(["medicines", idx]),
+                                time: value,
+                              },
+                            },
+                          });
+                        }}
                       >
-                        Sáng
-                      </Option>
-                      <Option
-                        value="noon"
-                        disabled={
-                          (form.getFieldValue(["medicines", idx, "time"]) || []).includes("noon")
-                        }
-                      >
-                        Trưa
-                      </Option>
-                    </Select>
-                  </Form.Item>
-                </div>
-              ))}
+                        <Option
+                          value="morning"
+                          disabled={
+                            (form.getFieldValue(["medicines", idx, "time"]) || []).includes("morning")
+                          }
+                        >
+                          Sáng
+                        </Option>
+                        <Option
+                          value="noon"
+                          disabled={
+                            (form.getFieldValue(["medicines", idx, "time"]) || []).includes("noon")
+                          }
+                        >
+                          Trưa
+                        </Option>
+                      </Select>
+                    </Form.Item>
+                  </div>
+                );
+              })}
             </div>
           </Col>
         </Row>
@@ -497,6 +561,135 @@ const MedicationForm = () => {
           </Space>
         </div>
       </Form>
+
+      <Button
+        type="default"
+        style={{ marginBottom: 16 }}
+        onClick={async () => {
+          // Lấy parentID trước khi gọi API
+          let parentID = null;
+          try {
+            const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+            parentID = parentResponse.data.parentID;
+          } catch {}
+          if (parentID) fetchHistory(parentID);
+          setHistoryVisible(true);
+        }}
+      >
+        Lịch sử gửi thuốc
+      </Button>
+      <Modal
+        open={historyVisible}
+        onCancel={() => setHistoryVisible(false)}
+        title="Lịch sử gửi thuốc"
+        footer={null}
+        width={1200}
+      >
+        <Table
+          dataSource={historyData}
+          loading={historyLoading}
+          rowKey="requestID"
+          columns={[
+            { 
+              title: "Ngày gửi", 
+              key: "approvalDate",
+              render: (_, record) => {
+                const d = record.approvalDate || record.date;
+                if (!d) return "";
+                const date = new Date(d);
+                const vietnamTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+                return vietnamTime.toLocaleString("vi-VN");
+              }
+            },
+            { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
+            { title: "Ghi chú", dataIndex: "note", key: "note" },
+       
+          ]}
+          expandable={{
+            expandedRowRender: (record) => (
+              <Table
+                dataSource={
+                  Array.isArray(record.medicineDetails)
+                    ? record.medicineDetails
+                    : Array.isArray(record.medicineDetails?.$values)
+                      ? record.medicineDetails.$values
+                      : []
+                }
+                pagination={false}
+                rowKey="requestDetailID"
+                columns={[
+                  { title: "Tên thuốc/Vật tư ", dataIndex: "requestItemName", key: "requestItemName" },
+                  { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
+                  { title: "Liều dùng/Cách sử dụng ", dataIndex: "dosageInstructions", key: "dosageInstructions" },
+                  { title: "Thời điểm", dataIndex: "time", key: "time", render: timeToVN },
+                ]}
+              />
+            ),
+            rowExpandable: () => true,
+          }}
+        />
+      </Modal>
+
+      {/* Modal tạo thuốc mới */}
+      <Modal
+        open={createMedicineModal}
+        onCancel={() => setCreateMedicineModal(false)}
+        title="Tạo thuốc/vật tư mới"
+        onOk={async () => {
+          setCreatingMedicine(true);
+          try {
+            await api.post("/RequestItemList", {
+              requestItemName: newMedicineName,
+              description: newMedicineDesc
+            });
+            toast.success("Tạo thuốc mới thành công!");
+            setCreateMedicineModal(false);
+            setNewMedicineName("");
+            setNewMedicineDesc("");
+            await fetchMedicineList();
+            // Tự động chọn thuốc vừa tạo cho trang hiện tại
+            const updatedList = await api.get("/RequestItemList");
+            const created = (updatedList.data.$values || updatedList.data).find(
+              (item) => item.requestItemName === newMedicineName
+            );
+            if (created) {
+              // Tạo mảng mới để trigger re-render
+              const itemName = [...(form.getFieldValue("itemName") || [])];
+              itemName[currentPage - 1] = { medicineName: created.requestItemID };
+              form.setFieldsValue({ itemName });
+              console.log("itemName sau khi set:", form.getFieldValue("itemName"));
+              // Trigger validate lại trường này sau khi setFieldsValue
+              setTimeout(async () => {
+                try {
+                  await form.validateFields([["itemName", currentPage - 1, "medicineName"]]);
+                  console.log("Validate OK");
+                } catch (err) {
+                  console.log("Validate lỗi:", err);
+                }
+              }, 0);
+            }
+          } catch (e) {
+            toast.error("Tạo thuốc thất bại!");
+          }
+          setCreatingMedicine(false);
+        }}
+        confirmLoading={creatingMedicine}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tên thuốc/vật tư" required>
+            <Input
+              value={newMedicineName}
+              onChange={e => setNewMedicineName(e.target.value)}
+            />
+          </Form.Item>
+          <Form.Item label="Mô tả">
+            <Input
+              value={newMedicineDesc}
+              onChange={e => setNewMedicineDesc(e.target.value)}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
