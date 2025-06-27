@@ -1,59 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   DesktopOutlined,
   FileOutlined,
   PieChartOutlined,
-  TeamOutlined,
   UserOutlined,
   SettingOutlined,
   LogoutOutlined,
   PropertySafetyOutlined,
+  TeamOutlined,
+  MedicineBoxOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Layout, Menu, theme, Avatar, Dropdown } from "antd";
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import { FiMenu, FiSearch, FiUser } from "react-icons/fi";
-import { HiOutlineLogout } from "react-icons/hi";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  Breadcrumb,
+  Layout,
+  Menu,
+  theme,
+  Avatar,
+  Dropdown,
+  Space,
+  Typography,
+} from "antd";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../redux/features/userSlice";
 import NotificationDropdown from "./NotificationDropdown";
 
 const { Header, Content, Footer, Sider } = Layout;
+const { Title } = Typography;
+
+// Helper function to create menu items
 function getItem(label, key, icon, children) {
   return {
     key,
     icon,
     children,
-    label: <Link to={key}>{label}</Link>,
+    label: children ? label : <Link to={key}>{label}</Link>,
   };
 }
+
 const items = [
-  getItem("Báo cáo sự kiện y tế", "medical-event", <PieChartOutlined />),
-  getItem("Danh sách học sinh", "student-profile-list", <DesktopOutlined />),
-  getItem("Duyệt thuốc", "approve-medicine", <PropertySafetyOutlined />),
-  getItem("User", "sub1", <UserOutlined />),
+  getItem("Quản lý sự cố", "/nurse/medical-event", <PieChartOutlined />),
+  getItem("Hồ sơ học sinh", "/nurse/student-profile-list", <TeamOutlined />),
+  getItem(
+    "Duyệt đơn thuốc",
+    "/nurse/approve-medicine",
+    <PropertySafetyOutlined />
+  ),
+  getItem(
+    "Quản lí kho thuốc",
+    "/nurse/medical-inventory",
+    <MedicineBoxOutlined />
+  ),
 ];
+
+// Mapping path to breadcrumb name
+const breadcrumbNameMap = {
+  "/nurse": "Trang chủ",
+  "/nurse/medical-event": "Báo cáo sự cố y tế",
+  "/nurse/student-profile-list": "Danh sách hồ sơ học sinh",
+  "/nurse/approve-medicine": "Duyệt đơn thuốc",
+  "/nurse/profile": "Thông tin cá nhân",
+  "/nurse/medical-inventory": "Quản lí kho thuốc",
+};
 
 const Nurse = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const user = useSelector((state) => state.user);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
+  // Dynamic Breadcrumb
+  const pathSnippets = location.pathname.split("/").filter((i) => i);
+  const breadcrumbItems = useMemo(() => {
+    const extraBreadcrumbItems = pathSnippets.map((_, index) => {
+      const url = `/${pathSnippets.slice(0, index + 1).join("/")}`;
+      const name =
+        breadcrumbNameMap[url] ||
+        url.substring(url.lastIndexOf("/") + 1).replace(/-/g, " ");
+      return {
+        key: url,
+        title: <Link to={url}>{name}</Link>,
+      };
+    });
+    // We only want the last part for the nurse dashboard
+    return [extraBreadcrumbItems[1]].filter(Boolean);
+  }, [location.pathname]);
+
   const handleMenuClick = (e) => {
-    if (e.key == "1") {
-      navigate("profile");
+    if (e.key === "profile") {
+      navigate("/nurse/profile");
     }
-    if (e.key == "3") {
-      // key '3' là đăng xuất
-      console.log("Đăng xuất", e.key);
+    if (e.key === "logout") {
       dispatch(logout());
       localStorage.removeItem("token");
       navigate("/login");
     }
   };
+
+  const userMenuItems = [
+    {
+      key: "profile",
+      label: "Thông tin cá nhân",
+      icon: <UserOutlined />,
+    },
+    {
+      key: "settings",
+      label: "Cài đặt",
+      icon: <SettingOutlined />,
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "logout",
+      label: "Đăng xuất",
+      icon: <LogoutOutlined />,
+    },
+  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -61,11 +128,27 @@ const Nurse = () => {
         collapsible
         collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
+        theme="dark"
       >
-        <div className="demo-logo-vertical" />
+        <div
+          style={{
+            height: 32,
+            margin: 16,
+            background: "rgba(255, 255, 255, 0.2)",
+            borderRadius: 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Title level={4} style={{ color: "white", margin: 0 }}>
+            {collapsed ? "Y Tế" : "Y Tế Học Đường"}
+          </Title>
+        </div>
         <Menu
           theme="dark"
-          defaultSelectedKeys={["1"]}
+          defaultSelectedKeys={["/nurse/medical-event"]}
+          selectedKeys={[location.pathname]}
           mode="inline"
           items={items}
         />
@@ -74,15 +157,20 @@ const Nurse = () => {
         <Header
           style={{
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             alignItems: "center",
             padding: "0 24px",
             background: colorBgContainer,
+            borderBottom: "1px solid #f0f0f0",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <Breadcrumb
+            items={breadcrumbItems}
+            style={{ textTransform: "capitalize" }}
+          />
+          <Space align="center" size="middle">
             <span style={{ color: "#666" }}>
-              Xin chào{" "}
+              Xin chào y tá{" "}
               <span style={{ color: "#1677ff", fontWeight: 600 }}>
                 {user?.fullName || "Y tá"}
               </span>
@@ -90,44 +178,25 @@ const Nurse = () => {
             <NotificationDropdown />
             <Dropdown
               menu={{
-                items: [
-                  {
-                    key: "1",
-                    label: "Thông tin",
-                    icon: <UserOutlined />,
-                  },
-                  {
-                    key: "2",
-                    label: "Cài đặt",
-                    icon: <SettingOutlined />,
-                  },
-                  {
-                    key: "3",
-                    label: "Đăng xuất",
-                    icon: <LogoutOutlined />,
-                  },
-                ],
+                items: userMenuItems,
                 onClick: handleMenuClick,
               }}
               placement="bottomRight"
+              trigger={["click"]}
             >
               <Avatar
                 size={40}
                 icon={<UserOutlined />}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", backgroundColor: "#1677ff" }}
               />
             </Dropdown>
-          </div>
+          </Space>
         </Header>
-        <Content style={{ margin: "0 16px" }}>
-          <Breadcrumb
-            style={{ margin: "16px 0" }}
-            items={[{ title: "User" }, { title: "Bill" }]}
-          />
+        <Content style={{ margin: "16px" }}>
           <div
             style={{
               padding: 24,
-              height: "100%",
+              minHeight: "100%",
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
             }}
@@ -135,8 +204,8 @@ const Nurse = () => {
             <Outlet />
           </div>
         </Content>
-        <Footer style={{ textAlign: "center" }}>
-          ©{new Date().getFullYear()} Được tạo ra bởi team 432
+        <Footer style={{ textAlign: "center", background: "transparent" }}>
+          Hệ thống Y Tế Học Đường ©{new Date().getFullYear()} - Tạo bởi Team 432
         </Footer>
       </Layout>
     </Layout>
