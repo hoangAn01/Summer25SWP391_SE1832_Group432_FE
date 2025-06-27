@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Container, Typography, Box, Paper, Divider } from "@mui/material";
 import Header from "../../../components/Header/Header";
+import { Footer } from "../../../components/Footer/Footer";
 
 const Blog3Detail = () => {
   const { pathname } = useLocation();

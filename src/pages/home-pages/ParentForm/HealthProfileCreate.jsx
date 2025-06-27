@@ -228,64 +228,6 @@ function HealthProfileCreatePage() {
             </div>
 
             <div style={{ flex: 1, minWidth: 320 }}>
-              <Form.List name="treatmentHistory">
-                {(fields, { add, remove }) => (
-                  <div>
-                    <label>Tiền sử điều trị</label>
-                    {fields.map((field, idx) => (
-                      <Space
-                        key={field.key}
-                        align="baseline"
-                        style={{ display: "flex", marginBottom: 8 }}
-                      >
-                        <Form.Item
-                          name={[field.name, "date"]}
-                          fieldKey={[field.fieldKey, "date"]}
-                          rules={[{ required: true, message: "Chọn ngày" }]}
-                          style={{ marginBottom: 0 }}
-                        >
-                          <DatePicker
-                            format="DD/MM/YYYY"
-                            placeholder="Ngày"
-                            style={{ width: 120 }}
-                          />
-                        </Form.Item>
-                        <Form.Item
-                          name={[field.name, "desc"]}
-                          fieldKey={[field.fieldKey, "desc"]}
-                          rules={[
-                            {
-                              required: true,
-                              message: "Nhập nội dung điều trị",
-                            },
-                          ]}
-                          style={{ marginBottom: 0 }}
-                        >
-                          <Input
-                            placeholder={`Tiền sử điều trị ${idx + 1}`}
-                            style={{ width: 220 }}
-                          />
-                        </Form.Item>
-                        {fields.length > 1 && (
-                          <MinusCircleOutlined
-                            onClick={() => remove(field.name)}
-                            style={{ color: "#ff4d4f", cursor: "pointer" }}
-                          />
-                        )}
-                      </Space>
-                    ))}
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      icon={<PlusOutlined />}
-                      style={{ width: "100%" }}
-                    >
-                      Thêm tiền sử điều trị
-                    </Button>
-                  </div>
-                )}
-              </Form.List>
-
               <Form.Item
                 label="Thị lực"
                 name="visionTest"

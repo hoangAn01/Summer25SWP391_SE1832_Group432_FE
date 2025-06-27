@@ -32,7 +32,6 @@ function Event() {
     const saved = localStorage.getItem("readNotificationIds");
     return saved ? JSON.parse(saved) : [];
   });
-  const [readFilter, setReadFilter] = useState("ALL"); // ALL | READ | UNREAD
 
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
@@ -70,39 +69,7 @@ function Event() {
         )
       : data.filter((item) => item.notificationType === typeFilter)
   )
-  .filter(item => {
-    if (readFilter === "ALL") return true;
-    if (readFilter === "UNREAD") return !readIds.includes(item.notificationID);
-    if (readFilter === "READ") return readIds.includes(item.notificationID);
-    return true;
-  })
   .sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
-
-  const handleJoin = async (notificationId) => {
-    try {
-      // TODO: Uncomment when API is ready
-      // await api.put(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
-      console.log("Joining notification:", notificationId); // eslint-disable-line no-unused-vars
-      message.success("Bạn đã xác nhận tham gia sự kiện!");
-      fetchDataNotificationOfParent(parent.parent.parentID);
-    } catch (error) {
-      console.error("Lỗi khi xác nhận tham gia:", error);
-      message.error("Không thể xác nhận tham gia!");
-    }
-  };
-
-  const handleDecline = async (notificationId) => {
-    try {
-      // TODO: Uncomment when API is ready
-      // await api.delete(`/ParentNotifications/notification/${notificationId}/parent/${parent.parent.parentID}`);
-      console.log("Declining notification:", notificationId); // eslint-disable-line no-unused-vars
-      message.success("Bạn đã từ chối tham gia sự kiện!");
-      fetchDataNotificationOfParent(parent.parent.parentID);
-    } catch (error) {
-      console.error("Lỗi khi từ chối sự kiện:", error);
-      message.error("Không thể từ chối sự kiện!");
-    }
-  };
 
   const handleOpen = (item) => {
     setOpenedId(item.notificationID);
@@ -129,7 +96,7 @@ function Event() {
 
       // Việt hóa thời gian uống thuốc
       const viLines = filteredLines.map(line => {
-        if (line.toLowerCase().startsWith('thời gian uống thuốc:')) {
+        if (line.toLowerCase().includes('thời gian uống thuốc')) {
           return line.replace(/morning/gi, 'Sáng')
                      .replace(/noon/gi, 'Trưa')
                      .replace(/evening/gi, 'Tối');
@@ -180,19 +147,6 @@ function Event() {
             <Select.Option value="OTHER">Khác</Select.Option>
           </Select>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontWeight: 500, marginBottom: 4 }}>Trạng thái đọc</span>
-          <Select
-            value={readFilter}
-            onChange={setReadFilter}
-            style={{ width: 160 }}
-            placeholder="Lọc trạng thái đọc"
-          >
-            <Select.Option value="ALL">Tất cả</Select.Option>
-            <Select.Option value="UNREAD">Chưa đọc</Select.Option>
-            <Select.Option value="READ">Đã đọc</Select.Option>
-          </Select>
-        </div>
       </div>
 
       {/* Loading state */}
@@ -218,7 +172,14 @@ function Event() {
             onClick={() => handleOpen(item)}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <b style={{ flex: 1 }}>{item.title}</b>
+              <b style={{ flex: 1 }}>
+                {(item.notificationType === "MEDICAL_REQUEST" || item.title?.toLowerCase().includes("yêu cầu thuốc"))
+                  ? `Học sinh ${
+                      item.studentName ||
+                      (item.title?.match(/học sinh (.+?) đã/i)?.[1] || "")
+                    } đã được nhân viên y tế của trường cho sử dụng thuốc/vật tư y tế.`
+                  : item.title}
+              </b>
               <Tag color={readIds.includes(item.notificationID) ? "default" : "blue"}>
                 {readIds.includes(item.notificationID) ? "Đã đọc" : "Chưa đọc"}
               </Tag>

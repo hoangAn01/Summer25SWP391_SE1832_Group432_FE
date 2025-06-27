@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Container, Typography, Box, Paper } from "@mui/material";
 import Header from "../../../components/Header/Header";
+import { Footer } from "../../../components/Footer/Footer";
 
 const Blog2Detail = () => {
   useEffect(() => {

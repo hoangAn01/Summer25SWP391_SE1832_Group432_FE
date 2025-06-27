@@ -299,21 +299,7 @@ const HealthProfileEdit = () => {
                     />
                   </Form.Item>
 
-                  <Form.Item
-                    label="Dị ứng"
-                    name="allergy"
-                    rules={[
-                      {
-                        required: true,
-                        message: "Vui lòng nhập dị ứng (nếu có)",
-                      },
-                    ]}
-                  >
-                    <Input
-                      disabled={!isEdit}
-                      placeholder="Nhập dị ứng (nếu có)"
-                    />
-                  </Form.Item>
+                 
                 </Card>
               </div>
               <div style={{ flex: 1, minWidth: 340 }}>
@@ -395,6 +381,21 @@ const HealthProfileEdit = () => {
                       rows={3}
                       placeholder="Nhập thông tin bệnh mãn tính (nếu không có, để trống)"
                       style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label="Dị ứng"
+                    name="allergy"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Vui lòng nhập dị ứng (nếu có)",
+                      },
+                    ]}
+                  >
+                    <Input
+                      disabled={!isEdit}
+                      placeholder="Nhập dị ứng (nếu có)"
                     />
                   </Form.Item>
                 </Card>
