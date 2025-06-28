@@ -16,6 +16,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 
 function RegisterForm() {
@@ -23,14 +25,52 @@ function RegisterForm() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // State cho địa chỉ động
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
+  const [street, setStreet] = useState("");
+
+  useEffect(() => {
+    axios.get("https://provinces.open-api.vn/api/?depth=1").then(res => setProvinces(res.data));
+  }, []);
+
+  const handleProvinceChange = (value) => {
+    setSelectedProvince(value);
+    setSelectedDistrict("");
+    setSelectedWard("");
+    setDistricts([]);
+    setWards([]);
+    axios.get(`https://provinces.open-api.vn/api/p/${value}?depth=2`).then(res => setDistricts(res.data.districts));
+  };
+
+  const handleDistrictChange = (value) => {
+    setSelectedDistrict(value);
+    setSelectedWard("");
+    setWards([]);
+    axios.get(`https://provinces.open-api.vn/api/d/${value}?depth=2`).then(res => setWards(res.data.wards));
+  };
+
+  const handleWardChange = (value) => {
+    setSelectedWard(value);
+  };
+
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const { dateOfBirth, address, ...rest } = values;
+      const { dateOfBirth, ...rest } = values;
+      // Ghép địa chỉ đầy đủ
+      const provinceName = provinces.find(p => p.code === selectedProvince)?.name || "";
+      const districtName = districts.find(d => d.code === selectedDistrict)?.name || "";
+      const wardName = wards.find(w => w.code === selectedWard)?.name || "";
+      const address = `${street}, ${wardName}, ${districtName}, ${provinceName}`;
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
-        address: address
+        address
       };
       console.log("Payload địa chỉ:", payload.address);
       const response = await api.post("Auth/register", payload);
@@ -175,15 +215,68 @@ function RegisterForm() {
             </Form.Item>
 
             <Form.Item
-              name="address"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
+              label="Địa chỉ"
+              required
+              style={{ marginBottom: 0 }}
             >
-              <Input placeholder="Địa chỉ" />
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Select
+                  placeholder="Chọn tỉnh/thành phố"
+                  value={selectedProvince || undefined}
+                  onChange={handleProvinceChange}
+                  style={{ width: '100%' }}
+                  showSearch
+                  optionFilterProp="children"
+                  filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                >
+                  {provinces.map(p => (
+                    <Select.Option key={p.code} value={p.code}>{p.name}</Select.Option>
+                  ))}
+                </Select>
+                {selectedProvince && (
+                  <Select
+                    placeholder="Chọn quận/huyện"
+                    value={selectedDistrict || undefined}
+                    onChange={handleDistrictChange}
+                    style={{ width: '100%' }}
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                  >
+                    {districts.map(d => (
+                      <Select.Option key={d.code} value={d.code}>{d.name}</Select.Option>
+                    ))}
+                  </Select>
+                )}
+                {selectedDistrict && (
+                  <Select
+                    placeholder="Chọn phường/xã"
+                    value={selectedWard || undefined}
+                    onChange={handleWardChange}
+                    style={{ width: '100%' }}
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                  >
+                    {wards.map(w => (
+                      <Select.Option key={w.code} value={w.code}>{w.name}</Select.Option>
+                    ))}
+                  </Select>
+                )}
+                {selectedWard && (
+                  <Input
+                    placeholder="Nhập tên đường/số nhà"
+                    value={street}
+                    onChange={e => setStreet(e.target.value)}
+                  />
+                )}
+              </Space>
             </Form.Item>
 
             <Form.Item
               name="gender"
               rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
+              style={{ marginTop: 24 }}
             >
               <Select placeholder="Chọn giới tính">
                 <Select.Option value="M">Nam</Select.Option>
