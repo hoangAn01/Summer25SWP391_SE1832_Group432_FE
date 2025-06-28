@@ -89,18 +89,39 @@ function Event() {
         ? item.content.split('\n')
         : item.content.split('-').map(line => line.trim()).filter(Boolean);
 
-      // Lọc bỏ dòng chứa 'Nurse note:'
+      // Lọc bỏ dòng chứa 'Nurse note:', 'Trạng thái', 'Ngày phê duyệt' (không phân biệt vị trí, hoa thường)
       const filteredLines = lines.filter(
-        (line) => !line.trim().toLowerCase().startsWith("nurse note")
+        (line) => {
+          const l = line.trim().toLowerCase();
+          return (
+            !l.startsWith("nurse note") &&
+            !l.includes("trạng thái") &&
+            !l.includes("ngày phê duyệt")
+          );
+        }
       );
 
-      // Việt hóa thời gian uống thuốc
+      // Việt hóa thời gian uống thuốc và hiển thị giờ phút cho ngày
       const viLines = filteredLines.map(line => {
         if (line.toLowerCase().includes('thời gian uống thuốc')) {
           return line.replace(/morning/gi, 'Sáng')
                      .replace(/noon/gi, 'Trưa')
                      .replace(/evening/gi, 'Tối');
         }
+        // Nếu là dòng ngày yêu cầu, thay bằng thời gian nhận đơn (sentDate)
+        if (line.toLowerCase().includes('ngày yêu cầu') && item.sentDate) {
+          const sent = new Date(item.sentDate);
+          const vietnamTime = new Date(sent.getTime() + 7 * 60 * 60 * 1000);
+          return `Ngày yêu cầu: ${vietnamTime.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          })}`;
+        }
+
         return line;
       });
 
@@ -172,17 +193,32 @@ function Event() {
             onClick={() => handleOpen(item)}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <b style={{ flex: 1 }}>
-                {(item.notificationType === "MEDICAL_REQUEST" || item.title?.toLowerCase().includes("yêu cầu thuốc"))
-                  ? `Học sinh ${
-                      item.studentName ||
-                      (item.title?.match(/học sinh (.+?) đã/i)?.[1] || "")
-                    } đã được nhân viên y tế của trường cho sử dụng thuốc/vật tư y tế.`
-                  : item.title}
-              </b>
-              <Tag color={readIds.includes(item.notificationID) ? "default" : "blue"}>
-                {readIds.includes(item.notificationID) ? "Đã đọc" : "Chưa đọc"}
-              </Tag>
+              <div style={{ flex: 1 }}>
+                <b>
+                  {(item.notificationType === "MEDICAL_REQUEST" || item.title?.toLowerCase().includes("yêu cầu thuốc"))
+                    ? `Học sinh ${
+                        item.studentName || 
+                        (item.title?.match(/học sinh (.+?) đã/i)?.[1] || "")
+                      } đã được nhân viên y tế của trường cho sử dụng thuốc/vật tư y tế.`
+                    : item.title}
+                </b>
+                {item.sentDate && (
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>
+                    {(() => {
+                      const sent = new Date(item.sentDate);
+                      const vietnamTime = new Date(sent.getTime() + 7 * 60 * 60 * 1000);
+                      return vietnamTime.toLocaleString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false
+                      });
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
             {openedId === item.notificationID && (
               <div style={{ marginTop: 12 }}>
