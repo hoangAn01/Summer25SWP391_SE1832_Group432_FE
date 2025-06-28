@@ -193,6 +193,10 @@ function App() {
             />
           ),
         },
+        {
+          path: "/nurse/blog",
+          element: <BlogCreateForm />,
+        },
       ],
     },
     {

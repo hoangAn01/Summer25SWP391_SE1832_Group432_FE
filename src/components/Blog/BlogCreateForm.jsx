@@ -1,18 +1,21 @@
 import React, { useState } from "react";
 import { Form, Input, Button, message, Typography, Card } from "antd";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../config/axios";
 
 const { Title } = Typography;
 
 const BlogCreateForm = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
       await api.post("/Blog", values);
       message.success("Tạo blog thành công!");
-    } catch (error) {
+    } catch {
       message.error("Tạo blog thất bại!");
     } finally {
       setLoading(false);
@@ -21,6 +24,17 @@ const BlogCreateForm = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f8fb', paddingTop: 60 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', maxWidth: 600, margin: '0 auto' }}>
+        { !location.pathname.startsWith('/nurse') && (
+          <Button
+            type="default"
+            onClick={() => navigate("/")}
+            style={{ marginBottom: 24, fontWeight: 500 }}
+          >
+            Quay lại trang chủ
+          </Button>
+        )}
+      </div>
       <Card
         style={{
           maxWidth: 600,
@@ -62,7 +76,7 @@ const BlogCreateForm = () => {
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} block size="large" style={{ fontWeight: 600 }}>
-              Đăng bài
+              Hoàn tất
             </Button>
           </Form.Item>
         </Form>

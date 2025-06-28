@@ -51,6 +51,11 @@ const items = [
     "/nurse/medical-inventory",
     <MedicineBoxOutlined />
   ),
+  getItem(
+    "Đăng blog học đường",
+    "/nurse/blog",
+    <FileOutlined />
+  ),
 ];
 
 // Mapping path to breadcrumb name
