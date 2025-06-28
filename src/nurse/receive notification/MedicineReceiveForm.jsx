@@ -8,24 +8,44 @@ import {
   Modal,
   Input,
   Space,
+  Typography,
+  Alert,
+  Divider,
 } from "antd";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  UserOutlined,
+  MedicineBoxOutlined,
+} from "@ant-design/icons";
 
-// Component xác nhận đã nhận thuốc
+const { Title, Text, Paragraph } = Typography;
+
 const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
 
-  // medicineRequest: object chứa thông tin đơn thuốc
-  // onConfirm: callback khi xác nhận đã nhận thuốc
-  // onReject: callback khi từ chối nhận thuốc
+  if (!medicineRequest) {
+    return (
+      <Card>
+        <Alert
+          message="Không có dữ liệu"
+          description="Không tìm thấy thông tin đơn thuốc để xác nhận."
+          type="warning"
+          showIcon
+        />
+      </Card>
+    );
+  }
 
   const handleConfirm = () => {
-    message.success("Đã xác nhận đã nhận thuốc!");
-    if (onConfirm) onConfirm();
+    // In a real app, you would call an API here.
+    message.success("Đã xác nhận nhận thuốc từ phụ huynh!");
+    if (onConfirm) onConfirm(medicineRequest.requestID);
   };
 
-  const handleReject = () => {
+  const handleShowRejectModal = () => {
     setRejectModalVisible(true);
   };
 
@@ -35,12 +55,17 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
       return;
     }
     setRejectLoading(true);
-    // Gọi API gửi lý do từ chối cho phụ huynh ở đây nếu cần
-    if (onReject) await onReject(rejectReason);
-    setRejectLoading(false);
-    setRejectModalVisible(false);
-    setRejectReason("");
-    message.info("Đã gửi lý do từ chối cho phụ huynh.");
+    // In a real app, you would call an API here.
+    try {
+      if (onReject) await onReject(medicineRequest.requestID, rejectReason);
+      message.info("Đã gửi lý do từ chối cho phụ huynh.");
+      setRejectModalVisible(false);
+      setRejectReason("");
+    } catch (error) {
+      message.error("Gửi lý do thất bại!");
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   const handleRejectCancel = () => {
@@ -48,28 +73,31 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
     setRejectReason("");
   };
 
-  if (!medicineRequest) return <div>Không có dữ liệu đơn thuốc.</div>;
-
   return (
-    <Card style={{ maxWidth: 700, margin: "0 auto", marginTop: 32 }}>
-      {/* PHẦN TRÊN: THÔNG BÁO */}
-      <div
-        style={{
-          marginBottom: 24,
-          fontWeight: 600,
-          color: "#1677ff",
-          fontSize: 18,
-        }}
-      >
-        Xác nhận đã nhận thuốc từ phụ huynh
-      </div>
+    <Card
+      bordered={false}
+      style={{
+        maxWidth: 700,
+        margin: "24px auto",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}
+    >
+      <Alert
+        message="Yêu cầu xác nhận"
+        description="Vui lòng kiểm tra và xác nhận đã nhận đủ thuốc từ phụ huynh."
+        type="info"
+        showIcon
+        style={{ marginBottom: 24 }}
+      />
 
-      {/* PHẦN DƯỚI: NỘI DUNG ĐƠN THUỐC */}
       <Descriptions
-        title="Thông tin học sinh"
+        title={
+          <>
+            <UserOutlined /> Thông tin học sinh
+          </>
+        }
         bordered
         column={1}
-        style={{ marginBottom: 24 }}
       >
         <Descriptions.Item label="Họ tên">
           {medicineRequest.studentName}
@@ -85,33 +113,61 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
         </Descriptions.Item>
       </Descriptions>
 
+      <Divider />
+
       <List
-        header={<b>Danh sách thuốc</b>}
-        bordered
+        header={
+          <Title level={5}>
+            <MedicineBoxOutlined /> Danh sách thuốc
+          </Title>
+        }
         dataSource={medicineRequest.medicineDetails}
-        renderItem={(item, idx) => (
+        renderItem={(item, index) => (
           <List.Item>
-            <div>
-              <b>Thuốc {idx + 1}:</b> {item.medicineName || "Không rõ"}
-              <br />
-              <span>Liều lượng: {item.dosage}</span>
-              <br />
-              <span>Thời điểm uống: {item.time}</span>
-              <br />
-              <span>Ghi chú: {item.note}</span>
-            </div>
+            <List.Item.Meta
+              avatar={<Avatar>{index + 1}</Avatar>}
+              title={<Text strong>{item.medicineName || "Không rõ tên"}</Text>}
+              description={
+                <>
+                  <Paragraph style={{ margin: 0 }}>
+                    Liều lượng: <Text type="secondary">{item.dosage}</Text>
+                  </Paragraph>
+                  <Paragraph style={{ margin: 0 }}>
+                    Thời điểm: <Text type="secondary">{item.time}</Text>
+                  </Paragraph>
+                  <Paragraph style={{ margin: 0 }}>
+                    Ghi chú:{" "}
+                    <Text type="secondary">{item.note || "Không có"}</Text>
+                  </Paragraph>
+                </>
+              }
+            />
           </List.Item>
         )}
-        style={{ marginBottom: 24 }}
+        style={{
+          marginTop: 24,
+          background: "#fafafa",
+          padding: "8px 16px",
+          borderRadius: 8,
+        }}
       />
 
-      <div style={{ textAlign: "center" }}>
-        <Space>
-          <Button type="primary" size="large" onClick={handleConfirm}>
-            Xác nhận đã nhận thuốc
-          </Button>
-          <Button danger size="large" onClick={handleReject}>
+      <div style={{ textAlign: "right", marginTop: 32 }}>
+        <Space size="large">
+          <Button
+            danger
+            icon={<CloseCircleOutlined />}
+            onClick={handleShowRejectModal}
+          >
             Từ chối
+          </Button>
+          <Button
+            type="primary"
+            size="large"
+            icon={<CheckCircleOutlined />}
+            onClick={handleConfirm}
+          >
+            Xác nhận đã nhận
           </Button>
         </Space>
       </div>
@@ -122,14 +178,14 @@ const MedicineReceiveForm = ({ medicineRequest, onConfirm, onReject }) => {
         onOk={handleRejectOk}
         onCancel={handleRejectCancel}
         confirmLoading={rejectLoading}
-        okText="Gửi lý do từ chối"
+        okText="Gửi lý do"
         cancelText="Hủy"
       >
         <Input.TextArea
           rows={4}
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
-          placeholder="Nhập lý do từ chối để gửi cho phụ huynh"
+          placeholder="Nhập lý do từ chối để hệ thống gửi thông báo cho phụ huynh."
         />
       </Modal>
     </Card>
