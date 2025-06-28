@@ -21,9 +21,12 @@ const LoginForm = () => {
     try {
       const response = await api.post("Auth/login", values);
       // Lưu toàn bộ thông tin user vào Redux
-        
+      if (response.data.user && response.data.user.active === false) {
+        toast.error("Tài khoản đã bị ngưng hoạt động!");
+        return;
+      }
       dispatch(login(response.data.user));
-      localStorage.setItem("token", response.data.token); //lấy cái token
+      localStorage.setItem("token", response.data.token);
       if (response.data.user.role === "Admin") {
         navigate("/dashboard");
         toast.success("Đăng nhập thành công!");
@@ -34,7 +37,6 @@ const LoginForm = () => {
         toast.success("Đăng nhập thành công!");
         return;
       }
-
       navigate("/home");
       toast.success("Đăng nhập thành công!");
     } catch (error) {

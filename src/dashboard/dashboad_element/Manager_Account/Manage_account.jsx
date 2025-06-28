@@ -163,6 +163,21 @@ function Manage_account() {
     // TODO: Implement edit functionality
   };
 
+  // Xử lý chuyển trạng thái hoạt động/ngưng hoạt động
+  const handleToggleActive = async (record) => {
+    try {
+      await api.put(`/admin/accounts/${record.userID}`, {
+        password: record.password || '',
+        role: record.role,
+        active: !record.active
+      });
+      message.success(record.active ? 'Đã ngưng hoạt động tài khoản!' : 'Tài khoản đã được kích hoạt!');
+      fetchAccounts();
+    } catch (error) {
+      message.error('Không thể cập nhật trạng thái tài khoản!');
+    }
+  };
+
   const columns = [
     {
       title: "ID",
@@ -214,26 +229,21 @@ function Manage_account() {
       title: "Trạng thái",
       dataIndex: "active",
       key: "active",
-      render: (active) => (active ? "Hoạt động" : "Ngừng hoạt động"),
+      render: (active) => active ? "Hoạt động" : "Ngưng hoạt động",
     },
     {
       title: "Hành động",
-      key: "actions",
-      render: (text, record) => (
-        <Space size="middle">
-          <Button type="primary" onClick={() => handleEdit(record)}>
-            Chỉnh sửa
-          </Button>
-          <Popconfirm
-            title="Xác nhận xóa tài khoản"
-            description={`Bạn có chắc muốn xóa tài khoản của ${record.fullName}?`}
-            onConfirm={() => handleDelete(record)}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
+      key: "action",
+      render: (_, record) => (
+        <Space>
+          {/* Nút chuyển trạng thái hoạt động/ngưng hoạt động */}
+          <Button
+            type={record.active ? "default" : "primary"}
+            danger={record.active}
+            onClick={() => handleToggleActive(record)}
           >
-            <Button danger>Xóa</Button>
-          </Popconfirm>
+            {record.active ? "Ngưng hoạt động tài khoản" : "Hoạt động"}
+          </Button>
         </Space>
       ),
     },

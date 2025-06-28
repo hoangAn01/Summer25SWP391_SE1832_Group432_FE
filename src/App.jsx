@@ -41,6 +41,7 @@ import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
+import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
 
 
@@ -72,6 +73,14 @@ function App() {
     {
       path: "/register",
       element: <RegisterForm />,
+    },
+    {
+      path: "/dang-blog",
+      element: <>
+   
+          <BlogCreateForm />,
+      </>
+  
     },
     {
       path: "/blog/hoat-dong-ngoai-khoa",

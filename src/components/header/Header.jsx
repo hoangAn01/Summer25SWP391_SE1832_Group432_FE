@@ -272,6 +272,14 @@ const Header = () => {
                     <MenuItem
                       onClick={() => {
                         handleUserClose();
+                        navigate("/dang-blog");
+                      }}
+                    >
+                     Đăng blog học đường 
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
                         setShowLogoutModal(true);
                       }}
                     >
