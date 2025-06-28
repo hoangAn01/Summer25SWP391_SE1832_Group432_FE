@@ -35,6 +35,7 @@ import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
 import Created_event from "./dashboard/dashboad_element/Created_event";
 import StudentProfileList from "./nurse/StudentProfileList";
+import StudentSearch from "./dashboard/dashboad_element/StudentSearch";
 import NurseProfile from "./nurse/NurseProfile";
 import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
 import ApproveMedicine from "./nurse/approveMedicine";
@@ -217,7 +218,11 @@ function App() {
         {
           path: "event_now",
           element: <EventNow />,
-        }
+        },
+        {
+          path: "student_profile",
+          element: <StudentSearch />,
+        },
       ],
     },
     {

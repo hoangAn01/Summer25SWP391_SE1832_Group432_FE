@@ -1,41 +1,105 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, List, Typography, Form, Input, Button, DatePicker, Row, Col, message, Select, Checkbox } from "antd";
-
-const mockEvents = [
-  {
-    id: 1,
-    content: "Khám sức khỏe định kỳ cho học sinh khối 1",
-    date: "2024-06-20 08:00",
-    grade: "1",
-    type: "Khám sức khỏe",
-    healthChecks: ["Chiều cao", "Cân nặng", "Thị lực"]
-  },
-  {
-    id: 2,
-    content: "Kiểm tra răng miệng toàn trường",
-    date: "2024-05-15 09:00",
-    grade: "all",
-    type: "Khám răng",
-    healthChecks: ["Vệ sinh răng miệng"]
-  },
-];
+import api from "../../../config/axios";
+import dayjs from "dayjs";
 
 function Health_check() {
-  const [events, setEvents] = useState(mockEvents);
+  const [events, setEvents] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
 
-  const onFinish = (values) => {
-    const newEvent = {
-      id: events.length + 1,
-      content: values.content,
-      date: values.date.format("YYYY-MM-DD HH:mm"),
-      grade: values.grade,
-      type: values.type,
-      healthChecks: values.healthChecks || []
-    };
-    setEvents([newEvent, ...events]);
-    form.resetFields();
-    message.success("Tạo sự kiện y tế thành công!");
+  // Lấy danh sách thông báo đã tạo và học sinh
+  useEffect(() => {
+    fetchEvents();
+    fetchStudents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/Notifications");
+      const notis = res.data.$values || res.data;
+
+      const checkupEvents = (notis || [])
+        .filter(
+          (n) =>
+            n.notificationType &&
+            n.notificationType.toString().toLowerCase().includes("checkup")
+        )
+        .map((n) => ({
+          id: n.notificationID,
+          content: n.content,
+          date: n.scheduleDate || n.sentDate,
+          grade: "-",
+          type: "Khám sức khỏe",
+          healthChecks: [],
+        }));
+
+      setEvents(checkupEvents);
+    } catch (err) {
+      console.error(err);
+      message.error("Không thể tải danh sách sự kiện");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const res = await api.get("/Student");
+      setStudents(res.data.$values || res.data);
+    } catch (err) {
+      console.error("Không thể tải danh sách học sinh", err);
+    }
+  };
+
+  const onFinish = async (values) => {
+    try {
+      setSubmitting(true);
+
+      // Chọn học sinh gửi thông báo theo khối
+      let selectedStudentIds = [];
+      if (values.grade === "all") {
+        selectedStudentIds = students.map((s) => s.studentID);
+      } else {
+        selectedStudentIds = students
+          .filter(
+            (s) =>
+              s.className &&
+              s.className.toString().startsWith(values.grade.toString())
+          )
+          .map((s) => s.studentID);
+      }
+
+      const body = {
+        title: `Khám sức khỏe ${values.type} - ${
+          values.grade === "all" ? "toàn trường" : `khối ${values.grade}`
+        }`,
+        content: values.content,
+        checkupDate: values.date.format("YYYY-MM-DDTHH:mm:ss"),
+        notificationDate: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
+        responseDeadline: values.date
+          .subtract(3, "day")
+          .format("YYYY-MM-DDTHH:mm:ss"),
+        studentIDs: selectedStudentIds,
+        checkupType: values.type,
+        location: "Phòng y tế",
+        additionalInstructions: (values.healthChecks || []).join(", "),
+      };
+
+      await api.post("/ParentNotifications/periodic-checkup", body);
+
+      message.success("Tạo sự kiện y tế thành công!");
+      form.resetFields();
+      fetchEvents();
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data || "Không thể tạo sự kiện");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const healthCheckOptions = [
@@ -53,9 +117,11 @@ function Health_check() {
       <Col xs={24} md={8}>
         <Card title="Lịch sử sự kiện y tế" bordered={false}>
           <List
+            loading={loading}
             itemLayout="horizontal"
             dataSource={events}
-            renderItem={item => (
+            locale={{ emptyText: "Không có sự kiện nào" }}
+            renderItem={(item) => (
               <List.Item>
                 <List.Item.Meta
                   title={<Typography.Text strong>{item.content}</Typography.Text>}
@@ -140,8 +206,8 @@ function Health_check() {
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" htmlType="submit" block>
-                Tạo sự kiện y tế
+              <Button type="primary" htmlType="submit" block loading={submitting}>
+                {submitting ? "Đang tạo..." : "Tạo sự kiện y tế"}
               </Button>
             </Form.Item>
           </Form>

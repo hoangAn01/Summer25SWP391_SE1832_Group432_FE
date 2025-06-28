@@ -11,6 +11,8 @@ import {
   Divider,
   Select,
   message,
+  Modal,
+  Input,
 } from "antd";
 import {
   CalendarOutlined,
@@ -19,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
+import { Select as AntSelect } from "antd";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -32,6 +35,10 @@ function Event() {
     const saved = localStorage.getItem("readNotificationIds");
     return saved ? JSON.parse(saved) : [];
   });
+  const [attendanceModal, setAttendanceModal] = useState({ open: false, notification: null, isAttend: true, type: "VACCINATION" });
+  const [studentsOfParent, setStudentsOfParent] = useState([]);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [noteDecline, setNoteDecline] = useState("");
 
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
@@ -53,6 +60,17 @@ function Event() {
     if (parent?.parent?.parentID) {
       console.log("Parent ID:", parent.parent.parentID);
       fetchDataNotificationOfParent(parent.parent.parentID);
+      // Fetch students of parent for attendance
+      (async () => {
+        try {
+          const res = await api.get(`/Student/${parent.parent.parentID}`);
+          const list = res.data.$values || res.data;
+          setStudentsOfParent(list);
+          if (list.length > 0) setSelectedStudentId(list[0].studentID);
+        } catch (err) {
+          console.error(err);
+        }
+      })();
     }
   }, [parent?.parent?.parentID]);
 
@@ -77,6 +95,38 @@ function Event() {
       const newReadIds = [...readIds, item.notificationID];
       setReadIds(newReadIds);
       localStorage.setItem("readNotificationIds", JSON.stringify(newReadIds));
+    }
+  };
+
+  const handleAttendance = (item, isAttend, type) => {
+    setAttendanceModal({ open: true, notification: item, isAttend, type });
+  };
+
+  const submitAttendance = async () => {
+    if (!attendanceModal.notification) return;
+    try {
+      if (attendanceModal.type === "VACCINATION") {
+        await api.put(`/ParentalConsents/event/${attendanceModal.notification.notificationID}/attendance`, {
+          parentId: parent.parent.parentID,
+          studentId: selectedStudentId,
+          isAttend: attendanceModal.isAttend,
+          note: attendanceModal.isAttend ? null : noteDecline,
+        });
+      } else {
+        // CHECKUP_CONSENT
+        await api.put(`/ParentalConsents/checkup/${attendanceModal.notification.notificationID}`, {
+          parentId: parent.parent.parentID,
+          studentId: selectedStudentId,
+          isApproved: attendanceModal.isAttend,
+          note: attendanceModal.isAttend ? null : noteDecline,
+        });
+      }
+      message.success("Đã gửi phản hồi");
+      setAttendanceModal({ open: false, notification: null, isAttend: true, type: "VACCINATION" });
+      setNoteDecline("");
+    } catch (err) {
+      console.error(err);
+      message.error(err.response?.data || "Gửi phản hồi thất bại");
     }
   };
 
@@ -205,6 +255,35 @@ function Event() {
                       Phụ huynh nhận: {item.parentNotifications.map((p) => p.parentID).join(", ")}
                     </Paragraph>
                   )}
+                {/* Buttons for vaccination event */}
+                {(item.notificationType === "VACCINATION" || item.notificationType === "CHECKUP_CONSENT") && (
+                  <Row gutter={8} style={{ marginTop: 12 }}>
+                    <Col>
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAttendance(item, true, item.notificationType);
+                        }}
+                      >
+                        Tham gia
+                      </Button>
+                    </Col>
+                    <Col>
+                      <Button
+                        danger
+                        icon={<CloseCircleOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAttendance(item, false, item.notificationType);
+                        }}
+                      >
+                        Từ chối
+                      </Button>
+                    </Col>
+                  </Row>
+                )}
                 <Divider style={{ margin: "16px 0" }} />
               </div>
             )}
@@ -219,6 +298,40 @@ function Event() {
           </Text>
         </div>
       ) : null}
+
+      {/* Modal attendance */}
+      <Modal
+        open={attendanceModal.open}
+        title={attendanceModal.isAttend ? "Xác nhận tham gia" : "Từ chối tham gia"}
+        onCancel={() => setAttendanceModal({ open: false, notification: null, isAttend: true, type: "VACCINATION" })}
+        onOk={submitAttendance}
+        okText={attendanceModal.isAttend ? "Đồng ý" : "Gửi từ chối"}
+      >
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <div>
+            <span>Chọn học sinh:&nbsp;</span>
+            <AntSelect
+              style={{ minWidth: 200 }}
+              value={selectedStudentId}
+              onChange={(v) => setSelectedStudentId(v)}
+            >
+              {studentsOfParent.map((s) => (
+                <AntSelect.Option key={s.studentID} value={s.studentID}>
+                  {s.fullName}
+                </AntSelect.Option>
+              ))}
+            </AntSelect>
+          </div>
+          {!attendanceModal.isAttend && (
+            <Input.TextArea
+              rows={3}
+              placeholder="Lý do từ chối (tuỳ chọn)"
+              value={noteDecline}
+              onChange={(e) => setNoteDecline(e.target.value)}
+            />
+          )}
+        </Space>
+      </Modal>
     </div>
   );
 }
