@@ -11,18 +11,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/features/userSlice";
 
 const { Header, Content, Footer, Sider } = Layout;
-function getItem(label, key, icon, children) {
+function getItem(label, key, icon, children, isParentOnly = false) {
   return {
     key,
     icon,
     children,
     label:
-      key === "logout" ? label : <Link to={`/dashboard/${key}`}>{label}</Link>,
+      key === "logout"
+        ? label
+        : isParentOnly
+        ? label
+        : <Link to={`/dashboard/${key}`}>{label}</Link>,
   };
 }
 const items = [
   getItem("Tìm kiếm học sinh", "student_profile", <DesktopOutlined />),
-  getItem("Tạo sự kiện ", "create_event", <CalendarOutlined />, [
+  getItem("Tạo sự kiện", "create_event_group", <CalendarOutlined />, [
     getItem("Tạo sự kiện tiêm chủng", "Vaccine_event", <MedicineBoxOutlined />),
     getItem(
       "Tạo lịch kiểm tra sức khỏe",
@@ -30,16 +34,22 @@ const items = [
       <MedicineBoxOutlined />
     ),
     getItem("Sự kiện khác", "other_event", <MedicineBoxOutlined />),
-  ]),
-  getItem("Sự kiện đã tạo  ", "created_event", <DesktopOutlined />),
+  ], true),
+  getItem("Quản lí sự kiện", "event_group", <DesktopOutlined />, [
+    getItem("Sự kiện đã tạo", "created_event", <DesktopOutlined />),
+    getItem("Sự kiện đang diễn ra", "event_now", <DesktopOutlined />),
+  ], true),
+  getItem("Thông báo ", "notification", <DesktopOutlined />),
   getItem(
     "Quản lí tài khoản phụ huynh ",
     "manage_account",
     <DesktopOutlined />
   ),
-  getItem("Sự kiện đang diển ra", "event_now", <DesktopOutlined />),
+ 
+ 
 
   getItem("Báo cáo ", "report", <DesktopOutlined />),
+  getItem("Duyệt blog ", "approve_blog", <DesktopOutlined />),
 
   getItem("Đăng xuất ", "logout", <DesktopOutlined />),
 ];

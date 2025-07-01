@@ -42,6 +42,10 @@ import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthPro
 import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
+import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
+import Notification from "./dashboard/Notification";
+import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
+import BlogList from "./pages/home-pages/blog/BlogList";
 
 
 
@@ -136,7 +140,14 @@ function App() {
         </>
       ),
     },
-
+    {
+      path: "/blog/list",
+      element: <BlogList />,
+    },
+    {
+      path: "/blog/:blogID",
+      element: <BlogDetailDynamic />,
+    },
     {
       path: "/create-health-profile",
       element: <HealthProfileCreatePage />,
@@ -230,6 +241,14 @@ function App() {
         {
           path: "event_now",
           element: <EventNow />,
+        },
+        {
+          path: "approve_blog",
+          element: <ManagerBlog />,
+        },
+        {
+          path: "notification",
+          element: <Notification/>,
         }
       ],
     },

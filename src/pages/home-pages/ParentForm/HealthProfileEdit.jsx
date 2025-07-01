@@ -376,12 +376,19 @@ const HealthProfileEdit = () => {
                       },
                     ]}
                   >
-                    <Input.TextArea
-                      disabled={!isEdit}
-                      rows={3}
-                      placeholder="Nhập thông tin bệnh mãn tính (nếu không có, để trống)"
-                      style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
-                    />
+                    {isEdit ? (
+                      <Input.TextArea
+                        rows={3}
+                        placeholder="Nhập thông tin bệnh mãn tính (nếu không có, để trống)"
+                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 48, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("chronicDisease")?.trim()
+                          ? form.getFieldValue("chronicDisease")
+                          : <span style={{ color: "#888" }}>Không có bệnh mãn tính</span>}
+                      </div>
+                    )}
                   </Form.Item>
                   <Form.Item
                     label="Dị ứng"

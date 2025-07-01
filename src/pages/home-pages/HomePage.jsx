@@ -16,11 +16,30 @@ import { Footer } from "../../components/Footer/Footer";
 
 import "./HomePage.css";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import api from "../../config/axios";
 
 const HomePage = () => {
   const navigate = useNavigate();
 
+  const [blogs, setBlogs] = useState([]);
 
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const res = await api.get("/Blog");
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data.$values)
+          ? res.data.$values
+          : [];
+        setBlogs(data.filter(blog => blog.isPublished));
+      } catch {
+        setBlogs([]);
+      }
+    };
+    fetchBlogs();
+  }, []);
 
   const scrollToSection = (elementId) => {
     const element = document.getElementById(elementId);
@@ -28,6 +47,11 @@ const HomePage = () => {
       element.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  // Trước phần render blogs
+  // Sắp xếp blogs theo ngày tạo mới nhất và chỉ lấy 3 blog đầu tiên
+  const sortedBlogs = [...blogs].sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+  const top3Blogs = sortedBlogs.slice(0, 3);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -608,282 +632,108 @@ const HomePage = () => {
             >
               Blog học đường
             </Typography>
-            <Grid container spacing={4} alignItems="stretch" wrap="nowrap">
-              {/* Blog Post 1 */}
-              <Grid item xs={4}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "translateY(-8px)" },
-                    borderRadius: 2,
-                  }}
-                >
-                  <Box sx={{ position: "relative", paddingTop: "56.25%" }}>
-                    <Box
-                      component="img"
-                      src="/images/ngoai_khoa.webp"
-                      alt="Blog post 1"
+            <Grid container spacing={5} alignItems="stretch" justifyContent="center" wrap="nowrap">
+              {top3Blogs.length === 0 && (
+                <Grid item xs={12}>
+                  <Typography align="center" color="text.secondary">
+                    Hiện chưa có blog nào được duyệt.
+                  </Typography>
+                </Grid>
+              )}
+              {top3Blogs.map((blog) => {
+                let md = 4;
+                if (top3Blogs.length === 1) md = 6;
+                else if (top3Blogs.length === 2) md = 5;
+                return (
+                  <Grid item xs={12} md={md} key={blog.blogID} sx={{display: 'flex', justifyContent: 'center', minWidth: 320, maxWidth: 500}}>
+                    <Card
                       sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderTopLeftRadius: 8,
-                        borderTopRightRadius: 8,
+                        width: '100%',
+                        maxWidth: 500,
+                        height: 420,
+                        display: "flex",
+                        flexDirection: "column",
+                        transition: "transform 0.2s",
+                        cursor: "pointer",
+                        "&:hover": { transform: "translateY(-12px) scale(1.03)" },
+                        borderRadius: 4,
+                        boxShadow: 6,
+                        justifyContent: "flex-start",
+                        alignItems: 'stretch',
+                        mx: 'auto',
                       }}
-                    />
-                  </Box>
-                  <CardContent
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      p: 4,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: { xs: "1.2rem", md: "1.4rem" },
-                      }}
+                      onClick={() => navigate(`/blog/${blog.blogID}`)}
                     >
-                      Hoạt Động Ngoại Khóa Bổ Ích
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                      sx={{
-                        fontSize: { xs: "0.9rem", md: "1rem" },
-                        mb: 3,
-                        flexGrow: 1,
-                      }}
-                    >
-                      Khám phá các hoạt động ngoại khóa thú vị giúp học sinh
-                      phát triển toàn diện cả về thể chất và tinh thần.
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mt: "auto" }}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
+                      <Box sx={{ width: "100%", aspectRatio: "16/9", position: "relative", bgcolor: '#f0f0f0' }}>
+                        <Box
+                          component="img"
+                          src={blog.imageUrl}
+                          alt={blog.title}
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderTopLeftRadius: 16,
+                            borderTopRightRadius: 16,
+                          }}
+                        />
+                      </Box>
+                      <CardContent
                         sx={{
                           flex: 1,
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
+                          display: "flex",
+                          flexDirection: "column",
+                          p: 5,
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
-                        15 phút đọc
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => {
-                          navigate("/blog/hoat-dong-ngoai-khoa");
-                          setTimeout(() => window.scrollTo(0, 0), 0);
-                        }}
-                        sx={{
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        }}
-                      >
-                        Đọc thêm
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Blog Post 2 */}
-              <Grid item xs={4}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "translateY(-8px)" },
-                    borderRadius: 2,
-                  }}
-                >
-                  <Box sx={{ position: "relative", paddingTop: "56.25%" }}>
-                    <Box
-                      component="img"
-                      src="/images/blog2.jpeg"
-                      alt="Blog post 2"
-                      sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderTopLeftRadius: 8,
-                        borderTopRightRadius: 8,
-                      }}
-                    />
-                  </Box>
-                  <CardContent
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      p: 4,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: { xs: "1.2rem", md: "1.4rem" },
-                      }}
-                    >
-                      Kỹ Năng Sống Cần Thiết
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                      sx={{
-                        fontSize: { xs: "0.9rem", md: "1rem" },
-                        mb: 3,
-                        flexGrow: 1,
-                      }}
-                    >
-                      Những kỹ năng sống quan trọng giúp học sinh tự tin, độc
-                      lập và sẵn sàng đối mặt với thử thách.
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mt: "auto" }}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{
-                          flex: 1,
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        }}
-                      >
-                        10 phút đọc
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => {
-                          navigate("/blog/ky-nang-song");
-                          setTimeout(() => window.scrollTo(0, 0), 0);
-                        }}
-                        sx={{
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        }}
-                      >
-                        Đọc thêm
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Blog Post 3 */}
-              <Grid item xs={4}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "translateY(-8px)" },
-                    borderRadius: 2,
-                  }}
-                >
-                  <Box sx={{ position: "relative", paddingTop: "56.25%" }}>
-                    <Box
-                      component="img"
-                      src="/images/congnghe.jpg"
-                      alt="Blog post 3"
-                      sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderTopLeftRadius: 8,
-                        borderTopRightRadius: 8,
-                      }}
-                    />
-                  </Box>
-                  <CardContent
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      p: 4,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      gutterBottom
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: { xs: "1.2rem", md: "1.4rem" },
-                      }}
-                    >
-                      Công Nghệ Trong Giáo Dục
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      paragraph
-                      sx={{
-                        fontSize: { xs: "0.9rem", md: "1rem" },
-                        mb: 3,
-                        flexGrow: 1,
-                      }}
-                    >
-                      Khám phá cách công nghệ hiện đại đang thay đổi và nâng cao
-                      chất lượng giáo dục trong trường học.
-                    </Typography>
-                    <Box
-                      sx={{ display: "flex", alignItems: "center", mt: "auto" }}
-                    >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{
-                          flex: 1,
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        }}
-                      >
-                        12 phút đọc
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        onClick={() => {
-                          navigate("/blog/cong-nghe-giao-duc");
-                          setTimeout(() => window.scrollTo(0, 0), 0);
-                        }}
-                        sx={{
-                          fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        }}
-                      >
-                        Đọc thêm
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                        <Typography
+                          variant="h5"
+                          gutterBottom
+                          sx={{
+                            fontWeight: "bold",
+                            fontSize: {
+                              xs: 'clamp(0.95rem, 2.5vw, 1.15rem)',
+                              md: 'clamp(1.05rem, 1.5vw, 1.25rem)'
+                            },
+                            textAlign: "center",
+                            maxHeight: 84,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {blog.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'center', fontSize: '0.95rem' }}>
+                          Ngày đăng: {new Date(blog.createdDate).toLocaleDateString('vi-VN')}
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", mt: "auto" }}>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            size="large"
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/blog/${blog.blogID}`);
+                            }}
+                            sx={{ fontSize: { xs: "1rem", md: "1.15rem" }, px: 3, py: 1 }}
+                          >
+                            Đọc thêm
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
 
             {/* View More Button */}
@@ -898,6 +748,7 @@ const HomePage = () => {
                   borderRadius: 2,
                   fontSize: { xs: "0.9rem", md: "1.1rem" },
                 }}
+                onClick={() => navigate('/blog/list')}
               >
                 Xem thêm bài viết
               </Button>

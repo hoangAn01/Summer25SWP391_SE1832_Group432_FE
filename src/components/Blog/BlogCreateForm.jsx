@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { Form, Input, Button, message, Typography, Card } from "antd";
+import { Form, Input, Button, message, Typography, Card, Upload } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../config/axios";
+import { UploadOutlined } from '@ant-design/icons';
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const { Title } = Typography;
 
@@ -9,16 +12,44 @@ const BlogCreateForm = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [imageUrl, setImageUrl] = useState("");
+  const [form] = Form.useForm();
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await api.post("/Blog", values);
-      message.success("Tạo blog thành công!");
+      await api.post("/Blog", { ...values, imageUrl });
+      toast.success("Bạn đã đăng blog thành công!");
+      form.resetFields();
+      setImageUrl("");
+      setTimeout(() => navigate("/nurse/blog"), 700);
     } catch {
       message.error("Tạo blog thất bại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Giả lập upload ảnh, bạn cần thay thế bằng API thực tế nếu có
+  const customUpload = async ({ file, onSuccess }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "upload_NguyenLong");
+    try {
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/dueel4qtb/image/upload",
+        formData
+      );
+      if (res.data && res.data.secure_url) {
+        setImageUrl(res.data.secure_url);
+        onSuccess("ok");
+        message.success("Bạn đã đăng ảnh thành công!");
+      } else {
+        message.error("Upload ảnh thất bại!");
+      }
+    } catch (error) {
+      message.error("Upload ảnh thất bại!");
+      console.log("Error", error);
     }
   };
 
@@ -49,6 +80,7 @@ const BlogCreateForm = () => {
           Đăng Blog Học Đường
         </Title>
         <Form
+          form={form}
           layout="vertical"
           onFinish={onFinish}
           style={{ width: '100%' }}
@@ -68,16 +100,26 @@ const BlogCreateForm = () => {
             <Input.TextArea rows={6} placeholder="Nhập nội dung bài viết" size="large" />
           </Form.Item>
           <Form.Item
-            name="imageUrl"
-            label="Link ảnh"
-            rules={[{ required: true, message: "Vui lòng nhập link ảnh" }]}
+            label="Ảnh minh họa"
+            required
           >
-            <Input placeholder="Nhập link ảnh minh họa" size="large" />
+            <Upload
+              customRequest={customUpload}
+              showUploadList={false}
+              accept="image/*"
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
+            </Upload>
+            {imageUrl && (
+              <img src={imageUrl} alt="preview" style={{ marginTop: 16, maxWidth: 200, borderRadius: 8 }} />
+            )}
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} block size="large" style={{ fontWeight: 600 }}>
               Hoàn tất
             </Button>
+            
           </Form.Item>
         </Form>
       </Card>

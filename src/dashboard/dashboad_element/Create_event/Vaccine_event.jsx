@@ -13,12 +13,15 @@ import {
   Select,
 } from "antd";
 import api from "../../../config/axios";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 function Vaccine_event() {
   const [events, setEvents] = useState([]);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const user = useSelector((state) => state.user);
 
   // Lấy danh sách sự kiện từ API
   const fetchEvents = async () => {
@@ -60,29 +63,19 @@ function Vaccine_event() {
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
-
-      // Chuẩn bị dữ liệu để gửi lên API
+      // Lấy managerID từ user đăng nhập (hoặc localStorage)
+      const managerID = user?.userID || localStorage.getItem("userID");
       const newEvent = {
-        title: `Sự kiện tiêm chủng ${
-          values.grade === "all" ? "toàn trường" : `khối ${values.grade}`
-        }`,
-        content: values.content,
-        sentDate: values.date.format("YYYY-MM-DDTHH:mm:ss"),
-        status: "Published",
+        eventName: values.eventName,
+        date: values.date.toISOString(),
+        location: values.location,
+        classID: values.classID,
+        managerID: managerID ? Number(managerID) : 0,
       };
-
-      console.log("Creating vaccine event:", newEvent);
-
-      // Gửi sự kiện lên API
-      await api.post("/Notifications", newEvent);
-
-      // Cập nhật danh sách sự kiện
-      message.success("Tạo sự kiện tiêm chủng thành công!");
-
-      // Làm mới danh sách sự kiện
+      console.log("Creating vaccination event:", newEvent);
+      await api.post("/VaccinationEvent", newEvent);
+      toast.success("Tạo sự kiện tiêm chủng thành công!");
       fetchEvents();
-
-      // Đặt lại form
       form.resetFields();
     } catch (error) {
       console.error("Lỗi khi tạo sự kiện:", error);
@@ -111,7 +104,7 @@ function Vaccine_event() {
                     <>
                       <span>Nội dung: {item.content}</span>
                       <br />
-                      <span>Thời gian: {item.date}</span>
+                      <span>Thời gian: {new Date(item.date).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                     </>
                   }
                 />
@@ -131,30 +124,32 @@ function Vaccine_event() {
         >
           <Form layout="vertical" form={form} onFinish={onFinish}>
             <Form.Item
+              label="Tên sự kiện tiêm chủng"
+              name="eventName"
+              rules={[{ required: true, message: "Vui lòng nhập tên sự kiện" }]}
+            >
+              <Input placeholder="Nhập tên sự kiện tiêm chủng" />
+            </Form.Item>
+            <Form.Item
+              label="Địa điểm tổ chức"
+              name="location"
+              rules={[{ required: true, message: "Vui lòng nhập địa điểm" }]}
+            >
+              <Input placeholder="Nhập địa điểm tổ chức" />
+            </Form.Item>
+            <Form.Item
               label="Chọn khối lớp"
-              name="grade"
+              name="classID"
               rules={[{ required: true, message: "Vui lòng chọn khối lớp" }]}
             >
               <Select placeholder="Chọn khối lớp">
-                <Select.Option value="all">Toàn bộ học sinh</Select.Option>
-                <Select.Option value="1">Khối 1</Select.Option>
-                <Select.Option value="2">Khối 2</Select.Option>
-                <Select.Option value="3">Khối 3</Select.Option>
-                <Select.Option value="4">Khối 4</Select.Option>
-                <Select.Option value="5">Khối 5</Select.Option>
+                <Select.Option value={1}>Khối 1</Select.Option>
+                <Select.Option value={2}>Khối 2</Select.Option>
+                <Select.Option value={3}>Khối 3</Select.Option>
+                <Select.Option value={4}>Khối 4</Select.Option>
+                <Select.Option value={5}>Khối 5</Select.Option>
+                <Select.Option value={0}>Toàn bộ học sinh</Select.Option>
               </Select>
-            </Form.Item>
-            <Form.Item
-              label="Nội dung sự kiện tiêm"
-              name="content"
-              rules={[
-                { required: true, message: "Vui lòng nhập nội dung sự kiện" },
-              ]}
-            >
-              <Input.TextArea
-                rows={3}
-                placeholder="Nhập nội dung sự kiện tiêm chủng..."
-              />
             </Form.Item>
             <Form.Item
               label="Thời gian tổ chức"

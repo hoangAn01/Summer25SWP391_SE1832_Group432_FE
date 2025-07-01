@@ -9,24 +9,28 @@ import {
   Modal,
   message,
   Popconfirm,
+  Form,
+  Input,
+  Select,
 } from "antd";
 import {
   CalendarOutlined,
   MedicineBoxOutlined,
   SendOutlined,
   DeleteOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
-import { useSelector } from "react-redux";
 
 const { Title, Text, Paragraph } = Typography;
 
 function Created_event() {
-  const user = useSelector((state) => state.user);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
+  const [notificationForm] = Form.useForm();
 
   useEffect(() => {
     fetchNotifications();
@@ -35,50 +39,24 @@ function Created_event() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/Notifications");
-
-      // Xử lý response với cấu trúc mới có $values
-      const notificationsData = response.data.$values || [];
-      console.log("User role:", user?.role);
-      console.log("Dữ liệu thông báo từ API:", notificationsData);
-
-      let filteredNotifications = notificationsData;
-      if (user?.role?.toLowerCase() === "admin") {
-        filteredNotifications = notificationsData.filter(
-          notif => notif.notificationType !== "MEDICAL_REQUEST"
-        );
-        console.log("Sau khi lọc MEDICAL_REQUEST cho admin:", filteredNotifications);
-        filteredNotifications.forEach((notif, idx) => {
-          console.log(`Thông báo còn lại [${idx}]:`, notif.title, notif.notificationType);
-        });
-      }
-
-      if (Array.isArray(filteredNotifications)) {
-        // Transform notifications to match existing component structure
-        const transformedNotifications = filteredNotifications.map(
-          (notification) => ({
-            id: notification.notificationID,
-            title: notification.title,
-            content: notification.content,
-            date: notification.sentDate,
-            status:
-              notification.status === "Published" ? "created" : "in_progress",
-            type: "notification", // Default type
-            grade: "Toàn trường", // Default grade
-            notificationType: notification.notificationType
-          })
-        );
-
-        // Sắp xếp theo thời gian mới nhất lên đầu
-        transformedNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        setNotifications(transformedNotifications);
-      } else {
-        message.error("Dữ liệu thông báo không đúng định dạng");
-      }
+      const response = await api.get("/VaccinationEvent");
+      const eventsData = response.data.$values || response.data;
+      const transformedNotifications = eventsData.map(event => ({
+        id: event.eventID, // Ẩn không hiển thị trên UI
+        title: event.eventName,
+        content: `Địa điểm: ${event.location} - Khối lớp: ${event.classID}`,
+        date: event.date,
+        status: "created", // hoặc map theo logic nếu có
+        type: "vaccine",
+        grade: event.classID === 0 ? "Toàn trường" : `Khối ${event.classID}`,
+        // Không hiển thị vaccineRecords, managerID
+      }));
+      // Sắp xếp theo thời gian mới nhất lên đầu
+      transformedNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setNotifications(transformedNotifications);
     } catch (error) {
-      console.error("Lỗi khi tải thông báo:", error);
-      message.error("Không thể tải danh sách thông báo");
+      console.error("Lỗi khi tải danh sách sự kiện tiêm chủng:", error);
+      message.error("Không thể tải danh sách sự kiện tiêm chủng");
     } finally {
       setLoading(false);
     }
@@ -111,25 +89,24 @@ function Created_event() {
     setSelectedNotification(null);
   };
 
-  const handleSendNotification = async () => {
+  const handleCreateNotification = async (values) => {
     try {
-      // Gọi API để gửi thông báo
-      await api.post(`/Notifications/${selectedNotification.id}/send`);
-
-      // Cập nhật trạng thái thông báo
-      const updatedNotifications = notifications.map((notif) =>
-        notif.id === selectedNotification.id
-          ? { ...notif, status: "sent" }
-          : notif
-      );
-
-      setNotifications(updatedNotifications);
-      setSelectedNotification((prev) => ({ ...prev, status: "sent" }));
-
-      message.success("Gửi thông báo thành công");
-    } catch (error) {
-      console.error("Lỗi khi gửi thông báo:", error);
-      message.error("Không thể gửi thông báo");
+      const payload = {
+        title: values.title,
+        content: values.content,
+        status: "created",
+        notificationType: values.notificationType,
+        vaccinationEventID: values.notificationType === "VACCINATION" ? selectedNotification.id : null,
+        medicalEventID: values.notificationType === "MEDICAL_EVENT" ? selectedNotification.id : null,
+        parentIds: [],
+        eventTime: selectedNotification.date,
+      };
+      await api.post("/Notifications", payload);
+      message.success("Tạo thông báo thành công!");
+      setIsNotificationModalVisible(false);
+      notificationForm.resetFields();
+    } catch {
+      message.error("Không thể tạo thông báo");
     }
   };
 
@@ -143,7 +120,7 @@ function Created_event() {
       }
 
       // Gọi API xóa thông báo
-      await api.delete(`/Notifications/${notificationId}`);
+      await api.delete(`/VaccinationEvent/${notificationId}`);
 
       // Cập nhật danh sách thông báo
       const updatedNotifications = notifications.filter(
@@ -166,7 +143,7 @@ function Created_event() {
   return (
     <div style={{ padding: 24 }}>
       <Title level={3} style={{ marginBottom: 24 }}>
-        Danh sách thông báo
+        Danh sách sự kiện đã tạo 
       </Title>
       <List
         grid={{ gutter: 16, column: 2 }}
@@ -225,7 +202,7 @@ function Created_event() {
       />
 
       <Modal
-        title="Chi tiết thông báo"
+        title="Chi tiết sự kiện "
         open={isModalVisible}
         onCancel={handleCloseModal}
         footer={[
@@ -235,15 +212,15 @@ function Created_event() {
           selectedNotification?.status === "created" && (
             <>
               <Button
-                key="send"
+                key="create-notification"
                 type="primary"
-                icon={<SendOutlined />}
-                onClick={handleSendNotification}
+                icon={<PlusOutlined />}
+                onClick={() => setIsNotificationModalVisible(true)}
               >
-                Gửi thông báo
+                Tạo thông báo
               </Button>
               <Popconfirm
-                title="Bạn có chắc chắn muốn xóa thông báo này?"
+                title="Bạn có chắc chắn muốn xóa sự kiện  này?"
                 onConfirm={() =>
                   handleDeleteNotification(selectedNotification.id)
                 }
@@ -311,6 +288,34 @@ function Created_event() {
             </Space>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title="Tạo thông báo cho sự kiện tiêm chủng"
+        open={isNotificationModalVisible}
+        onCancel={() => setIsNotificationModalVisible(false)}
+        footer={null}
+      >
+        <Form form={notificationForm} layout="vertical" onFinish={handleCreateNotification}>
+          <Form.Item label="Tiêu đề" name="title" rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Nội dung" name="content" rules={[{ required: true, message: "Vui lòng nhập nội dung" }]}>
+            <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item label="Loại thông báo" name="notificationType" rules={[{ required: true, message: "Vui lòng chọn loại thông báo" }]}>
+            <Select placeholder="Chọn loại thông báo">
+              <Select.Option value="VACCINATION">Tiêm chủng</Select.Option>
+              <Select.Option value="MEDICAL_EVENT">Sự kiện y tế</Select.Option>
+              <Select.Option value="CHECKUP_CONSENT">Đồng ý kiểm tra sức khỏe</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Tạo thông báo
+            </Button>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
