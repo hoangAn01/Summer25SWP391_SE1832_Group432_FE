@@ -42,8 +42,8 @@ import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
-
-
+import CheckupPage from "./nurse/checkup";
+import MedicalInventory from "./nurse/medical-inventory";
 
 function App() {
   const router = createBrowserRouter([
@@ -159,31 +159,15 @@ function App() {
         },
         {
           path: "/nurse/medicine-receive",
-          element: (
-            <MedicineReceiveForm
-              medicineRequest={{
-                studentName: "Nguyễn Văn A",
-                className: "1A",
-                parentName: "Trần Thị B",
-                phone: "0123456789",
-                medicineDetails: [
-                  {
-                    medicineName: "Paracetamol",
-                    dosage: "1 viên/lần",
-                    time: "Sáng, Trưa",
-                    note: "Uống sau ăn"
-                  },
-                  {
-                    medicineName: "Amoxicillin",
-                    dosage: "2 viên/lần",
-                    time: "Tối",
-                    note: "Không dùng nếu dị ứng penicillin"
-                  }
-                ]
-              }}
-              onConfirm={() => {}}
-            />
-          ),
+          element: <MedicineReceiveForm />,
+        },
+        {
+          path: "/nurse/medical-inventory",
+          element: <MedicalInventory />,
+        },
+        {
+          path: "/nurse/checkup",
+          element: <CheckupPage />,
         },
       ],
     },

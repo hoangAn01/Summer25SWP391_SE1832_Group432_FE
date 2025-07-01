@@ -1,5 +1,15 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Table, Input, Select, Card, Spin, Alert, Typography, Row, Col } from "antd";
+import {
+  Table,
+  Input,
+  Select,
+  Card,
+  Spin,
+  Alert,
+  Typography,
+  Row,
+  Col,
+} from "antd";
 import { SearchOutlined, TeamOutlined } from "@ant-design/icons";
 import api from "../../config/axios";
 
@@ -52,9 +62,12 @@ const StudentSearch = () => {
     const searchStudents = async () => {
       if (!searchText) return; // không tìm khi ô trống
       try {
-        const res = await api.get(`/Student/search/${encodeURIComponent(searchText)}`, {
-          signal: controller.signal,
-        });
+        const res = await api.get(
+          `/Student/search/${encodeURIComponent(searchText)}`,
+          {
+            signal: controller.signal,
+          }
+        );
         const result = res.data.$values || res.data;
         setStudents(result);
       } catch (err) {
@@ -155,7 +168,14 @@ const StudentSearch = () => {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+        }}
+      >
         <Spin tip="Đang tải dữ liệu..." size="large" />
       </div>
     );
@@ -163,7 +183,12 @@ const StudentSearch = () => {
 
   if (error) {
     return (
-      <Alert type="error" message="Lỗi tải dữ liệu" description={error} showIcon />
+      <Alert
+        type="error"
+        message="Lỗi tải dữ liệu"
+        description={error}
+        showIcon
+      />
     );
   }
 

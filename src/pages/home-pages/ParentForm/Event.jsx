@@ -22,6 +22,7 @@ import {
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
 import { Select as AntSelect } from "antd";
+import { toast } from "react-toastify";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -40,7 +41,7 @@ function Event() {
     open: false,
     notificationId: null,
     isAttend: true,
-    type: "VACCINATION"
+    type: "VACCINATION",
   });
   const [studentsOfParent, setStudentsOfParent] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -48,12 +49,17 @@ function Event() {
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
-    const statusLower = status.toLowerCase();
-    
-    if (statusLower === "approved" || statusLower === "đã đồng ý") return "Đã đồng ý";
-    if (statusLower === "rejected" || statusLower === "đã từ chối") return "Đã từ chối";
-    if (statusLower === "pending" || statusLower === "chờ phản hồi" || statusLower === "chờ phụ huynh xác nhận") return "Chờ phản hồi";
-    
+    const s = status.toLowerCase();
+    if (s === "approved" || s === "đã đồng ý") return "Đã đồng ý";
+    if (s === "rejected" || s === "đã từ chối") return "Đã từ chối";
+    if (
+      s === "unread" ||
+      s === "đã gửi" ||
+      s === "pending" ||
+      s === "chờ phản hồi" ||
+      s === "chờ phụ huynh xác nhận"
+    )
+      return "Chờ phản hồi";
     return status;
   };
 
@@ -61,23 +67,13 @@ function Event() {
     try {
       setLoading(true);
       const response = await api.get(`/ParentNotifications/parent/${idParent}`);
-
-      // Xử lý response với cấu trúc mới có $values và map status
-      const notificationsData = (response.data.$values || []).map(notification => {
-        // Lấy status từ notification hoặc từ parental consent nếu có
-        let status = notification.individualStatus || notification.status || "Chờ phản hồi";
-        
-        // Nếu có parental consent, lấy status từ đó
-        if (notification.parentalConsent) {
-          status = notification.parentalConsent.consentStatus;
-        }
-
-        return {
+      // Dữ liệu trả về đã đúng cấu trúc, chỉ cần lấy $values
+      const notificationsData = (response.data.$values || []).map(
+        (notification) => ({
           ...notification,
-          status: status
-        };
-      });
-      
+          status: mapStatusToVietnamese(notification.status),
+        })
+      );
       setData(notificationsData);
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
@@ -135,7 +131,7 @@ function Event() {
       open: true,
       notificationId: item.notificationID,
       isAttend,
-      type
+      type,
     });
   };
 
@@ -145,101 +141,50 @@ function Event() {
       message.error("Vui lòng chọn học sinh");
       return;
     }
-    
     setSubmitting(true);
     try {
-      let response;
-      if (attendanceModal.type === "VACCINATION") {
-        response = await api.put(`/ParentalConsents/event/${attendanceModal.notificationId}/attendance`, {
-          parentId: parent.parent.parentID,
-          studentId: selectedStudentId,
-          isAttend: attendanceModal.isAttend,
-          note: attendanceModal.isAttend ? null : noteDecline,
-        });
-      } else {
-        response = await api.put(`/ParentalConsents/checkup/${attendanceModal.notificationId}`, {
-          parentId: parent.parent.parentID,
-          studentId: selectedStudentId,
-          isApproved: attendanceModal.isAttend,
-          note: attendanceModal.isAttend ? null : noteDecline,
-        });
+      if (attendanceModal.type === "CHECKUP_CONSENT") {
+        await api.put(
+          `/ParentalConsents/checkup/${attendanceModal.notificationId}`,
+          {
+            parentId: parent.parent.parentID,
+            studentId: selectedStudentId,
+            isApproved: attendanceModal.isAttend,
+            note: noteDecline,
+          }
+        );
+      } else if (attendanceModal.type === "VACCINATION") {
+        // Nếu sau này có API riêng cho VACCINATION thì xử lý ở đây
       }
-
-      // Cập nhật state với response từ server
-      setData(prevData => 
-        prevData.map(item => {
+      setData((prevData) =>
+        prevData.map((item) => {
           if (item.notificationID === attendanceModal.notificationId) {
             return {
               ...item,
-              consentStatus: attendanceModal.isAttend ? "Đã đồng ý" : "Đã từ chối",
-              attendanceStatus: attendanceModal.isAttend ? "APPROVED" : "REJECTED",
-              note: noteDecline || null
+              status: attendanceModal.isAttend ? "Đã đồng ý" : "Đã từ chối",
+              note: noteDecline || null,
             };
           }
           return item;
         })
       );
-
-      message.success("Đã gửi phản hồi thành công");
+      toast.success("Đã gửi phản hồi thành công");
       setAttendanceModal({
         open: false,
         notificationId: null,
         isAttend: true,
-        type: "VACCINATION"
+        type: "VACCINATION",
       });
       setNoteDecline("");
-      
     } catch (err) {
       console.error(err);
-      message.error(err.response?.data?.message || "Gửi phản hồi thất bại. Vui lòng thử lại sau.");
+      message.error(
+        err.response?.data?.message ||
+          "Gửi phản hồi thất bại. Vui lòng thử lại sau."
+      );
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const isWaitingResponse = (status) => {
-    if (!status) return true;
-    const lowerStatus = status.toLowerCase();
-    return lowerStatus === "chờ phản hồi" || 
-           lowerStatus === "chờ phụ huynh xác nhận" || 
-           lowerStatus === "pending";
-  };
-
-  const renderNotificationContent = (item) => {
-    if (
-      item.notificationType === "MEDICAL_REQUEST" ||
-      item.title?.toLowerCase().includes("yêu cầu thuốc")
-    ) {
-      const lines = item.content.includes('\n')
-        ? item.content.split('\n')
-        : item.content.split('-').map(line => line.trim()).filter(Boolean);
-
-      // Lọc bỏ dòng chứa 'Nurse note:'
-      const filteredLines = lines.filter(
-        (line) => !line.trim().toLowerCase().startsWith("nurse note")
-      );
-
-      // Việt hóa thời gian uống thuốc
-      const viLines = filteredLines.map(line => {
-        if (line.toLowerCase().includes('thời gian uống thuốc')) {
-          return line.replace(/morning/gi, 'Sáng')
-                     .replace(/noon/gi, 'Trưa')
-                     .replace(/evening/gi, 'Tối');
-        }
-        return line;
-      });
-
-      return (
-        <div style={{ whiteSpace: "pre-line" }}>
-          {viLines.map((line, idx) => (
-            <div key={idx} style={{ marginBottom: 4 }}>
-              {line}
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return <Paragraph style={{ margin: "8px 0" }}>{item.content}</Paragraph>;
   };
 
   return (
@@ -256,9 +201,11 @@ function Event() {
       </Title>
 
       {/* Bộ lọc loại thông báo */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontWeight: 500, marginBottom: 4 }}>Loại thông báo</span>
+      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontWeight: 500, marginBottom: 4 }}>
+            Loại thông báo
+          </span>
           <Select
             value={typeFilter}
             onChange={setTypeFilter}
@@ -269,7 +216,7 @@ function Event() {
               { value: "VACCINATION", label: "Tiêm chủng" },
               { value: "CHECKUP", label: "Khám sức khỏe" },
               { value: "MEDICAL_REQUEST", label: "Gửi thuốc" },
-              { value: "OTHER", label: "Khác" }
+              { value: "OTHER", label: "Khác" },
             ]}
           />
         </div>
@@ -285,97 +232,109 @@ function Event() {
       {/* Danh sách thông báo đã lọc */}
       {!loading && filteredData.length > 0 ? (
         filteredData.map((item) => {
-          // Lấy status từ item hoặc từ parental consent nếu có
           const status = item.status || "Chờ phản hồi";
-          const canRespond = status === "Chờ phản hồi" || 
-                            status === "Chờ phụ huynh xác nhận" || 
-                            !status;
-          
+          // Chỉ cho phản hồi nếu là CHECKUP_CONSENT và status là Chờ phản hồi
+          const canRespond =
+            item.notificationType === "CHECKUP_CONSENT" &&
+            status === "Chờ phản hồi";
           return (
             <Card
               key={item.notificationID}
               style={{
                 marginBottom: 16,
-                background: readIds.includes(item.notificationID) ? "#f8faff" : "#e6f7ff",
+                background: readIds.includes(item.notificationID)
+                  ? "#f8faff"
+                  : "#e6f7ff",
                 borderRadius: 8,
                 maxWidth: 900,
                 margin: "0 auto 16px auto",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
               onClick={() => handleOpen(item)}
             >
               <div style={{ display: "flex", alignItems: "center" }}>
                 <b style={{ flex: 1 }}>
-                  {(item.notificationType === "MEDICAL_REQUEST" || item.title?.toLowerCase().includes("yêu cầu thuốc"))
-                    ? `Học sinh ${
-                        item.studentName ||
-                        (item.title?.match(/học sinh (.+?) đã/i)?.[1] || "")
-                      } đã được nhân viên y tế của trường cho sử dụng thuốc/vật tư y tế.`
+                  {item.notificationType === "VACCINATION"
+                    ? item.title || "Thông báo lịch tiêm phòng"
+                    : item.notificationType === "MEDICAL_EVENT"
+                    ? item.title || "Thông báo sự cố y tế"
                     : item.title}
                 </b>
-                <Tag color={readIds.includes(item.notificationID) ? "default" : "blue"}>
-                  {readIds.includes(item.notificationID) ? "Đã đọc" : "Chưa đọc"}
-                </Tag>
-                <Tag color={
-                  status === "Đã đồng ý" ? "success" :
-                  status === "Đã từ chối" ? "error" :
-                  canRespond ? "warning" : "default"
-                }>
+                <Tag
+                  color={
+                    status === "Đã đồng ý"
+                      ? "success"
+                      : status === "Đã từ chối"
+                      ? "error"
+                      : canRespond
+                      ? "warning"
+                      : "default"
+                  }
+                >
                   {status}
                 </Tag>
+              </div>
+              {/* Hiển thị ngày giờ gửi */}
+              <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
+                {item.sentDate
+                  ? `Gửi lúc: ${new Date(item.sentDate).toLocaleString(
+                      "vi-VN"
+                    )}`
+                  : ""}
               </div>
               {openedId === item.notificationID && (
                 <div style={{ marginTop: 12 }}>
                   <Button
                     size="small"
                     style={{ float: "right", marginBottom: 8 }}
-                    onClick={e => {
+                    onClick={(e) => {
                       e.stopPropagation();
                       setOpenedId(null);
                     }}
                   >
                     Thu gọn
                   </Button>
-                  {renderNotificationContent(item)}
-                
-                  {/* Hiển thị parentNotifications nếu có */}
-                  {item.parentNotifications &&
-                    item.parentNotifications.length > 0 && (
-                      <Paragraph type="secondary" style={{ marginTop: 8 }}>
-                        Phụ huynh nhận: {item.parentNotifications.map((p) => p.parentID).join(", ")}
-                      </Paragraph>
+                  <Paragraph style={{ margin: "8px 0" }}>
+                    {item.content}
+                  </Paragraph>
+                  {/* Nút phản hồi chỉ hiện với CHECKUP_CONSENT và status chờ phản hồi */}
+                  {item.notificationType === "CHECKUP_CONSENT" &&
+                    canRespond && (
+                      <Row gutter={8} style={{ marginTop: 12 }}>
+                        <Col>
+                          <Button
+                            type="primary"
+                            icon={<CheckCircleOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAttendance(
+                                item,
+                                true,
+                                item.notificationType
+                              );
+                            }}
+                          >
+                            Tham gia
+                          </Button>
+                        </Col>
+                        <Col>
+                          <Button
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAttendance(
+                                item,
+                                false,
+                                item.notificationType
+                              );
+                            }}
+                          >
+                            Từ chối
+                          </Button>
+                        </Col>
+                      </Row>
                     )}
-                  {/* Buttons for vaccination event */}
-                  {(item.notificationType === "VACCINATION" || item.notificationType === "CHECKUP_CONSENT") && (
-                    <Row gutter={8} style={{ marginTop: 12 }}>
-                      <Col>
-                        <Button
-                          type="primary"
-                          icon={<CheckCircleOutlined />}
-                          disabled={!canRespond}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAttendance(item, true, item.notificationType);
-                          }}
-                        >
-                          Tham gia
-                        </Button>
-                      </Col>
-                      <Col>
-                        <Button
-                          danger
-                          icon={<CloseCircleOutlined />}
-                          disabled={!canRespond}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAttendance(item, false, item.notificationType);
-                          }}
-                        >
-                          Từ chối
-                        </Button>
-                      </Col>
-                    </Row>
-                  )}
                   <Divider style={{ margin: "16px 0" }} />
                 </div>
               )}
@@ -395,13 +354,17 @@ function Event() {
       {/* Modal attendance */}
       <Modal
         open={attendanceModal.open}
-        title={attendanceModal.isAttend ? "Xác nhận tham gia" : "Từ chối tham gia"}
-        onCancel={() => setAttendanceModal({
-          open: false,
-          notificationId: null,
-          isAttend: true,
-          type: "VACCINATION"
-        })}
+        title={
+          attendanceModal.isAttend ? "Xác nhận tham gia" : "Từ chối tham gia"
+        }
+        onCancel={() =>
+          setAttendanceModal({
+            open: false,
+            notificationId: null,
+            isAttend: true,
+            type: "VACCINATION",
+          })
+        }
         onOk={submitAttendance}
         okText={attendanceModal.isAttend ? "Đồng ý" : "Gửi từ chối"}
         cancelText="Huỷ"
@@ -410,28 +373,30 @@ function Event() {
       >
         <Space direction="vertical" style={{ width: "100%" }}>
           <div>
-            <span style={{ color: '#ff4d4f', marginRight: 4 }}>*</span>
+            <span style={{ color: "#ff4d4f", marginRight: 4 }}>*</span>
             <span>Chọn học sinh:</span>
             <Select
-              style={{ width: '100%', marginTop: 8 }}
+              style={{ width: "100%", marginTop: 8 }}
               value={selectedStudentId}
               onChange={(v) => setSelectedStudentId(v)}
-              status={!selectedStudentId ? 'error' : ''}
-              options={studentsOfParent.map(s => ({
+              status={!selectedStudentId ? "error" : ""}
+              options={studentsOfParent.map((s) => ({
                 value: s.studentID,
-                label: s.fullName
+                label: s.fullName,
               }))}
               placeholder="Chọn học sinh tham gia"
             />
           </div>
-          {!attendanceModal.isAttend && (
-            <Input.TextArea
-              rows={3}
-              placeholder="Lý do từ chối (tuỳ chọn)"
-              value={noteDecline}
-              onChange={(e) => setNoteDecline(e.target.value)}
-            />
-          )}
+          <Input.TextArea
+            rows={3}
+            placeholder={
+              attendanceModal.isAttend
+                ? "Ghi chú (tuỳ chọn)"
+                : "Lý do từ chối (tuỳ chọn)"
+            }
+            value={noteDecline}
+            onChange={(e) => setNoteDecline(e.target.value)}
+          />
         </Space>
       </Modal>
     </div>

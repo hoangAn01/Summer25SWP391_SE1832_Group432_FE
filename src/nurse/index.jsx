@@ -51,6 +51,7 @@ const items = [
     "/nurse/medical-inventory",
     <MedicineBoxOutlined />
   ),
+  getItem("Khám định kỳ", "/nurse/checkup", <FileOutlined />),
 ];
 
 // Mapping path to breadcrumb name
