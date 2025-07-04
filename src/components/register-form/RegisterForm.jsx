@@ -27,31 +27,26 @@ function RegisterForm() {
 
   // State cho địa chỉ động
   const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
   const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedWard, setSelectedWard] = useState("");
   const [street, setStreet] = useState("");
 
+  // Lấy danh sách tỉnh/thành và phường/xã từ API VietnamLabs
   useEffect(() => {
-    axios.get("https://provinces.open-api.vn/api/?depth=1").then(res => setProvinces(res.data));
+    axios.get("https://vietnamlabs.com/api/vietnamprovince").then(res => {
+      if (res.data && res.data.data) {
+        setProvinces(res.data.data);
+      }
+    });
   }, []);
 
   const handleProvinceChange = (value) => {
     setSelectedProvince(value);
-    setSelectedDistrict("");
     setSelectedWard("");
-    setDistricts([]);
-    setWards([]);
-    axios.get(`https://provinces.open-api.vn/api/p/${value}?depth=2`).then(res => setDistricts(res.data.districts));
-  };
-
-  const handleDistrictChange = (value) => {
-    setSelectedDistrict(value);
-    setSelectedWard("");
-    setWards([]);
-    axios.get(`https://provinces.open-api.vn/api/d/${value}?depth=2`).then(res => setWards(res.data.wards));
+    // Tìm tỉnh/thành được chọn và cập nhật danh sách phường/xã
+    const found = provinces.find(p => p.province === value);
+    setWards(found ? found.wards : []);
   };
 
   const handleWardChange = (value) => {
@@ -63,10 +58,9 @@ function RegisterForm() {
     try {
       const { dateOfBirth, ...rest } = values;
       // Ghép địa chỉ đầy đủ
-      const provinceName = provinces.find(p => p.code === selectedProvince)?.name || "";
-      const districtName = districts.find(d => d.code === selectedDistrict)?.name || "";
-      const wardName = wards.find(w => w.code === selectedWard)?.name || "";
-      const address = `${street}, ${wardName}, ${districtName}, ${provinceName}`;
+      const provinceName = selectedProvince || "";
+      const wardName = selectedWard || "";
+      const address = `${street}, ${wardName}, ${provinceName}`;
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
@@ -215,63 +209,67 @@ function RegisterForm() {
             </Form.Item>
 
             <Form.Item
-              label="Địa chỉ"
-              required
-              style={{ marginBottom: 0 }}
+              label="Tỉnh/Thành phố"
+              name="province"
+              rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành phố" }]}
             >
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Select
+                showSearch
+                placeholder="Chọn tỉnh/thành phố"
+                optionFilterProp="children"
+                onChange={handleProvinceChange}
+                filterOption={(input, option) =>
+                  (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+                }
+                value={selectedProvince || undefined}
+              >
+                {provinces.map((p) => (
+                  <Select.Option key={p.province} value={p.province}>
+                    {p.province}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            {selectedProvince && (
+              <Form.Item
+                label="Phường/Xã"
+                name="ward"
+                rules={[{ required: true, message: "Vui lòng chọn phường/xã" }]}
+              >
                 <Select
-                  placeholder="Chọn tỉnh/thành phố"
-                  value={selectedProvince || undefined}
-                  onChange={handleProvinceChange}
-                  style={{ width: '100%' }}
                   showSearch
+                  placeholder="Chọn phường/xã"
                   optionFilterProp="children"
-                  filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
+                  onChange={handleWardChange}
+                  filterOption={(input, option) =>
+                    (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+                  }
+                  value={selectedWard || undefined}
+                  disabled={!selectedProvince}
                 >
-                  {provinces.map(p => (
-                    <Select.Option key={p.code} value={p.code}>{p.name}</Select.Option>
+                  {wards.map((w) => (
+                    <Select.Option key={w.name} value={w.name}>
+                      {w.name}
+                    </Select.Option>
                   ))}
                 </Select>
-                {selectedProvince && (
-                  <Select
-                    placeholder="Chọn quận/huyện"
-                    value={selectedDistrict || undefined}
-                    onChange={handleDistrictChange}
-                    style={{ width: '100%' }}
-                    showSearch
-                    optionFilterProp="children"
-                    filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
-                  >
-                    {districts.map(d => (
-                      <Select.Option key={d.code} value={d.code}>{d.name}</Select.Option>
-                    ))}
-                  </Select>
-                )}
-                {selectedDistrict && (
-                  <Select
-                    placeholder="Chọn phường/xã"
-                    value={selectedWard || undefined}
-                    onChange={handleWardChange}
-                    style={{ width: '100%' }}
-                    showSearch
-                    optionFilterProp="children"
-                    filterOption={(input, option) => (option?.children ?? '').toLowerCase().includes(input.toLowerCase())}
-                  >
-                    {wards.map(w => (
-                      <Select.Option key={w.code} value={w.code}>{w.name}</Select.Option>
-                    ))}
-                  </Select>
-                )}
-                {selectedWard && (
-                  <Input
-                    placeholder="Nhập tên đường/số nhà"
-                    value={street}
-                    onChange={e => setStreet(e.target.value)}
-                  />
-                )}
-              </Space>
-            </Form.Item>
+              </Form.Item>
+            )}
+
+            {selectedWard && (
+              <Form.Item
+                label="Địa chỉ chi tiết (số nhà, tên đường)"
+                name="street"
+                rules={[{ required: true, message: "Vui lòng nhập địa chỉ chi tiết" }]}
+              >
+                <Input
+                  placeholder="Nhập số nhà, tên đường..."
+                  value={street}
+                  onChange={e => setStreet(e.target.value)}
+                />
+              </Form.Item>
+            )}
 
             <Form.Item
               name="gender"
