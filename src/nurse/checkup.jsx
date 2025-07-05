@@ -88,11 +88,10 @@ const CheckupPage = () => {
     setStudentModalOpen(true);
     setStudentLoading(true);
     try {
-      // Lấy toàn bộ học sinh của lớp
-      const res = await api.get("Student");
-      const allStudents = (res.data.$values || []).filter(
-        (s) => s.classID === schedule.classID
-      );
+      // Lấy danh sách học sinh của lớp
+      const classResponse = await api.get(`Class/${schedule.classID}`);
+      const allClass = classResponse.data.$values || [];
+
       // Lấy danh sách consent đã đồng ý cho buổi khám này
       const consentRes = await api.get("ParentalConsents");
       const consents = (consentRes.data.$values || []).filter(
@@ -100,9 +99,10 @@ const CheckupPage = () => {
           c.schoolCheckupID === schedule.scheduleID &&
           c.consentStatus === "Đã đồng ý"
       );
-      const approvedStudentIDs = consents.map((c) => c.studentID);
+
       // Lọc học sinh chỉ giữ lại các bạn đã được phụ huynh đồng ý
-      const filtered = allStudents.filter((s) =>
+      const approvedStudentIDs = consents.map((c) => c.studentID);
+      const filtered = allClass.filter((s) =>
         approvedStudentIDs.includes(s.studentID)
       );
       setStudents(filtered);
@@ -115,12 +115,16 @@ const CheckupPage = () => {
 
   const openReportModal = async (student, schedule) => {
     setSelectedStudent(student);
-    setSelectedSchedule(schedule); // Cần schedule để so sánh ngày
+    setSelectedSchedule(schedule);
     setReportModalOpen(true);
     setReportLoading(true);
     try {
-      const res = await api.get(`Checkup/student/${student.studentID}`);
-      setStudentReports(res.data.$values || []);
+      // Get the parent ID from the student data if available
+      const parentId = student.parentID || 1; // Default to 1 if not available
+      const res = await api.get(
+        `Checkup/detail/${schedule.scheduleID}/parent/${parentId}`
+      );
+      setStudentReports([res.data]); // Wrap single report in array to maintain compatibility
     } catch {
       toast.error("Không thể tải báo cáo sức khỏe");
       setStudentReports([]);
@@ -220,22 +224,16 @@ const CheckupPage = () => {
   // Render Helpers & Columns
   // =================================================================
 
-  const getReportForSchedule = () => {
-    if (!selectedSchedule || !studentReports.length) return null;
-    const scheduleDate = dayjs(selectedSchedule.date);
-    return (
-      studentReports.find((r) => dayjs(r.date).isSame(scheduleDate, "day")) ||
-      null
-    );
-  };
-
   const renderReport = () => {
-    const report = getReportForSchedule();
-    if (!report) {
+    if (!studentReports.length) {
       return <Empty description="Chưa có báo cáo cho buổi khám này." />;
     }
+    const report = studentReports[0]; // Get the first (and only) report
     return (
       <Descriptions bordered column={1} size="small">
+        <Descriptions.Item label="Học sinh">
+          {report.studentName}
+        </Descriptions.Item>
         <Descriptions.Item label="Ngày khám">
           {dayjs(report.date).format("DD/MM/YYYY")}
         </Descriptions.Item>
@@ -257,8 +255,8 @@ const CheckupPage = () => {
         <Descriptions.Item label="Ghi chú">
           {report.description}
         </Descriptions.Item>
-        <Descriptions.Item label="Y tá nhập">
-          {report.nurseName}
+        <Descriptions.Item label="Y tá phụ trách">
+          {report.nurseName || "Chưa cập nhật"}
         </Descriptions.Item>
       </Descriptions>
     );

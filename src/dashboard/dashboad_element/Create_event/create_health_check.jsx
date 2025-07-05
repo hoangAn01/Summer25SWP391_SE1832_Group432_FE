@@ -1,32 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Card, Form, Input, Button, DatePicker, Select, message } from "antd";
+import React from "react";
+import { Card, Form, Input, Button, DatePicker, Select } from "antd";
 import api from "../../../config/axios";
 import { toast } from "react-toastify";
 
 function Health_check() {
   const [form] = Form.useForm();
-  const [classes, setClasses] = useState([]);
-
-  // Lấy danh sách lớp
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const res = await api.get("/Class");
-        setClasses(res.data.$values || res.data);
-      } catch {
-        message.error("Không thể tải danh sách lớp");
-      }
-    };
-    fetchClasses();
-  }, []);
 
   const onFinish = async (values) => {
     try {
       const body = {
-        date: values.date.format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-        classIDs: values.classIDs,
-        managerID: 1,
-        note: values.note || "",
+        scheduleName: values.scheduleName,
+        scheduleDate: values.scheduleDate.format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+        description: values.description || "",
+        nurseID: 1, // Cứng nurseID = 1 như yêu cầu
+        targetClass: values.targetClass,
       };
       console.log("body", body);
       await api.post("/CheckupSchedules", body);
@@ -46,64 +33,76 @@ function Health_check() {
       >
         <Form layout="vertical" form={form} onFinish={onFinish}>
           <Form.Item
-            label="Chọn lớp"
-            name="classIDs"
-            rules={[{ required: true, message: "Vui lòng chọn lớp" }]}
+            label="Tên lịch khám sức khỏe"
+            name="scheduleName"
+            rules={[{ required: true, message: "Vui lòng nhập tên lịch khám" }]}
           >
-            <Select
-              mode="multiple"
-              placeholder="Chọn một hoặc nhiều lớp"
-              optionFilterProp="children"
-              showSearch
-            >
-              {classes.map((cls) => (
-                <Select.Option key={cls.classID} value={cls.classID}>
-                  {cls.className}
-                </Select.Option>
-              ))}
-            </Select>
+            <Input placeholder="Nhập tên lịch khám sức khỏe..." />
           </Form.Item>
 
-          <Form.Item label="Ghi chú" name="note">
-            <Input.TextArea rows={3} placeholder="Nhập ghi chú (nếu có)..." />
+          <Form.Item
+            label="Khối lớp"
+            name="targetClass"
+            rules={[{ required: true, message: "Vui lòng chọn khối lớp" }]}
+          >
+            <Select placeholder="Chọn khối lớp">
+              <Select.Option value="Khối 1">Khối 1</Select.Option>
+              <Select.Option value="Khối 2">Khối 2</Select.Option>
+              <Select.Option value="Khối 3">Khối 3</Select.Option>
+              <Select.Option value="Khối 4">Khối 4</Select.Option>
+              <Select.Option value="Khối 5">Khối 5</Select.Option>
+              <Select.Option value="Toàn khối">Toàn khối</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
             label="Thời gian tổ chức"
-            name="date"
+            name="scheduleDate"
             rules={[{ required: true, message: "Vui lòng chọn thời gian" }]}
           >
             <DatePicker
+              placeholder="Chọn thời gian khám"
               showTime
               format="YYYY-MM-DD HH:mm"
               style={{ width: "100%" }}
-              disabledDate={(current) =>
-                current && current < new Date().setHours(0, 0, 0, 0)
-              }
+              disabledDate={(current) => {
+                // Không cho chọn ngày trong quá khứ
+                return current && current < new Date().setHours(0, 0, 0, 0);
+              }}
               disabledTime={(current) => {
                 if (!current) return {};
                 const now = new Date();
+
+                // Nếu chọn ngày hôm nay
                 if (
                   current.year() === now.getFullYear() &&
                   current.month() === now.getMonth() &&
                   current.date() === now.getDate()
                 ) {
                   return {
+                    // Vô hiệu hóa các giờ đã qua
                     disabledHours: () =>
                       Array.from({ length: 24 }, (_, i) => i).filter(
-                        (h) => h < now.getHours()
+                        (h) => h <= now.getHours()
                       ),
-                    disabledMinutes: (selectedHour) =>
-                      selectedHour === now.getHours()
-                        ? Array.from({ length: 60 }, (_, i) => i).filter(
-                            (m) => m < now.getMinutes()
-                          )
-                        : [],
+                    // Vô hiệu hóa các phút đã qua nếu chọn giờ hiện tại
+                    disabledMinutes: (selectedHour) => {
+                      if (selectedHour === now.getHours()) {
+                        return Array.from({ length: 60 }, (_, i) => i).filter(
+                          (m) => m <= now.getMinutes()
+                        );
+                      }
+                      return [];
+                    },
                   };
                 }
                 return {};
               }}
             />
+          </Form.Item>
+
+          <Form.Item label="Mô tả" name="description">
+            <Input.TextArea rows={3} placeholder="Nhập mô tả chi tiết..." />
           </Form.Item>
 
           <Form.Item>

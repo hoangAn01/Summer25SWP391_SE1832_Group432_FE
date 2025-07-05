@@ -20,9 +20,13 @@ const LoginForm = () => {
     console.log("Form submitted:", values);
     try {
       const response = await api.post("Auth/login", values);
+      const { accountID, ...rest } = response.data.user;
+      const user = {
+        ...rest,
+        userID: accountID,
+      };
       // Lưu toàn bộ thông tin user vào Redux
-        
-      dispatch(login(response.data.user));
+      dispatch(login(user));
       localStorage.setItem("token", response.data.token); //lấy cái token
       if (response.data.user.role === "Admin") {
         navigate("/dashboard");

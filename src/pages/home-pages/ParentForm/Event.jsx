@@ -21,7 +21,6 @@ import {
 } from "@ant-design/icons";
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
-import { Select as AntSelect } from "antd";
 import { toast } from "react-toastify";
 
 const { Title, Text, Paragraph } = Typography;
@@ -30,7 +29,8 @@ function Event() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const parent = useSelector((state) => state.parent);
+  const parent = useSelector((state) => state.parent.parent);
+  const [parentID, setParentID] = useState(null);
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [openedId, setOpenedId] = useState(null);
   const [readIds, setReadIds] = useState(() => {
@@ -66,14 +66,15 @@ function Event() {
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
       setLoading(true);
-      const response = await api.get(`/ParentNotifications/parent/${idParent}`);
-      // Dữ liệu trả về đã đúng cấu trúc, chỉ cần lấy $values
-      const notificationsData = (response.data.$values || []).map(
-        (notification) => ({
+      const response = await api.get(`/Notifications`);
+      // Lọc thông báo theo recipientAccountID (userID của phụ huynh)
+      const allNotifications = response.data.$values || [];
+      const notificationsData = allNotifications
+        .filter((notification) => notification.recipientAccountID === idParent)
+        .map((notification) => ({
           ...notification,
           status: mapStatusToVietnamese(notification.status),
-        })
-      );
+        }));
       setData(notificationsData);
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
@@ -84,13 +85,17 @@ function Event() {
   };
 
   useEffect(() => {
-    if (parent?.parent?.parentID) {
-      console.log("Parent ID:", parent.parent.parentID);
-      fetchDataNotificationOfParent(parent.parent.parentID);
-      // Fetch students of parent for attendance
+    if (parent?.accountID) {
+      console.log("User ID:", parent.accountID);
+      fetchDataNotificationOfParent(parent.accountID);
       (async () => {
         try {
-          const res = await api.get(`/Student/${parent.parent.parentID}`);
+          const parentResponse = await api.get(
+            `Parent/ByAccount/${parent.accountID}`
+          );
+          const pid = parentResponse.data.parentID;
+          setParentID(pid);
+          const res = await api.get(`Student/by-parent/${pid}`);
           const list = res.data.$values || res.data;
           setStudentsOfParent(list);
           if (list.length > 0) setSelectedStudentId(list[0].studentID);
@@ -99,19 +104,36 @@ function Event() {
         }
       })();
     }
-  }, [parent?.parent?.parentID]);
+  }, [parent?.accountID]);
 
   const filteredData = useMemo(() => {
     return (
       typeFilter === "ALL"
         ? data
         : typeFilter === "OTHER"
-        ? data.filter((item) => !item.notificationType)
+        ? data.filter(
+            (item) =>
+              !item.notificationType || item.notificationType === "General"
+          )
         : typeFilter === "MEDICAL_REQUEST"
         ? data.filter(
             (item) =>
-              item.notificationType === "MEDICAL_REQUEST" ||
-              (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))
+              item.notificationType === "Duyệt thuốc" ||
+              (item.title && item.title.toLowerCase().includes("thuốc"))
+          )
+        : typeFilter === "VACCINATION"
+        ? data.filter(
+            (item) =>
+              item.notificationType === "Thông báo tiêm vaccine" ||
+              (item.title && item.title.toLowerCase().includes("vaccine"))
+          )
+        : typeFilter === "CHECKUP"
+        ? data.filter(
+            (item) =>
+              item.notificationType === "Thông báo khám sức khỏe" ||
+              item.notificationType === "Kết quả khám" ||
+              item.notificationType === "CheckupSchedule" ||
+              (item.title && item.title.toLowerCase().includes("khám"))
           )
         : data.filter((item) => item.notificationType === typeFilter)
     ).sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
@@ -145,10 +167,10 @@ function Event() {
     try {
       if (attendanceModal.type === "CHECKUP_CONSENT") {
         await api.put(
-          `/ParentalConsents/checkup/${attendanceModal.notificationId}`,
+          `/api/checkup-consents/${attendanceModal.notificationId}`,
           {
-            parentId: parent.parent.parentID,
-            studentId: selectedStudentId,
+            parentID: parentID,
+            studentID: selectedStudentId,
             isApproved: attendanceModal.isAttend,
             note: noteDecline,
           }
@@ -254,10 +276,18 @@ function Event() {
             >
               <div style={{ display: "flex", alignItems: "center" }}>
                 <b style={{ flex: 1 }}>
-                  {item.notificationType === "VACCINATION"
+                  {item.notificationType === "Thông báo tiêm vaccine"
                     ? item.title || "Thông báo lịch tiêm phòng"
                     : item.notificationType === "MEDICAL_EVENT"
                     ? item.title || "Thông báo sự cố y tế"
+                    : item.notificationType === "Thông báo khám sức khỏe"
+                    ? item.title || "Thông báo khám sức khỏe"
+                    : item.notificationType === "Kết quả khám"
+                    ? item.title || "Kết quả khám sức khỏe"
+                    : item.notificationType === "Duyệt thuốc"
+                    ? item.title || "Thông báo duyệt thuốc"
+                    : item.notificationType === "Thông báo tai nạn"
+                    ? item.title || "Thông báo tai nạn"
                     : item.title}
                 </b>
                 <Tag

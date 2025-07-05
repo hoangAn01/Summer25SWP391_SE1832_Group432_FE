@@ -15,6 +15,7 @@ import {
   Card,
   Drawer,
   Typography,
+  Switch,
 } from "antd";
 import { toast } from "react-toastify";
 import {
@@ -28,10 +29,12 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import relativeTime from "dayjs/plugin/relativeTime";
 import api from "../config/axios";
 import { useSelector } from "react-redux";
 
 dayjs.extend(utc);
+dayjs.extend(relativeTime);
 
 const { Title } = Typography;
 
@@ -48,11 +51,18 @@ const MedicalEvent = () => {
   const [eventDetails, setEventDetails] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [medicalInventory, setMedicalInventory] = useState([]);
+  const user = useSelector((state) => state.user);
   const [originalEventData, setOriginalEventData] = useState(null);
   const [originalItemsData, setOriginalItemsData] = useState(null);
-  const user = useSelector((state) => state.user);
 
-  const eventTypes = ["Chấn thương", "Dị ứng", "Sốt", "Khác"];
+  const eventTypes = [
+    "Chấn thương",
+    "Dị ứng",
+    "Sốt",
+    "Đau bụng",
+    "Chảy máu cam",
+    "Khác",
+  ];
 
   const fetchMedicalEvents = async () => {
     setLoading(true);
@@ -85,7 +95,20 @@ const MedicalEvent = () => {
     fetchMedicalInventory();
   }, []);
 
+  const isEventEditable = (eventDate) => {
+    const creationTime = dayjs(eventDate);
+    const now = dayjs();
+    const hoursDiff = now.diff(creationTime, "hour");
+    return hoursDiff < 24;
+  };
+
   const handleShowDrawer = (record = null) => {
+    if (record && !isEventEditable(record.eventDate)) {
+      toast.warning(
+        "Không thể chỉnh sửa sự cố đã tạo quá 24 giờ, vui lòng liên hệ với admin để xử lí"
+      );
+      return;
+    }
     setEditingEvent(record);
     if (record) {
       form.setFieldsValue({
@@ -93,9 +116,9 @@ const MedicalEvent = () => {
         eventTime: record.eventTime ? dayjs(record.eventTime) : null,
       });
       // Fetch and set items if editing
-      if (record.eventID) {
+      if (record.medicalEventID) {
         api
-          .get(`MedicalEventInventory/event/${record.eventID}`)
+          .get(`MedicalEventInventory/event/${record.medicalEventID}`)
           .then((res) => {
             const items = (res.data.$values || []).map((item) => ({
               ...item,
@@ -104,11 +127,14 @@ const MedicalEvent = () => {
             form.setFieldsValue({ items });
             // Lưu lại dữ liệu gốc để so sánh khi submit
             setOriginalEventData({
-              eventID: record.eventID,
+              medicalEventID: record.medicalEventID,
               description: record.description,
               eventType: record.eventType,
               eventTime: dayjs(record.eventTime).utc().format(),
               studentID: record.studentID,
+              outcome: record.outcome || "",
+              followUpRequired: record.followUpRequired || false,
+              status: record.status,
             });
             setOriginalItemsData(
               items.map((i) => ({
@@ -140,7 +166,7 @@ const MedicalEvent = () => {
     setSelectedEvent(record);
     try {
       const response = await api.get(
-        `MedicalEventInventory/event/${record.eventID}`
+        `MedicalEventInventory/event/${record.medicalEventID}`
       );
       setEventDetails(response.data.$values || []);
       setIsDetailModalVisible(true);
@@ -155,30 +181,40 @@ const MedicalEvent = () => {
       return;
     }
     try {
-      const response = await api.get(`/Student/search/${searchText}`);
-      const suggestions = (response.data.$values || []).map((student) => ({
-        value: student.fullName,
-        label: `${student.fullName} (Lớp ${student.className})`,
-        key: student.studentID,
-        student,
-      }));
-      setStudentSuggestions(suggestions);
+      const response = await api.get(`v2/search?query=${searchText}`);
+      console.log("response  ", response.data.data.students.$values);
+      if (response.data.success && response.data.data.students.$values) {
+        const suggestions = response.data.data.students.$values
+          .filter((student) => student.type === "student")
+          .map((student) => ({
+            value: student.name,
+            label: `${student.name} (${student.className})`,
+            key: student.id,
+            student: {
+              studentID: student.id,
+              fullName: student.name,
+              className: student.className,
+            },
+          }));
+        setStudentSuggestions(suggestions);
+      }
     } catch (error) {
       console.error("Lỗi khi tìm kiếm học sinh:", error);
+      toast.error("Lỗi khi tìm kiếm học sinh");
     }
   };
 
   const onStudentSelect = (value, option) => {
     form.setFieldsValue({
       studentID: option.student.studentID,
-      studentName: option.student.fullName,
+      studentFullName: option.student.fullName,
     });
     setStudentSuggestions([]);
   };
 
-  const handleUpdateStatus = async (eventID) => {
+  const handleUpdateStatus = async (eventID, newStatus) => {
     try {
-      await api.put(`MedicalEvents/${eventID}/status`, "Đã xử lý", {
+      await api.put(`MedicalEvents/${eventID}/status`, newStatus, {
         headers: { "Content-Type": "application/json" },
       });
       toast.success("Cập nhật trạng thái thành công!");
@@ -190,100 +226,99 @@ const MedicalEvent = () => {
 
   const handleFinish = async (values) => {
     try {
-      let nurseID = null;
-      // Lấy giờ phút từ values.eventTime
       const selectedTime = values.eventTime;
-      const now = dayjs(); // ngày hiện tại
-      // Kết hợp ngày hiện tại với giờ phút đã chọn
-      const eventTime = now
+      const eventTime = dayjs()
         .hour(selectedTime.hour())
         .minute(selectedTime.minute())
         .second(0)
         .millisecond(0)
         .utc()
         .format();
-      // Tách dữ liệu event và items
-      console.log("user  ", user);
-      const response = await api.get(`Nurse?userId=${user.userID}`);
+
+      // Lấy nurseID từ userID
+      const nurseResponse = await api.get("Nurse");
+      const nurseInfo = nurseResponse.data.$values.find(
+        (nurse) => nurse.accountID === user.userID
+      );
+      const nurseID = nurseInfo.nurseID;
+
       const eventData = {
-        eventID: values.eventID,
-        description: values.description.trim(),
-        eventType: values.eventType,
-        eventTime: eventTime, // dùng eventTime đã kết hợp
         studentID: parseInt(values.studentID),
-        nurseID: response.data.nurseID,
+        nurseID: nurseID,
+        eventType: values.eventType,
+        description: values.description.trim(),
+        outcome: values.outcome || "",
+        followUpRequired: values.followUpRequired || false,
+        eventTime: eventTime,
       };
+
       const itemsData = (values.items || []).map((i) => ({
         itemID: i.itemID,
         quantityUsed: i.quantityUsed,
-        isExisting: i.isExisting,
       }));
-      // So sánh riêng biệt
-      let isEventChanged = true;
-      let isItemsChanged = true;
-      if (editingEvent && originalEventData && originalItemsData) {
-        isEventChanged = !(
-          eventData.eventID === originalEventData.eventID &&
-          eventData.description === originalEventData.description &&
-          eventData.eventType === originalEventData.eventType &&
-          eventData.eventTime === originalEventData.eventTime &&
-          eventData.studentID === originalEventData.studentID
-        );
-        isItemsChanged =
-          itemsData.length !== originalItemsData.length ||
-          itemsData.some((item, idx) => {
-            const ori = originalItemsData[idx];
-            return (
-              item.itemID !== ori.itemID ||
-              item.quantityUsed !== ori.quantityUsed ||
-              item.isExisting !== ori.isExisting
-            );
-          });
+
+      if (editingEvent) {
+        // Kiểm tra thay đổi
+        let isEventChanged = false;
+        let isItemsChanged = false;
+
+        if (originalEventData) {
+          isEventChanged =
+            eventData.description !== originalEventData.description ||
+            eventData.eventType !== originalEventData.eventType ||
+            eventData.eventTime !== originalEventData.eventTime ||
+            eventData.studentID !== originalEventData.studentID ||
+            eventData.outcome !== originalEventData.outcome ||
+            eventData.followUpRequired !== originalEventData.followUpRequired;
+        }
+
+        if (originalItemsData) {
+          isItemsChanged =
+            itemsData.length !== originalItemsData.length ||
+            itemsData.some((item, idx) => {
+              const ori = originalItemsData[idx];
+              return (
+                !ori ||
+                item.itemID !== ori.itemID ||
+                item.quantityUsed !== ori.quantityUsed
+              );
+            });
+        }
+
         if (!isEventChanged && !isItemsChanged) {
           toast.info("Bạn chưa thay đổi thông tin nào.");
           return;
-        } else {
-          nurseID = await api.get(`Nurse?userId=${user.userID}`);
+        }
+
+        // Cập nhật nếu có thay đổi
+        if (isEventChanged) {
+          await api.put(
+            `MedicalEvents/${editingEvent.medicalEventID}`,
+            eventData
+          );
+        }
+      } else {
+        // Tạo mới sự cố
+        const createResponse = await api.post("MedicalEvents", eventData);
+        const newEventId = createResponse.data.medicalEventID;
+        // Cập nhật medicalEventID để dùng cho việc thêm thuốc
+        eventData.medicalEventID = newEventId;
+      }
+
+      // Xử lý thuốc (chỉ khi tạo mới)
+      if (!editingEvent && itemsData.length > 0) {
+        for (const item of itemsData) {
+          await api.post("MedicalEventInventory", {
+            medicalEventID: eventData.medicalEventID,
+            itemID: item.itemID,
+            quantityUsed: item.quantityUsed,
+          });
         }
       }
 
-      // Gọi API theo phần thay đổi
-      if (editingEvent) {
-        if (isEventChanged) {
-          await api.put(`MedicalEvents/${eventData.eventID}`, {
-            ...eventData,
-            nurseID: nurseID || undefined,
-          });
-        }
-        if (isItemsChanged) {
-          await api.patch(
-            `/MedicalEventInventory/event/${eventData.eventID}/items`,
-            {
-              eventID: eventData.eventID,
-              items: itemsData,
-            }
-          );
-        }
-        toast.success("Cập nhật sự cố thành công!");
-      } else {
-        // Tạo mới event trước
-        const response = await api.get("Nurse");
-        nurseID = response.data.nurseID;
-        console.log("eventData  ", eventData);
-        const createResponse = await api.post("MedicalEvents", {
-          ...eventData,
-          nurseID,
-        });
-        const newEventId = createResponse.data.eventID;
-        // Sau đó tạo items nếu có
-        if (newEventId && itemsData.length > 0) {
-          await api.patch(`/MedicalEventInventory/event/${newEventId}/items`, {
-            eventID: newEventId,
-            items: itemsData,
-          });
-        }
-        toast.success("Thêm sự cố thành công!");
-      }
+      toast.success(
+        editingEvent ? "Cập nhật sự cố thành công!" : "Thêm sự cố thành công!"
+      );
       handleCloseDrawer();
       fetchMedicalEvents();
     } catch (error) {
@@ -295,36 +330,33 @@ const MedicalEvent = () => {
     const { keyword, status } = values;
     let filteredData = [...originalData];
 
+    // Lọc theo từ khóa (tên học sinh)
     if (keyword) {
-      const response = await api.get(
-        `/MedicalEvents/search?keyword=${keyword}`
+      const searchText = keyword.toLowerCase();
+      filteredData = filteredData.filter((item) =>
+        item.studentFullName.toLowerCase().includes(searchText)
       );
-      filteredData = response.data.$values;
     }
 
+    // Lọc theo trạng thái
     if (status && status !== "All") {
-      filteredData = filteredData.filter((item) => {
-        if (status === "Đang xử lý") {
-          return ["Đang xử lý", "Processing", "chưa xử lý"].includes(
-            item.status
-          );
-        }
-        if (status === "Đã xử lý") {
-          return ["Đã xử lý", "Processed"].includes(item.status);
-        }
-        return false;
-      });
+      filteredData = filteredData.filter((item) => item.status === status);
     }
 
     setTableData(filteredData);
   };
 
   const columns = [
-    { title: "ID", dataIndex: "eventID", key: "eventID", width: 80 },
+    {
+      title: "ID",
+      dataIndex: "medicalEventID",
+      key: "medicalEventID",
+      width: 80,
+    },
     {
       title: "Họ và tên học sinh",
-      dataIndex: "studentName",
-      key: "studentName",
+      dataIndex: "studentFullName",
+      key: "studentFullName",
     },
     { title: "Loại sự cố", dataIndex: "eventType", key: "eventType" },
     {
@@ -332,6 +364,19 @@ const MedicalEvent = () => {
       dataIndex: "eventTime",
       key: "eventTime",
       render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm"),
+      sorter: (a, b) => new Date(b.eventTime) - new Date(a.eventTime),
+      defaultSortOrder: "descend",
+    },
+    {
+      title: "Y tá phụ trách",
+      dataIndex: "nurseFullName",
+      key: "nurseFullName",
+    },
+    {
+      title: "Kết quả",
+      dataIndex: "outcome",
+      key: "outcome",
+      render: (outcome) => outcome || "Chưa có",
     },
     {
       title: "Trạng thái",
@@ -340,14 +385,12 @@ const MedicalEvent = () => {
       render: (status) => {
         const statusMap = {
           "Đã xử lý": { color: "green", text: "Đã xử lý" },
-          Processed: { color: "green", text: "Đã xử lý" },
           "Đang xử lý": { color: "orange", text: "Đang xử lý" },
-          Processing: { color: "orange", text: "Đang xử lý" },
-          "chưa xử lý": { color: "orange", text: "Đang xử lý" },
+          "Đang theo dõi": { color: "blue", text: "Đang theo dõi" },
         };
         const { color, text } = statusMap[status] || {
-          color: "red",
-          text: "Chưa xử lý",
+          color: "orange",
+          text: status,
         };
         return <Tag color={color}>{text}</Tag>;
       },
@@ -356,39 +399,69 @@ const MedicalEvent = () => {
       title: "Thao tác",
       key: "action",
       width: 280,
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetails(record)}
-          >
-            Xem
-          </Button>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => handleShowDrawer(record)}
-          >
-            Sửa
-          </Button>
-          {record.status !== "Đã xử lý" && record.status !== "Processed" && (
-            <Popconfirm
-              title="Xác nhận xử lý sự cố?"
-              onConfirm={() => handleUpdateStatus(record.eventID)}
-              okText="Xác nhận"
-              cancelText="Hủy"
+      render: (_, record) => {
+        const canEdit = isEventEditable(record.eventDate);
+
+        return (
+          <Space size="small">
+            <Button
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDetails(record)}
             >
-              <Button
-                type="primary"
-                style={{ background: "#52c41a", borderColor: "#52c41a" }}
-                icon={<CheckCircleOutlined />}
+              Xem
+            </Button>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => handleShowDrawer(record)}
+              disabled={!canEdit}
+              title={
+                !canEdit
+                  ? "Không thể sửa sự cố đã tạo quá 24 giờ, vui lòng liên hệ admin để xử lí"
+                  : ""
+              }
+            >
+              Sửa
+            </Button>
+            {record.status === "Đang xử lý" && (
+              <Popconfirm
+                title="Chuyển sang trạng thái đang theo dõi?"
+                onConfirm={() =>
+                  handleUpdateStatus(record.medicalEventID, "Đang theo dõi")
+                }
+                okText="Xác nhận"
+                cancelText="Hủy"
               >
-                Đã xử lý
-              </Button>
-            </Popconfirm>
-          )}
-        </Space>
-      ),
+                <Button
+                  type="primary"
+                  style={{ background: "#1890ff", borderColor: "#1890ff" }}
+                  icon={<PieChartOutlined />}
+                >
+                  Theo dõi
+                </Button>
+              </Popconfirm>
+            )}
+            {record.status === "Đang theo dõi" && (
+              <Popconfirm
+                title="Xác nhận đã xử lý xong?"
+                onConfirm={() =>
+                  handleUpdateStatus(record.medicalEventID, "Đã xử lý")
+                }
+                okText="Xác nhận"
+                cancelText="Hủy"
+              >
+                <Button
+                  type="primary"
+                  style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                  icon={<CheckCircleOutlined />}
+                >
+                  Đã xử lý
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -427,6 +500,7 @@ const MedicalEvent = () => {
           >
             <Select.Option value="All">Tất cả trạng thái</Select.Option>
             <Select.Option value="Đang xử lý">Đang xử lý</Select.Option>
+            <Select.Option value="Đang theo dõi">Đang theo dõi</Select.Option>
             <Select.Option value="Đã xử lý">Đã xử lý</Select.Option>
           </Select>
         </Form.Item>
@@ -449,7 +523,7 @@ const MedicalEvent = () => {
       <Table
         columns={columns}
         dataSource={tableData}
-        rowKey="eventID"
+        rowKey="medicalEventID"
         loading={loading}
       />
 
@@ -476,12 +550,12 @@ const MedicalEvent = () => {
         }
       >
         <Form form={form} layout="vertical" onFinish={handleFinish}>
-          <Form.Item name="eventID" hidden>
+          <Form.Item name="medicalEventID" hidden>
             <Input />
           </Form.Item>
           <Form.Item
             label="Họ và tên học sinh"
-            name="studentName"
+            name="studentFullName"
             rules={[
               { required: true, message: "Vui lòng nhập và chọn học sinh!" },
             ]}
@@ -538,14 +612,22 @@ const MedicalEvent = () => {
           >
             <Input.TextArea rows={4} placeholder="Mô tả chi tiết về sự cố" />
           </Form.Item>
+          <Form.Item label="Kết quả xử lý" name="outcome">
+            <Input.TextArea rows={3} placeholder="Nhập kết quả xử lý sự cố" />
+          </Form.Item>
+          <Form.Item
+            label="Cần theo dõi"
+            name="followUpRequired"
+            valuePropName="checked"
+          >
+            <Switch />
+          </Form.Item>
 
           <Title level={5}>Thuốc sử dụng</Title>
           <Form.List name="items">
             {(fields, { add, remove }) => (
               <>
                 {fields.map((field) => {
-                  const item = form.getFieldValue(["items", field.name]);
-                  const isExisting = item?.isExisting;
                   return (
                     <Space
                       key={field.key}
@@ -561,7 +643,7 @@ const MedicalEvent = () => {
                         <Select
                           placeholder="Thuốc"
                           style={{ width: 200 }}
-                          disabled={isExisting}
+                          disabled={editingEvent}
                           onChange={(itemName) => {
                             const selected = medicalInventory.find(
                               (i) => i.itemName === itemName
@@ -592,20 +674,18 @@ const MedicalEvent = () => {
                       </Form.Item>
                       <Form.Item
                         {...field}
-                        name={[field.name, "isExisting"]}
-                        hidden
-                      >
-                        <Input />
-                      </Form.Item>
-                      <Form.Item
-                        {...field}
                         name={[field.name, "quantityUsed"]}
                         rules={[{ required: true, message: "Nhập số lượng!" }]}
                         noStyle
                       >
-                        <InputNumber min={1} max={5} placeholder="Số lượng" />
+                        <InputNumber
+                          min={1}
+                          max={5}
+                          placeholder="Số lượng"
+                          disabled={editingEvent}
+                        />
                       </Form.Item>
-                      {!isExisting && (
+                      {!editingEvent && (
                         <MinusCircleOutlined
                           onClick={() => remove(field.name)}
                         />
@@ -613,16 +693,18 @@ const MedicalEvent = () => {
                     </Space>
                   );
                 })}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    block
-                    icon={<PlusOutlined />}
-                  >
-                    Thêm thuốc sử dụng
-                  </Button>
-                </Form.Item>
+                {!editingEvent && (
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      block
+                      icon={<PlusOutlined />}
+                    >
+                      Thêm thuốc sử dụng
+                    </Button>
+                  </Form.Item>
+                )}
               </>
             )}
           </Form.List>
@@ -630,7 +712,7 @@ const MedicalEvent = () => {
       </Drawer>
 
       <Modal
-        title={`Chi tiết sự cố y tế của ${selectedEvent?.studentName}`}
+        title={`Chi tiết sự cố y tế của ${selectedEvent?.studentFullName}`}
         open={isDetailModalVisible}
         onCancel={() => setIsDetailModalVisible(false)}
         footer={[

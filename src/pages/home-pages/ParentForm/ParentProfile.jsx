@@ -54,7 +54,7 @@ const ParentProfile = () => {
         }
 
         // Gọi API lấy thông tin phụ huynh
-        const parentResponse = await api.get(`/Parent/user/${userId}`);
+        const parentResponse = await api.get(`Parent/ByAccount/${userId}`);
         console.log("Parent Response:", parentResponse);
 
         setParentProfile(parentResponse.data);
@@ -63,7 +63,7 @@ const ParentProfile = () => {
         const parentID = parentResponse.data.parentID;
 
         // Gọi API lấy danh sách học sinh với parentID
-        const studentsResponse = await api.get(`/Student/${parentID}`);
+        const studentsResponse = await api.get(`Student/by-parent/${parentID}`);
         console.log("Students Response:", studentsResponse);
 
         // Lấy danh sách học sinh từ $values
@@ -84,10 +84,6 @@ const ParentProfile = () => {
         form.setFieldsValue({
           parentID: parentResponse.data.parentID,
           fullName: parentResponse.data.fullName,
-          gender: parentResponse.data.gender,
-          dateOfBirth: parentResponse.data.dateOfBirth
-            ? moment(parentResponse.data.dateOfBirth)
-            : null,
           address: parentResponse.data.address,
           phone: parentResponse.data.phone,
         });
@@ -129,13 +125,9 @@ const ParentProfile = () => {
       setLoading(true);
 
       // Gọi API cập nhật - sử dụng PUT thay vì GET
-      const response = await api.put(`/Parent/${values.parentID}`, {
+      const response = await api.put(`Parent/${values.parentID}`, {
         parentID: values.parentID,
         fullName: values.fullName,
-        gender: values.gender,
-        dateOfBirth: values.dateOfBirth
-          ? values.dateOfBirth.format("YYYY-MM-DD")
-          : null,
         address: values.address,
         phone: values.phone,
       });
@@ -183,8 +175,6 @@ const ParentProfile = () => {
       title: "Giới Tính",
       dataIndex: "gender",
       key: "gender",
-      render: (gender) =>
-        gender === "M" ? "Nam" : gender === "F" ? "Nữ" : "Khác",
     },
     {
       title: "Ngày Sinh",
@@ -343,34 +333,6 @@ const ParentProfile = () => {
           <Descriptions.Item
             label={
               <>
-                <ManOutlined style={{ marginRight: 8 }} />
-                Giới Tính
-              </>
-            }
-          >
-            {parentProfile?.gender === "M"
-              ? "Nam"
-              : parentProfile?.gender === "F"
-              ? "Nữ"
-              : "Khác"}
-          </Descriptions.Item>
-
-          <Descriptions.Item
-            label={
-              <>
-                <CalendarOutlined style={{ marginRight: 8 }} />
-                Ngày Sinh
-              </>
-            }
-          >
-            {parentProfile?.dateOfBirth
-              ? moment(parentProfile.dateOfBirth).format("DD/MM/YYYY")
-              : "Chưa cập nhật"}
-          </Descriptions.Item>
-
-          <Descriptions.Item
-            label={
-              <>
                 <HomeOutlined style={{ marginRight: 8 }} />
                 Địa Chỉ
               </>
@@ -419,25 +381,6 @@ const ParentProfile = () => {
               rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
             >
               <Input prefix={<UserOutlined />} placeholder="Nhập họ và tên" />
-            </Form.Item>
-
-            <Form.Item
-              name="gender"
-              label="Giới Tính"
-              rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
-            >
-              <Select placeholder="Chọn giới tính">
-                <Select.Option value="F">Nữ</Select.Option>
-                <Select.Option value="M">Nam</Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item name="dateOfBirth" label="Ngày Sinh">
-              <DatePicker
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                placeholder="Chọn ngày sinh"
-              />
             </Form.Item>
 
             <Form.Item name="address" label="Địa Chỉ">

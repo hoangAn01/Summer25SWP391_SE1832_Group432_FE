@@ -55,7 +55,7 @@ const Header = () => {
       // Lấy parentID theo userID
       (async () => {
         try {
-          const res = await api.get(`/Parent/user/${user.userID}`);
+          const res = await api.get(`Parent/ByAccount/${user.userID}`);
           setParentId(res.data.parentID);
         } catch (err) {
           console.error("Không tìm thấy parent:", err);
@@ -412,17 +412,23 @@ const Header = () => {
 
       <Dialog open={showLinkDialog} onClose={() => setShowLinkDialog(false)}>
         <DialogTitle>Liên kết học sinh với phụ huynh</DialogTitle>
-        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+        >
           <InputBase
             placeholder="Mã học sinh"
             value={linkForm.studentID}
-            onChange={(e) => setLinkForm({ ...linkForm, studentID: e.target.value })}
+            onChange={(e) =>
+              setLinkForm({ ...linkForm, studentID: e.target.value })
+            }
             sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
           />
           <InputBase
             placeholder="Họ tên học sinh"
             value={linkForm.studentName}
-            onChange={(e) => setLinkForm({ ...linkForm, studentName: e.target.value })}
+            onChange={(e) =>
+              setLinkForm({ ...linkForm, studentName: e.target.value })
+            }
             sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
           />
         </DialogContent>
@@ -446,7 +452,9 @@ const Header = () => {
                 setShowLinkDialog(false);
               } catch (err) {
                 console.error(err);
-                const msg = err.response?.data || "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
+                const msg =
+                  err.response?.data ||
+                  "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
                 toast.error(msg);
               } finally {
                 setLinkLoading(false);
