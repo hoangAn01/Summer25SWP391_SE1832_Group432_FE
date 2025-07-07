@@ -6,7 +6,7 @@ import {
   Input,
   Select,
   DatePicker,
-  Space
+  Space,
 } from "antd";
 
 import { FaEye, FaEyeSlash, FaGoogle, FaArrowLeft } from "react-icons/fa";
@@ -16,21 +16,54 @@ import { useNavigate } from "react-router-dom";
 import api from "../../config/axios";
 import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
-
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // State cho địa chỉ động
+  const [provinces, setProvinces] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
+  const [street, setStreet] = useState("");
+
+  // Lấy danh sách tỉnh/thành và phường/xã từ API VietnamLabs
+  useEffect(() => {
+    axios.get("https://vietnamlabs.com/api/vietnamprovince").then((res) => {
+      if (res.data && res.data.data) {
+        setProvinces(res.data.data);
+      }
+    });
+  }, []);
+
+  const handleProvinceChange = (value) => {
+    setSelectedProvince(value);
+    setSelectedWard("");
+    // Tìm tỉnh/thành được chọn và cập nhật danh sách phường/xã
+    const found = provinces.find((p) => p.province === value);
+    setWards(found ? found.wards : []);
+  };
+
+  const handleWardChange = (value) => {
+    setSelectedWard(value);
+  };
+
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const { dateOfBirth, address, ...rest } = values;
+      const { dateOfBirth, ...rest } = values;
+      // Ghép địa chỉ đầy đủ
+      const provinceName = selectedProvince || "";
+      const wardName = selectedWard || "";
+      const address = `${street}, ${wardName}, ${provinceName}`;
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
-        address: address
+        address,
       };
       console.log("Payload địa chỉ:", payload.address);
       const response = await api.post("Auth/register", payload);
@@ -110,9 +143,11 @@ function RegisterForm() {
                 { required: true, message: "Vui lòng nhập mật khẩu" },
                 { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" },
                 {
-                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/,
-                  message: "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt"
-                }
+                  pattern:
+                    /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/,
+                  message:
+                    "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt",
+                },
               ]}
             >
               <Input.Password placeholder="Mật khẩu" />
@@ -132,7 +167,7 @@ function RegisterForm() {
                       new Error("Mật khẩu xác nhận không khớp")
                     );
                   },
-                })
+                }),
               ]}
             >
               <Input.Password placeholder="Xác nhận mật khẩu" />
@@ -155,16 +190,20 @@ function RegisterForm() {
               name="dateOfBirth"
               rules={[
                 { required: true, message: "Vui lòng chọn ngày sinh" },
-                ({ getFieldValue }) => ({
+                () => ({
                   validator(_, value) {
                     if (!value) return Promise.resolve();
                     const year = value.year();
                     if (year >= 1960 && year <= 2006) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error("Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."));
+                    return Promise.reject(
+                      new Error(
+                        "Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."
+                      )
+                    );
                   },
-                })
+                }),
               ]}
             >
               <DatePicker
@@ -175,15 +214,80 @@ function RegisterForm() {
             </Form.Item>
 
             <Form.Item
-              name="address"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ" }]}
+              label="Tỉnh/Thành phố"
+              name="province"
+              rules={[
+                { required: true, message: "Vui lòng chọn tỉnh/thành phố" },
+              ]}
             >
-              <Input placeholder="Địa chỉ" />
+              <Select
+                showSearch
+                placeholder="Chọn tỉnh/thành phố"
+                optionFilterProp="children"
+                onChange={handleProvinceChange}
+                filterOption={(input, option) =>
+                  (option?.children ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+                value={selectedProvince || undefined}
+              >
+                {provinces.map((p) => (
+                  <Select.Option key={p.province} value={p.province}>
+                    {p.province}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
+
+            {selectedProvince && (
+              <Form.Item
+                label="Phường/Xã"
+                name="ward"
+                rules={[{ required: true, message: "Vui lòng chọn phường/xã" }]}
+              >
+                <Select
+                  showSearch
+                  placeholder="Chọn phường/xã"
+                  optionFilterProp="children"
+                  onChange={handleWardChange}
+                  filterOption={(input, option) =>
+                    (option?.children ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  value={selectedWard || undefined}
+                  disabled={!selectedProvince}
+                >
+                  {wards.map((w) => (
+                    <Select.Option key={w.name} value={w.name}>
+                      {w.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            )}
+
+            {selectedWard && (
+              <Form.Item
+                label="Địa chỉ chi tiết (số nhà, tên đường)"
+                name="street"
+                rules={[
+                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
+                ]}
+              >
+                <Input
+                  placeholder="Nhập số nhà, tên đường..."
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                />
+              </Form.Item>
+            )}
 
             <Form.Item
               name="gender"
               rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
+              style={{ marginTop: 24 }}
             >
               <Select placeholder="Chọn giới tính">
                 <Select.Option value="M">Nam</Select.Option>
@@ -192,13 +296,13 @@ function RegisterForm() {
               </Select>
             </Form.Item>
 
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <Button type="primary" htmlType="submit" block>
                 Đăng ký
               </Button>
-              <Button 
-                icon={<FaArrowLeft />} 
-                onClick={handleBackToLogin} 
+              <Button
+                icon={<FaArrowLeft />}
+                onClick={handleBackToLogin}
                 block
                 type="default"
               >

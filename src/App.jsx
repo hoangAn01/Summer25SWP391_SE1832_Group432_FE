@@ -44,6 +44,7 @@ import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
 import CheckupPage from "./nurse/checkup";
 import MedicalInventory from "./nurse/medical-inventory";
+import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
 function App() {
   const router = createBrowserRouter([
@@ -168,6 +169,10 @@ function App() {
         {
           path: "/nurse/checkup",
           element: <CheckupPage />,
+        },
+        {
+          path: "/nurse/blog",
+          element: <BlogCreateForm />,
         },
       ],
     },

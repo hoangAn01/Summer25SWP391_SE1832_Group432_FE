@@ -52,6 +52,7 @@ const items = [
     <MedicineBoxOutlined />
   ),
   getItem("Khám định kỳ", "/nurse/checkup", <FileOutlined />),
+  getItem("Đăng blog", "/nurse/blog", <FileOutlined />),
 ];
 
 // Mapping path to breadcrumb name
@@ -62,6 +63,7 @@ const breadcrumbNameMap = {
   "/nurse/approve-medicine": "Duyệt đơn thuốc",
   "/nurse/profile": "Thông tin cá nhân",
   "/nurse/medical-inventory": "Quản lí kho thuốc",
+  "/nurse/blog": "Đăng blog học đường",
 };
 
 const Nurse = () => {

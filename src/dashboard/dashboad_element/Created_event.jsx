@@ -9,24 +9,28 @@ import {
   Modal,
   message,
   Popconfirm,
+  Form,
+  Input,
+  Select,
 } from "antd";
 import {
   CalendarOutlined,
   MedicineBoxOutlined,
-  SendOutlined,
+  PlusOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
-import { useSelector } from "react-redux";
 
 const { Title, Text, Paragraph } = Typography;
 
 function Created_event() {
-  const user = useSelector((state) => state.user);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isNotificationModalVisible, setIsNotificationModalVisible] =
+    useState(false);
+  const [notificationForm] = Form.useForm();
 
   useEffect(() => {
     fetchNotifications();
@@ -35,50 +39,24 @@ function Created_event() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/Notifications");
-
-      // Xử lý response với cấu trúc mới có $values
-      const notificationsData = response.data.$values || [];
-      console.log("User role:", user?.role);
-      console.log("Dữ liệu thông báo từ API:", notificationsData);
-
-      let filteredNotifications = notificationsData;
-      if (user?.role?.toLowerCase() === "admin") {
-        filteredNotifications = notificationsData.filter(
-          notif => notif.notificationType !== "MEDICAL_REQUEST"
-        );
-        console.log("Sau khi lọc MEDICAL_REQUEST cho admin:", filteredNotifications);
-        filteredNotifications.forEach((notif, idx) => {
-          console.log(`Thông báo còn lại [${idx}]:`, notif.title, notif.notificationType);
-        });
-      }
-
-      if (Array.isArray(filteredNotifications)) {
-        // Transform notifications to match existing component structure
-        const transformedNotifications = filteredNotifications.map(
-          (notification) => ({
-            id: notification.notificationID,
-            title: notification.title,
-            content: notification.content,
-            date: notification.sentDate,
-            status:
-              notification.status === "Published" ? "created" : "in_progress",
-            type: "notification", // Default type
-            grade: "Toàn trường", // Default grade
-            notificationType: notification.notificationType
-          })
-        );
-
-        // Sắp xếp theo thời gian mới nhất lên đầu
-        transformedNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        setNotifications(transformedNotifications);
-      } else {
-        message.error("Dữ liệu thông báo không đúng định dạng");
-      }
+      const response = await api.get("/VaccinationEvent");
+      const eventsData = response.data.$values || response.data;
+      const transformedNotifications = eventsData.map((event) => ({
+        id: event.eventID,
+        title: event.eventName,
+        content: `Địa điểm: ${event.location} - Khối lớp: ${event.classID}`,
+        date: event.date,
+        status: "created",
+        type: "vaccine",
+        grade: event.classID === 0 ? "Toàn trường" : `Khối ${event.classID}`,
+      }));
+      transformedNotifications.sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+      );
+      setNotifications(transformedNotifications);
     } catch (error) {
-      console.error("Lỗi khi tải thông báo:", error);
-      message.error("Không thể tải danh sách thông báo");
+      console.error("Lỗi khi tải danh sách sự kiện tiêm chủng:", error);
+      message.error("Không thể tải danh sách sự kiện tiêm chủng");
     } finally {
       setLoading(false);
     }
@@ -111,62 +89,59 @@ function Created_event() {
     setSelectedNotification(null);
   };
 
-  const handleSendNotification = async () => {
+  const handleCreateNotification = async (values) => {
     try {
-      // Gọi API để gửi thông báo
-      await api.post(`/Notifications/${selectedNotification.id}/send`);
-
-      // Cập nhật trạng thái thông báo
-      const updatedNotifications = notifications.map((notif) =>
-        notif.id === selectedNotification.id
-          ? { ...notif, status: "sent" }
-          : notif
-      );
-
-      setNotifications(updatedNotifications);
-      setSelectedNotification((prev) => ({ ...prev, status: "sent" }));
-
-      message.success("Gửi thông báo thành công");
-    } catch (error) {
-      console.error("Lỗi khi gửi thông báo:", error);
-      message.error("Không thể gửi thông báo");
+      const payload = {
+        title: values.title,
+        content: values.content,
+        status: "created",
+        notificationType: values.notificationType,
+        vaccinationEventID:
+          values.notificationType === "VACCINATION"
+            ? selectedNotification.id
+            : null,
+        medicalEventID:
+          values.notificationType === "MEDICAL_EVENT"
+            ? selectedNotification.id
+            : null,
+        parentIds: [],
+        eventTime: selectedNotification.date,
+      };
+      await api.post("/Notifications", payload);
+      message.success("Tạo thông báo thành công!");
+      setIsNotificationModalVisible(false);
+      notificationForm.resetFields();
+    } catch {
+      message.error("Không thể tạo thông báo");
     }
   };
 
   const handleDeleteNotification = async (notificationId) => {
     try {
-      // Kiểm tra trạng thái trước khi xóa
       const notification = notifications.find((n) => n.id === notificationId);
       if (notification.status === "sent") {
-        message.error("Không thể xóa thông báo đã gửi");
+        message.error("Không thể xóa sự kiện đã gửi");
         return;
       }
-
-      // Gọi API xóa thông báo
-      await api.delete(`/Notifications/${notificationId}`);
-
-      // Cập nhật danh sách thông báo
+      await api.delete(`/VaccinationEvent/${notificationId}`);
       const updatedNotifications = notifications.filter(
         (notif) => notif.id !== notificationId
       );
       setNotifications(updatedNotifications);
-
-      // Đóng modal nếu đang mở thông báo bị xóa
       if (selectedNotification?.id === notificationId) {
         handleCloseModal();
       }
-
-      message.success("Xóa thông báo thành công");
+      message.success("Xóa sự kiện thành công");
     } catch (error) {
-      console.error("Lỗi khi xóa thông báo:", error);
-      message.error("Không thể xóa thông báo");
+      console.error("Lỗi khi xóa sự kiện:", error);
+      message.error("Không thể xóa sự kiện");
     }
   };
 
   return (
     <div style={{ padding: 24 }}>
       <Title level={3} style={{ marginBottom: 24 }}>
-        Danh sách thông báo
+        Danh sách sự kiện đã tạo
       </Title>
       <List
         grid={{ gutter: 16, column: 2 }}
@@ -179,6 +154,24 @@ function Created_event() {
               actions={[
                 <Button type="link" onClick={() => handleViewDetails(item)}>
                   Chi tiết
+                </Button>,
+                <Popconfirm
+                  title="Bạn có chắc chắn muốn xóa sự kiện này?"
+                  onConfirm={() => handleDeleteNotification(item.id)}
+                  okText="Xóa"
+                  cancelText="Hủy"
+                >
+                  <Button type="link" danger icon={<DeleteOutlined />} />
+                </Popconfirm>,
+                <Button
+                  type="link"
+                  icon={<PlusOutlined />}
+                  onClick={() => {
+                    setSelectedNotification(item);
+                    setIsNotificationModalVisible(true);
+                  }}
+                >
+                  Tạo thông báo
                 </Button>,
               ]}
             >
@@ -195,17 +188,7 @@ function Created_event() {
                     <span>{item.title}</span>
                     {item.status === "created" && (
                       <Tag color="orange" style={{ marginLeft: 8 }}>
-                        Đã tạo sự kiện, chưa gửi
-                      </Tag>
-                    )}
-                    {item.status === "sent" && (
-                      <Tag color="green" style={{ marginLeft: 8 }}>
-                        Đã gửi
-                      </Tag>
-                    )}
-                    {item.status === "in_progress" && (
-                      <Tag color="blue" style={{ marginLeft: 8 }}>
-                        Đang xử lý
+                        Đã tạo sự kiện
                       </Tag>
                     )}
                   </div>
@@ -223,94 +206,67 @@ function Created_event() {
           </List.Item>
         )}
       />
-
       <Modal
-        title="Chi tiết thông báo"
+        title="Chi tiết sự kiện"
         open={isModalVisible}
         onCancel={handleCloseModal}
-        footer={[
-          <Button key="back" onClick={handleCloseModal}>
-            Đóng
-          </Button>,
-          selectedNotification?.status === "created" && (
-            <>
-              <Button
-                key="send"
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={handleSendNotification}
-              >
-                Gửi thông báo
-              </Button>
-              <Popconfirm
-                title="Bạn có chắc chắn muốn xóa thông báo này?"
-                onConfirm={() =>
-                  handleDeleteNotification(selectedNotification.id)
-                }
-                okText="Xóa"
-                cancelText="Hủy"
-              >
-                <Button key="delete" type="danger" icon={<DeleteOutlined />}>
-                  Xóa thông báo
-                </Button>
-              </Popconfirm>
-            </>
-          ),
-        ]}
-        width={800}
-        bodyStyle={{
-          padding: "30px",
-          maxHeight: "600px",
-          overflowY: "auto",
-        }}
-        style={{
-          top: "50px",
-        }}
+        footer={null}
       >
         {selectedNotification && (
           <div>
-            <Title level={3} style={{ marginBottom: 20 }}>
-              {selectedNotification.title}
-            </Title>
-            <Space direction="vertical" size="large" style={{ width: "100%" }}>
-              <div>
-                <Text strong style={{ marginRight: 10 }}>
-                  Thời gian:{" "}
-                </Text>
-                <Text>{selectedNotification.date}</Text>
-              </div>
-              <div>
-                <Text strong style={{ marginRight: 10, verticalAlign: "top" }}>
-                  Nội dung:{" "}
-                </Text>
-                <Paragraph
-                  style={{
-                    backgroundColor: "#f0f2f5",
-                    padding: "15px",
-                    borderRadius: "8px",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {selectedNotification.content}
-                </Paragraph>
-              </div>
-              <div>
-                <Text strong style={{ marginRight: 10 }}>
-                  Trạng thái:{" "}
-                </Text>
-                {selectedNotification.status === "created" && (
-                  <Tag color="orange">Đã tạo sự kiện, chưa gửi</Tag>
-                )}
-                {selectedNotification.status === "sent" && (
-                  <Tag color="green">Đã gửi</Tag>
-                )}
-                {selectedNotification.status === "in_progress" && (
-                  <Tag color="blue">Đang xử lý</Tag>
-                )}
-              </div>
-            </Space>
+            <Title level={4}>{selectedNotification.title}</Title>
+            <Paragraph>{selectedNotification.content}</Paragraph>
+            <Text strong>Ngày tổ chức: </Text>
+            <Text>{selectedNotification.date}</Text>
+            <br />
+            <Text strong>Khối lớp: </Text>
+            <Text>{selectedNotification.grade}</Text>
           </div>
         )}
+      </Modal>
+      <Modal
+        title="Tạo thông báo cho sự kiện"
+        open={isNotificationModalVisible}
+        onCancel={() => setIsNotificationModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          form={notificationForm}
+          layout="vertical"
+          onFinish={handleCreateNotification}
+        >
+          <Form.Item
+            name="title"
+            label="Tiêu đề thông báo"
+            rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="content"
+            label="Nội dung thông báo"
+            rules={[{ required: true, message: "Vui lòng nhập nội dung" }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item
+            name="notificationType"
+            label="Loại thông báo"
+            rules={[
+              { required: true, message: "Vui lòng chọn loại thông báo" },
+            ]}
+          >
+            <Select>
+              <Select.Option value="VACCINATION">Tiêm chủng</Select.Option>
+              <Select.Option value="MEDICAL_EVENT">Sự kiện y tế</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Tạo thông báo
+            </Button>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );
