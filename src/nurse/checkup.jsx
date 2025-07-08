@@ -1,467 +1,422 @@
 import React, { useEffect, useState } from "react";
 import {
-  Card,
+  Select,
   Table,
-  Modal,
   Button,
-  Typography,
+  Tag,
   Spin,
-  Descriptions,
+  Alert,
+  Typography,
+  Space,
+  message,
+  Modal,
   Form,
   Input,
+  Checkbox,
   InputNumber,
-  DatePicker,
-  Space, // Import Space
-  Empty, // Import Empty
 } from "antd";
 import api from "../config/axios";
-import dayjs from "dayjs";
-import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 const { Title } = Typography;
 
-const CheckupPage = () => {
-  // =================================================================
-  // State
-  // =================================================================
-  const [schedules, setSchedules] = useState([]);
-  const [loading, setLoading] = useState(false);
+const statusColor = {
+  Pending: "warning",
+  Accepted: "success",
+  Rejected: "error",
+};
+
+const HEALTH_EVENT_TYPE_ID = 1; // Khám sức khỏe định kỳ
+
+const CheckUp = () => {
+  const [events, setEvents] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState("");
   const [students, setStudents] = useState([]);
-  const [studentLoading, setStudentLoading] = useState(false);
-  const [reportLoading, setReportLoading] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [studentReports, setStudentReports] = useState([]);
-  const [classMap, setClassMap] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const user = useSelector((state) => state.user); // nurseID
 
-  const [studentModalOpen, setStudentModalOpen] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalStudent, setModalStudent] = useState(null);
   const [form] = Form.useForm();
-  const user = useSelector((state) => state.user);
+  const [submitting, setSubmitting] = useState(false);
 
-  // =================================================================
-  // Effects
-  // =================================================================
+  const [viewedCheckup, setViewedCheckup] = useState(null);
+  const [viewedStudent, setViewedStudent] = useState(null);
+
+  // Fetch events (chỉ lấy eventTypeID = 1)
   useEffect(() => {
-    fetchSchedules();
-    fetchClasses();
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const eventRes = await api.get("Event");
+        const allEvents = eventRes.data.$values;
+        setEvents(
+          allEvents.filter((e) => e.eventTypeID === HEALTH_EVENT_TYPE_ID)
+        );
+      } catch {
+        setError("Không lấy được danh sách sự kiện.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
   }, []);
 
-  // =================================================================
-  // Data Fetching
-  // =================================================================
-  const fetchSchedules = async () => {
+  const fetchStudentsByEvent = async (eventId) => {
     setLoading(true);
     try {
-      const res = await api.get("CheckupSchedules");
-      setSchedules(res.data.$values || []);
+      const res = await api.get(
+        `StudentJoinEvent/${eventId}/Accepted-students`
+      );
+      setStudents(res.data.$values);
     } catch {
-      toast.error("Không thể tải danh sách buổi khám");
+      message.error("Không lấy được danh sách học sinh.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchClasses = async () => {
+  useEffect(() => {
+    if (selectedEvent) fetchStudentsByEvent(selectedEvent);
+    else setStudents([]);
+  }, [selectedEvent]);
+
+  const handleStudentResponse = async (studentId, status) => {
+    setLoading(true);
     try {
-      const res = await api.get("Class");
-      const map = (res.data.$values || res.data).reduce((acc, cls) => {
-        acc[cls.classID] = cls.className;
-        return acc;
-      }, {});
-      setClassMap(map);
+      await api.put("StudentJoinEvent/respond-by-student", {
+        studentId,
+        eventId: selectedEvent,
+        status,
+        note: "",
+      });
+      message.success("Cập nhật thành công!");
+      fetchStudentsByEvent(selectedEvent);
     } catch {
-      toast.error("Không thể tải danh sách lớp");
+      message.error("Cập nhật phản hồi thất bại");
+      setLoading(false);
     }
   };
 
-  // =================================================================
-  // Handlers
-  // =================================================================
-  const openStudentModal = async (schedule) => {
-    setSelectedSchedule(schedule);
-    setStudentModalOpen(true);
-    setStudentLoading(true);
-    try {
-      // Lấy danh sách học sinh của lớp
-      const classResponse = await api.get(`Class/${schedule.classID}`);
-      const allClass = classResponse.data.$values || [];
-
-      // Lấy danh sách consent đã đồng ý cho buổi khám này
-      const consentRes = await api.get("ParentalConsents");
-      const consents = (consentRes.data.$values || []).filter(
-        (c) =>
-          c.schoolCheckupID === schedule.scheduleID &&
-          c.consentStatus === "Đã đồng ý"
-      );
-
-      // Lọc học sinh chỉ giữ lại các bạn đã được phụ huynh đồng ý
-      const approvedStudentIDs = consents.map((c) => c.studentID);
-      const filtered = allClass.filter((s) =>
-        approvedStudentIDs.includes(s.studentID)
-      );
-      setStudents(filtered);
-    } catch {
-      toast.error("Không thể tải danh sách học sinh hoặc xác nhận phụ huynh");
-    } finally {
-      setStudentLoading(false);
-    }
-  };
-
-  const openReportModal = async (student, schedule) => {
-    setSelectedStudent(student);
-    setSelectedSchedule(schedule);
-    setReportModalOpen(true);
-    setReportLoading(true);
-    try {
-      // Get the parent ID from the student data if available
-      const parentId = student.parentID || 1; // Default to 1 if not available
-      const res = await api.get(
-        `Checkup/detail/${schedule.scheduleID}/parent/${parentId}`
-      );
-      setStudentReports([res.data]); // Wrap single report in array to maintain compatibility
-    } catch {
-      toast.error("Không thể tải báo cáo sức khỏe");
-      setStudentReports([]);
-    } finally {
-      setReportLoading(false);
-    }
-  };
-
-  const openCreateModal = (student, schedule) => {
-    setSelectedStudent(student);
-    setSelectedSchedule(schedule);
-    // Set ngày khám mặc định là ngày trong lịch khám
-    form.setFieldsValue({
-      date: schedule?.date ? dayjs(schedule.date) : null,
-    });
-    setCreateModalOpen(true);
-  };
-
-  const handleCreateReport = async (values) => {
-    setCreateLoading(true);
-    try {
-      if (!user || !user.userID) {
-        toast.error("Không xác định được y tá. Vui lòng đăng nhập lại.");
-        return;
-      }
-      if (!selectedStudent) {
-        toast.error("Không xác định được học sinh.");
-        return;
-      }
-
-      const nurseRes = await api.get(`Nurse?userId=${user.userID}`);
-      const nurseID = nurseRes.data.nurseID;
-
-      if (!nurseID) {
-        toast.error("Không tìm thấy thông tin y tá tương ứng.");
-        return;
-      }
-
-      const reportPayload = {
-        date: values.date.toISOString(),
-        description: values.description,
-        studentID: selectedStudent.studentID,
-        nurseID,
-      };
-
-      const reportRes = await api.post("Checkup/reports", reportPayload);
-      const reportID = reportRes.data.reportID;
-
-      const detailPayload = {
-        reportID,
-        weight: values.weight,
-        height: values.height,
-        bloodPressure: values.bloodPressure,
-        visionLeft: values.visionLeft,
-        visionRight: values.visionRight,
-      };
-
-      await api.post("Checkup", detailPayload);
-
-      toast.success("Nhập kết quả khám thành công!");
-      closeCreateModal();
-
-      // Tự động làm mới modal báo cáo nếu nó đang mở cho cùng học sinh
-      if (
-        reportModalOpen &&
-        selectedStudent?.studentID === selectedStudent.studentID
-      ) {
-        openReportModal(selectedStudent, selectedSchedule);
-      }
-    } catch (error) {
-      toast.error("Lỗi khi nhập kết quả khám. Vui lòng thử lại.");
-      console.error("Create report error:", error);
-    } finally {
-      setCreateLoading(false);
-    }
-  };
-
-  const closeStudentModal = () => {
-    setStudentModalOpen(false);
-    setSelectedSchedule(null);
-    setStudents([]);
-  };
-
-  const closeReportModal = () => {
-    setReportModalOpen(false);
-    setSelectedStudent(null);
-    setStudentReports([]);
-  };
-
-  const closeCreateModal = () => {
-    setCreateModalOpen(false);
-    setSelectedStudent(null);
+  const handleOpenModal = (student) => {
+    setModalStudent(student);
+    setIsModalOpen(true);
     form.resetFields();
   };
 
-  // =================================================================
-  // Render Helpers & Columns
-  // =================================================================
-
-  const renderReport = () => {
-    if (!studentReports.length) {
-      return <Empty description="Chưa có báo cáo cho buổi khám này." />;
-    }
-    const report = studentReports[0]; // Get the first (and only) report
-    return (
-      <Descriptions bordered column={1} size="small">
-        <Descriptions.Item label="Học sinh">
-          {report.studentName}
-        </Descriptions.Item>
-        <Descriptions.Item label="Ngày khám">
-          {dayjs(report.date).format("DD/MM/YYYY")}
-        </Descriptions.Item>
-        <Descriptions.Item label="Cân nặng">
-          {report.weight} kg
-        </Descriptions.Item>
-        <Descriptions.Item label="Chiều cao">
-          {report.height} cm
-        </Descriptions.Item>
-        <Descriptions.Item label="Huyết áp">
-          {report.bloodPressure}
-        </Descriptions.Item>
-        <Descriptions.Item label="Thị lực (trái)">
-          {report.visionLeft}
-        </Descriptions.Item>
-        <Descriptions.Item label="Thị lực (phải)">
-          {report.visionRight}
-        </Descriptions.Item>
-        <Descriptions.Item label="Ghi chú">
-          {report.description}
-        </Descriptions.Item>
-        <Descriptions.Item label="Y tá phụ trách">
-          {report.nurseName || "Chưa cập nhật"}
-        </Descriptions.Item>
-      </Descriptions>
-    );
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalStudent(null);
+    form.resetFields();
   };
 
-  const scheduleColumns = [
-    {
-      title: "Ngày khám",
-      dataIndex: "date",
-      key: "date",
-      render: (date) => dayjs(date).format("DD/MM/YYYY"),
-    },
-    {
-      title: "Lớp",
-      dataIndex: "classID",
-      key: "classID",
-      render: (classID) => classMap[classID] || "Không xác định",
-    },
-    {
-      title: "Ghi chú",
-      dataIndex: "note",
-      key: "note",
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      render: (_, record) => (
-        <Button type="primary" onClick={() => openStudentModal(record)}>
-          Xem danh sách học sinh
-        </Button>
-      ),
-    },
-  ];
+  const handleSubmitCheckup = async () => {
+    try {
+      const nurseResponse = await api.get("Nurse");
+      const nurseInfo = nurseResponse.data.$values.find(
+        (nurse) => nurse.accountID === user.userID
+      );
+      console.log(nurseResponse);
+      console.log(nurseInfo);
+      const values = await form.validateFields();
+      setSubmitting(true);
+      await api.post("CheckupRecord", {
+        ...values,
+        studentID: modalStudent.studentID,
+        nurseID: nurseInfo.nurseID,
+        eventID: selectedEvent,
+      });
+      toast.success("Gửi kết quả khám thành công!");
+      handleCloseModal();
+      fetchStudentsByEvent(selectedEvent);
+    } catch (err) {
+      if (err?.errorFields) return; // validation error
+      toast.error("Gửi kết quả khám thất bại!");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  const studentColumns = [
+  const handleViewCheckup = async (student) => {
+    setViewedCheckup(null);
+    setViewedStudent(student);
+    try {
+      setLoading(true);
+      const res = await api.get(
+        `CheckupRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+      );
+      setViewedCheckup(res.data);
+    } catch {
+      setViewedCheckup(undefined); // Không có báo cáo
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const columns = [
     {
-      title: "Họ tên",
-      dataIndex: "fullName",
-      key: "fullName",
+      title: "STT",
+      dataIndex: "index",
+      render: (_, __, idx) => idx + 1,
+      width: 60,
     },
     {
-      title: "Giới tính",
-      dataIndex: "gender",
-      key: "gender",
-      render: (gender) => (gender?.toUpperCase() === "M" ? "Nam" : "Nữ"),
+      title: "Mã học sinh",
+      dataIndex: "studentID",
+      width: 100,
     },
     {
-      title: "Ngày sinh",
-      dataIndex: "dateOfBirth",
-      key: "dateOfBirth",
-      render: (dob) => (dob ? dayjs(dob).format("DD/MM/YYYY") : ""),
+      title: "Tên học sinh",
+      dataIndex: "studentName",
+      width: 180,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      render: (status) => (
+        <Tag color={statusColor[status] || "default"}>
+          {status === "Pending"
+            ? "Chờ phản hồi"
+            : status === "Accepted"
+            ? "Đã tham gia"
+            : status === "Rejected"
+            ? "Vắng mặt"
+            : status}
+        </Tag>
+      ),
+      width: 120,
     },
     {
       title: "Thao tác",
-      key: "action",
+      dataIndex: "actions",
       render: (_, record) => (
         <Space>
+          {(record.status === "Pending" || record.status === "Accepted") && (
+            <>
+              <Button
+                type="primary"
+                size="small"
+                onClick={() =>
+                  handleStudentResponse(record.studentID, "Accepted")
+                }
+                disabled={record.status === "Accepted"}
+              >
+                Đã tham gia
+              </Button>
+              <Button
+                danger
+                size="small"
+                onClick={() =>
+                  handleStudentResponse(record.studentID, "Rejected")
+                }
+                disabled={record.status === "Rejected"}
+              >
+                Vắng mặt
+              </Button>
+            </>
+          )}
           <Button
-            type="link"
-            onClick={() => openReportModal(record, selectedSchedule)}
+            size="small"
+            onClick={() => handleOpenModal(record)}
+            type="dashed"
           >
-            Xem báo cáo
+            Báo cáo kết quả khám
           </Button>
           <Button
-            type="primary"
-            ghost
-            onClick={() => openCreateModal(record, selectedSchedule)}
+            size="small"
+            onClick={() => handleViewCheckup(record)}
+            type="default"
           >
-            Nhập kết quả
+            Xem lại báo cáo
           </Button>
         </Space>
       ),
+      width: 300,
     },
   ];
 
-  // =================================================================
-  // Main Render
-  // =================================================================
   return (
-    <Card>
-      <Title level={3}>Danh sách buổi khám sức khỏe định kỳ</Title>
-      <Table
-        columns={scheduleColumns}
-        dataSource={schedules}
-        rowKey="scheduleID"
-        loading={loading}
-        pagination={{ pageSize: 10, showSizeChanger: true }}
-      />
-
-      {/* Modal: Danh sách học sinh */}
-      <Modal
-        open={studentModalOpen}
-        title={`Danh sách học sinh lớp ${
-          classMap[selectedSchedule?.classID] || ""
-        }`}
-        onCancel={closeStudentModal}
-        footer={null}
-        width={800}
-      >
-        <Spin spinning={studentLoading}>
+    <div
+      style={{
+        maxWidth: 900,
+        margin: "0 auto",
+        padding: 24,
+        background: "#fff",
+        borderRadius: 8,
+        marginTop: 32,
+      }}
+    >
+      <Title level={3} style={{ textAlign: "center" }}>
+        Báo cáo khám sức khỏe định kỳ
+      </Title>
+      {error && (
+        <Alert type="error" message={error} style={{ marginBottom: 16 }} />
+      )}
+      <Space style={{ marginBottom: 24 }}>
+        <span>Sự kiện:</span>
+        <Select
+          style={{ width: 260 }}
+          placeholder="Chọn sự kiện khám sức khỏe"
+          value={selectedEvent}
+          onChange={setSelectedEvent}
+          allowClear
+        >
+          {events.map((event) => (
+            <Select.Option key={event.eventID} value={event.eventID}>
+              {event.eventName}
+            </Select.Option>
+          ))}
+        </Select>
+      </Space>
+      <Spin spinning={loading}>
+        {selectedEvent && (
           <Table
-            columns={studentColumns}
+            columns={columns}
             dataSource={students}
             rowKey="studentID"
-            pagination={{ pageSize: 10 }}
+            pagination={false}
+            bordered
+            style={{ marginTop: 16 }}
+            locale={{ emptyText: "Không có học sinh nào" }}
           />
-        </Spin>
-      </Modal>
-
-      {/* Modal: Báo cáo sức khỏe học sinh */}
-      <Modal
-        open={reportModalOpen}
-        title={`Báo cáo sức khỏe: ${selectedStudent?.fullName || ""}`}
-        onCancel={closeReportModal}
-        footer={[
-          <Button key="close" onClick={closeReportModal}>
-            Đóng
-          </Button>,
-        ]}
-      >
-        <Spin spinning={reportLoading}>{renderReport()}</Spin>
-      </Modal>
-
-      {/* Modal: Nhập kết quả khám */}
-      <Modal
-        open={createModalOpen}
-        title={`Nhập kết quả khám: ${selectedStudent?.fullName || ""}`}
-        onCancel={closeCreateModal}
-        footer={null}
-        destroyOnClose // Reset form fields when modal is closed
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreateReport}>
-          <Form.Item
-            name="date"
-            label="Ngày khám"
-            rules={[
-              { required: true, message: "Vui lòng chọn ngày giờ khám" },
-              {
-                validator: (_, value) => {
-                  if (!value) return Promise.resolve();
-                  const now = dayjs();
-                  const min = now.subtract(24, "hour");
-                  const max = now.add(24, "hour");
-                  if (value.isBefore(min) || value.isAfter(max)) {
-                    return Promise.reject(
-                      "Chỉ được chọn trong khoảng 24 giờ trước và 24 giờ sau thời điểm hiện tại!"
-                    );
-                  }
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
-            <DatePicker
-              format="DD/MM/YYYY HH:mm"
-              showTime={{ format: "HH:mm" }}
-              style={{ width: "100%" }}
-              placeholder="Chọn ngày giờ khám"
-              disabledDate={(current) => {
-                const now = dayjs();
-                const min = now.subtract(24, "hour").startOf("day");
-                const max = now.add(24, "hour").endOf("day");
-                return current && (current < min || current > max);
-              }}
+        )}
+      </Spin>
+      {/* Hiển thị báo cáo gần nhất */}
+      {viewedStudent && (
+        <div style={{ marginTop: 32 }}>
+          <Title level={4}>
+            Báo cáo gần nhất của học sinh: {viewedStudent.studentName}
+          </Title>
+          {viewedCheckup === null && <Spin />}
+          {viewedCheckup === undefined && (
+            <Alert
+              type="info"
+              message="Chưa có báo cáo khám sức khỏe cho học sinh này trong sự kiện này."
             />
-          </Form.Item>
-          <Form.Item name="weight" label="Cân nặng">
-            <InputNumber min={0} style={{ width: "100%" }} addonAfter="kg" />
-          </Form.Item>
-          <Form.Item name="height" label="Chiều cao">
-            <InputNumber min={0} style={{ width: "100%" }} addonAfter="cm" />
-          </Form.Item>
-          <Form.Item name="bloodPressure" label="Huyết áp">
-            <Input placeholder="Ví dụ: 120/80" />
-          </Form.Item>
-          <Form.Item name="visionLeft" label="Thị lực (mắt trái)">
-            <Input placeholder="Ví dụ: 10/10 hoặc 8/10" />
-          </Form.Item>
-          <Form.Item name="visionRight" label="Thị lực (mắt phải)">
-            <Input placeholder="Ví dụ: 10/10 hoặc 9/10" />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label="Ghi chú chung và kết luận"
-            rules={[{ required: true, message: "Vui lòng nhập ghi chú" }]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Tình trạng sức khỏe chung, các vấn đề cần lưu ý..."
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={createLoading}
-              block
+          )}
+          {viewedCheckup && (
+            <div
+              style={{ background: "#fafafa", padding: 16, borderRadius: 8 }}
             >
-              Lưu kết quả
-            </Button>
+              <p>
+                <b>Ngày khám:</b> {viewedCheckup.checkupDate}
+              </p>
+              <p>
+                <b>Y tá phụ trách:</b> {viewedCheckup.nurseName}
+              </p>
+              <p>
+                <b>Chiều cao:</b> {viewedCheckup.height} cm
+              </p>
+              <p>
+                <b>Cân nặng:</b> {viewedCheckup.weight} kg
+              </p>
+              <p>
+                <b>Huyết áp:</b> {viewedCheckup.bloodPressure}
+              </p>
+              <p>
+                <b>Thị lực trái:</b> {viewedCheckup.visionLeft}
+              </p>
+              <p>
+                <b>Thị lực phải:</b> {viewedCheckup.visionRight}
+              </p>
+              <p>
+                <b>Thính lực trái:</b> {viewedCheckup.hearingLeft}
+              </p>
+              <p>
+                <b>Thính lực phải:</b> {viewedCheckup.hearingRight}
+              </p>
+              <p>
+                <b>Phát hiện khác:</b> {viewedCheckup.otherFindings}
+              </p>
+              <p>
+                <b>Cần tư vấn thêm:</b>{" "}
+                {viewedCheckup.consultationRequired ? "Có" : "Không"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {/* Modal nhập kết quả khám */}
+      <Modal
+        open={isModalOpen}
+        title={
+          modalStudent
+            ? `Báo cáo kết quả khám: ${modalStudent.studentName}`
+            : "Báo cáo kết quả khám"
+        }
+        onCancel={handleCloseModal}
+        onOk={handleSubmitCheckup}
+        okText="Gửi báo cáo"
+        cancelText="Huỷ"
+        confirmLoading={submitting}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ consultationRequired: false }}
+        >
+          <Form.Item
+            label="Chiều cao (cm)"
+            name="height"
+            rules={[{ required: true, message: "Nhập chiều cao" }]}
+          >
+            <InputNumber min={0} />
+          </Form.Item>
+          <Form.Item
+            label="Cân nặng (kg)"
+            name="weight"
+            rules={[{ required: true, message: "Nhập cân nặng" }]}
+          >
+            <InputNumber min={0} />
+          </Form.Item>
+          <Form.Item
+            label="Huyết áp"
+            name="bloodPressure"
+            rules={[{ required: true, message: "Nhập huyết áp" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Thị lực trái"
+            name="visionLeft"
+            rules={[{ required: true, message: "Nhập thị lực trái" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Thị lực phải"
+            name="visionRight"
+            rules={[{ required: true, message: "Nhập thị lực phải" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Thính lực trái"
+            name="hearingLeft"
+            rules={[{ required: true, message: "Nhập thính lực trái" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Thính lực phải"
+            name="hearingRight"
+            rules={[{ required: true, message: "Nhập thính lực phải" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item label="Phát hiện khác" name="otherFindings">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="consultationRequired" valuePropName="checked">
+            <Checkbox>Cần tư vấn thêm</Checkbox>
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </div>
   );
 };
 
-export default CheckupPage;
+export default CheckUp;

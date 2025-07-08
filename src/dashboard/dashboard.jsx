@@ -28,25 +28,7 @@ function getItem(label, key, icon, children, isParentOnly = false) {
 }
 const items = [
   getItem("Tìm kiếm học sinh", "student_profile", <DesktopOutlined />),
-  getItem(
-    "Tạo sự kiện",
-    "create_event_group",
-    <CalendarOutlined />,
-    [
-      getItem(
-        "Tạo sự kiện tiêm chủng",
-        "Vaccine_event",
-        <MedicineBoxOutlined />
-      ),
-      getItem(
-        "Tạo lịch kiểm tra sức khỏe",
-        "create_health_check",
-        <MedicineBoxOutlined />
-      ),
-      getItem("Sự kiện khác", "other_event", <MedicineBoxOutlined />),
-    ],
-    true
-  ),
+  getItem("Tạo sự kiện mới", "create_event", <CalendarOutlined />),
   getItem(
     "Quản lý sự kiện",
     "event_group",

@@ -20,6 +20,7 @@ import {
   DeleteOutlined,
 } from "@ant-design/icons";
 import api from "../../config/axios";
+import EventCreate from "./Create_event/EventCreate";
 
 const { Title, Text, Paragraph } = Typography;
 

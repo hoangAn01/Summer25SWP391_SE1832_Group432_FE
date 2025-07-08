@@ -319,6 +319,14 @@ const Header = () => {
                     >
                       Tham gia sự kiện
                     </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        navigate("/confirm-event");
+                      }}
+                    >
+                      Xác nhận sự kiện
+                    </MenuItem>
                   </Menu>
                 </>
               ) : (

@@ -52,6 +52,7 @@ const items = [
     <MedicineBoxOutlined />
   ),
   getItem("Khám định kỳ", "/nurse/checkup", <FileOutlined />),
+  getItem("Báo cáo vaccine", "/nurse/vaccine-event-report", <FileOutlined />),
   getItem("Đăng blog", "/nurse/blog", <FileOutlined />),
 ];
 
@@ -62,6 +63,8 @@ const breadcrumbNameMap = {
   "/nurse/student-profile-list": "Danh sách hồ sơ học sinh",
   "/nurse/approve-medicine": "Duyệt đơn thuốc",
   "/nurse/profile": "Thông tin cá nhân",
+  "/nurse/checkup": "Khám định kỳ",
+  "/nurse/vaccine-event-report": "Báo cáo Vaccine",
   "/nurse/medical-inventory": "Quản lí kho thuốc",
   "/nurse/blog": "Đăng blog học đường",
 };

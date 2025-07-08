@@ -21,7 +21,6 @@ import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
 import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreate";
 import EventPage from "./pages/home-pages/ParentForm/Event";
-import Vaccine_event from "./dashboard/dashboad_element/Create_event/Vaccine_event";
 
 import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
@@ -30,7 +29,6 @@ import Header from "./components/Header/Header";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile";
 import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
 
-import Health_check from "./dashboard/dashboad_element/Create_event/create_health_check";
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
 import Created_event from "./dashboard/dashboad_element/Created_event";
@@ -42,9 +40,12 @@ import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
-import CheckupPage from "./nurse/checkup";
 import MedicalInventory from "./nurse/medical-inventory";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
+import EventCreate from "./dashboard/dashboad_element/Create_event/EventCreate";
+import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
+import VaccineEventReport from "./nurse/VaccineEventReport";
+import CheckUp from "./nurse/CheckUp";
 
 function App() {
   const router = createBrowserRouter([
@@ -168,7 +169,11 @@ function App() {
         },
         {
           path: "/nurse/checkup",
-          element: <CheckupPage />,
+          element: <CheckUp />,
+        },
+        {
+          path: "/nurse/vaccine-event-report",
+          element: <VaccineEventReport />,
         },
         {
           path: "/nurse/blog",
@@ -181,12 +186,8 @@ function App() {
       element: <Dashboard />,
       children: [
         {
-          path: "create_health_check",
-          element: <Health_check />,
-        },
-        {
-          path: "vaccine_event",
-          element: <Vaccine_event />,
+          path: "create_event",
+          element: <EventCreate />,
         },
         {
           path: "manage_account",
@@ -239,6 +240,15 @@ function App() {
     {
       path: "/student-health-profile/edit",
       element: <HealthProfileEdit />,
+    },
+    {
+      path: "/confirm-event",
+      element: (
+        <>
+          <Header />
+          <ConfirmEvent />
+        </>
+      ),
     },
   ]);
   return (

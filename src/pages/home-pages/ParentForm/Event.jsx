@@ -22,6 +22,7 @@ import {
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -30,7 +31,6 @@ function Event() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const parent = useSelector((state) => state.parent.parent);
-  const [parentID, setParentID] = useState(null);
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [openedId, setOpenedId] = useState(null);
   const [readIds, setReadIds] = useState(() => {
@@ -46,6 +46,11 @@ function Event() {
   const [studentsOfParent, setStudentsOfParent] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [noteDecline, setNoteDecline] = useState("");
+  const [modalStudent, setModalStudent] = useState({
+    studentID: null,
+    studentName: "",
+  });
+  const navigate = useNavigate();
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
@@ -56,6 +61,7 @@ function Event() {
       s === "unread" ||
       s === "đã gửi" ||
       s === "pending" ||
+      s === "sent" ||
       s === "chờ phản hồi" ||
       s === "chờ phụ huynh xác nhận"
     )
@@ -66,16 +72,14 @@ function Event() {
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
       setLoading(true);
-      const response = await api.get(`/Notifications`);
-      // Lọc thông báo theo recipientAccountID (userID của phụ huynh)
-      const allNotifications = response.data.$values || [];
-      const notificationsData = allNotifications
-        .filter((notification) => notification.recipientAccountID === idParent)
-        .map((notification) => ({
+      const response = await api.get(`Notifications/account/${idParent}`);
+      const notificationsData = response.data.$values || response.data;
+      setData(
+        notificationsData.map((notification) => ({
           ...notification,
           status: mapStatusToVietnamese(notification.status),
-        }));
-      setData(notificationsData);
+        }))
+      );
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
       message.error("Không thể tải danh sách thông báo");
@@ -93,9 +97,7 @@ function Event() {
           const parentResponse = await api.get(
             `Parent/ByAccount/${parent.accountID}`
           );
-          const pid = parentResponse.data.parentID;
-          setParentID(pid);
-          const res = await api.get(`Student/by-parent/${pid}`);
+          const res = await api.get(`Student/by-parent/${parent.accountID}`);
           const list = res.data.$values || res.data;
           setStudentsOfParent(list);
           if (list.length > 0) setSelectedStudentId(list[0].studentID);
@@ -104,7 +106,7 @@ function Event() {
         }
       })();
     }
-  }, [parent?.accountID]);
+  }, []);
 
   const filteredData = useMemo(() => {
     return (
@@ -119,6 +121,7 @@ function Event() {
         ? data.filter(
             (item) =>
               item.notificationType === "Duyệt thuốc" ||
+              item.notificationType === "MedicineRequest" ||
               (item.title && item.title.toLowerCase().includes("thuốc"))
           )
         : typeFilter === "VACCINATION"
@@ -148,7 +151,24 @@ function Event() {
     }
   };
 
-  const handleAttendance = (item, isAttend, type) => {
+  const handleAttendance = async (item, isAttend, type) => {
+    if (item.notificationType === "ConsentRequest") {
+      try {
+        const res = await api.get(
+          `Notifications/${item.notificationID}/student`
+        );
+        setModalStudent({
+          studentID: res.data.studentID,
+          studentName: res.data.studentName,
+        });
+        setSelectedStudentId(res.data.studentID);
+      } catch (err) {
+        setModalStudent({ studentID: null, studentName: "" });
+        setSelectedStudentId(null);
+        message.error("Không lấy được thông tin học sinh cho xác nhận!");
+        return;
+      }
+    }
     setAttendanceModal({
       open: true,
       notificationId: item.notificationID,
@@ -165,19 +185,14 @@ function Event() {
     }
     setSubmitting(true);
     try {
-      if (attendanceModal.type === "CHECKUP_CONSENT") {
-        await api.put(
-          `/api/checkup-consents/${attendanceModal.notificationId}`,
-          {
-            parentID: parentID,
-            studentID: selectedStudentId,
-            isApproved: attendanceModal.isAttend,
-            note: noteDecline,
-          }
-        );
-      } else if (attendanceModal.type === "VACCINATION") {
-        // Nếu sau này có API riêng cho VACCINATION thì xử lý ở đây
-      }
+      await api.put("StudentJoinEvent/respond-by-student", {
+        studentId: selectedStudentId,
+        eventId: data.find(
+          (item) => item.notificationID === attendanceModal.notificationId
+        )?.relatedEntityID,
+        status: attendanceModal.isAttend ? "Accepted" : "Rejected",
+        note: noteDecline,
+      });
       setData((prevData) =>
         prevData.map((item) => {
           if (item.notificationID === attendanceModal.notificationId) {
@@ -195,9 +210,10 @@ function Event() {
         open: false,
         notificationId: null,
         isAttend: true,
-        type: "VACCINATION",
+        type: "ConsentRequest",
       });
       setNoteDecline("");
+      setModalStudent({ studentID: null, studentName: "" });
     } catch (err) {
       console.error(err);
       message.error(
@@ -253,124 +269,76 @@ function Event() {
 
       {/* Danh sách thông báo đã lọc */}
       {!loading && filteredData.length > 0 ? (
-        filteredData.map((item) => {
-          const status = item.status || "Chờ phản hồi";
-          // Chỉ cho phản hồi nếu là CHECKUP_CONSENT và status là Chờ phản hồi
-          const canRespond =
-            item.notificationType === "CHECKUP_CONSENT" &&
-            status === "Chờ phản hồi";
-          return (
-            <Card
-              key={item.notificationID}
-              style={{
-                marginBottom: 16,
-                background: readIds.includes(item.notificationID)
-                  ? "#f8faff"
-                  : "#e6f7ff",
-                borderRadius: 8,
-                maxWidth: 900,
-                margin: "0 auto 16px auto",
-                cursor: "pointer",
-              }}
-              onClick={() => handleOpen(item)}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <b style={{ flex: 1 }}>
-                  {item.notificationType === "Thông báo tiêm vaccine"
-                    ? item.title || "Thông báo lịch tiêm phòng"
-                    : item.notificationType === "MEDICAL_EVENT"
-                    ? item.title || "Thông báo sự cố y tế"
-                    : item.notificationType === "Thông báo khám sức khỏe"
-                    ? item.title || "Thông báo khám sức khỏe"
-                    : item.notificationType === "Kết quả khám"
-                    ? item.title || "Kết quả khám sức khỏe"
-                    : item.notificationType === "Duyệt thuốc"
-                    ? item.title || "Thông báo duyệt thuốc"
-                    : item.notificationType === "Thông báo tai nạn"
-                    ? item.title || "Thông báo tai nạn"
-                    : item.title}
-                </b>
-                <Tag
-                  color={
-                    status === "Đã đồng ý"
-                      ? "success"
-                      : status === "Đã từ chối"
-                      ? "error"
-                      : canRespond
-                      ? "warning"
-                      : "default"
-                  }
-                >
-                  {status}
-                </Tag>
-              </div>
-              {/* Hiển thị ngày giờ gửi */}
-              <div style={{ color: "#888", fontSize: 13, marginTop: 4 }}>
-                {item.sentDate
-                  ? `Gửi lúc: ${new Date(item.sentDate).toLocaleString(
-                      "vi-VN"
-                    )}`
-                  : ""}
-              </div>
-              {openedId === item.notificationID && (
-                <div style={{ marginTop: 12 }}>
-                  <Button
-                    size="small"
-                    style={{ float: "right", marginBottom: 8 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenedId(null);
-                    }}
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          {filteredData.map((item) => {
+            const status = item.status || "Chờ phản hồi";
+            return (
+              <Card
+                key={item.notificationID}
+                style={{
+                  marginBottom: 16,
+                  background: readIds.includes(item.notificationID)
+                    ? "#f8faff"
+                    : "#e6f7ff",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                }}
+                onClick={() => handleOpen(item)}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div style={{ flex: 1 }}>
+                    <b style={{ fontSize: 16 }}>{item.title}</b>
+                    <div style={{ color: "#888", fontSize: 13, marginTop: 2 }}>
+                      {item.sentDate
+                        ? `Gửi lúc: ${new Date(item.sentDate).toLocaleString(
+                            "vi-VN"
+                          )}`
+                        : ""}
+                    </div>
+                  </div>
+                  <Tag
+                    color={
+                      status === "Đã đồng ý"
+                        ? "success"
+                        : status === "Đã từ chối"
+                        ? "error"
+                        : "default"
+                    }
+                    style={{ fontWeight: 600, fontSize: 14 }}
                   >
-                    Thu gọn
-                  </Button>
-                  <Paragraph style={{ margin: "8px 0" }}>
-                    {item.content}
-                  </Paragraph>
-                  {/* Nút phản hồi chỉ hiện với CHECKUP_CONSENT và status chờ phản hồi */}
-                  {item.notificationType === "CHECKUP_CONSENT" &&
-                    canRespond && (
-                      <Row gutter={8} style={{ marginTop: 12 }}>
-                        <Col>
-                          <Button
-                            type="primary"
-                            icon={<CheckCircleOutlined />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAttendance(
-                                item,
-                                true,
-                                item.notificationType
-                              );
-                            }}
-                          >
-                            Tham gia
-                          </Button>
-                        </Col>
-                        <Col>
-                          <Button
-                            danger
-                            icon={<CloseCircleOutlined />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAttendance(
-                                item,
-                                false,
-                                item.notificationType
-                              );
-                            }}
-                          >
-                            Từ chối
-                          </Button>
-                        </Col>
-                      </Row>
-                    )}
-                  <Divider style={{ margin: "16px 0" }} />
+                    {status}
+                  </Tag>
                 </div>
-              )}
-            </Card>
-          );
-        })
+                {openedId === item.notificationID && (
+                  <div style={{ marginTop: 12 }}>
+                    <Divider style={{ margin: "8px 0" }} />
+                    <Paragraph style={{ margin: "8px 0" }}>
+                      {item.content}
+                    </Paragraph>
+                    <div style={{ margin: "8px 0", color: "#555" }}>
+                      <b>Sự kiện:</b> {item.title}
+                      <br />
+                      <b>Ngày tổ chức:</b>{" "}
+                      {item.sentDate
+                        ? new Date(item.sentDate).toLocaleDateString("vi-VN")
+                        : ""}
+                      <br />
+                      <b>Trạng thái:</b> {status}
+                    </div>
+                    <Button
+                      type="primary"
+                      style={{ marginTop: 12 }}
+                      onClick={() => navigate("/confirm-event")}
+                    >
+                      Xác nhận sự kiện
+                    </Button>
+                    <Divider style={{ margin: "16px 0" }} />
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
       ) : !loading ? (
         <div style={{ textAlign: "center", padding: "20px" }}>
           <Text type="secondary">
@@ -387,14 +355,15 @@ function Event() {
         title={
           attendanceModal.isAttend ? "Xác nhận tham gia" : "Từ chối tham gia"
         }
-        onCancel={() =>
+        onCancel={() => {
           setAttendanceModal({
             open: false,
             notificationId: null,
             isAttend: true,
-            type: "VACCINATION",
-          })
-        }
+            type: "ConsentRequest",
+          });
+          setModalStudent({ studentID: null, studentName: "" });
+        }}
         onOk={submitAttendance}
         okText={attendanceModal.isAttend ? "Đồng ý" : "Gửi từ chối"}
         cancelText="Huỷ"
@@ -402,21 +371,11 @@ function Event() {
         okButtonProps={{ disabled: !selectedStudentId }}
       >
         <Space direction="vertical" style={{ width: "100%" }}>
-          <div>
-            <span style={{ color: "#ff4d4f", marginRight: 4 }}>*</span>
-            <span>Chọn học sinh:</span>
-            <Select
-              style={{ width: "100%", marginTop: 8 }}
-              value={selectedStudentId}
-              onChange={(v) => setSelectedStudentId(v)}
-              status={!selectedStudentId ? "error" : ""}
-              options={studentsOfParent.map((s) => ({
-                value: s.studentID,
-                label: s.fullName,
-              }))}
-              placeholder="Chọn học sinh tham gia"
-            />
-          </div>
+          {modalStudent.studentID && (
+            <div style={{ color: "#52c41a", fontWeight: 500 }}>
+              Học sinh: {modalStudent.studentName}
+            </div>
+          )}
           <Input.TextArea
             rows={3}
             placeholder={

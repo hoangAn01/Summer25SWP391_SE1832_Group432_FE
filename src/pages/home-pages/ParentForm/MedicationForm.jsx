@@ -62,19 +62,16 @@ const MedicationForm = () => {
     }
   };
 
-  // Lấy danh sách thuốc và vật tư y tế từ MedicalInventory
+  // Lấy danh sách thuốc và vật tư y tế từ MedicineRequest/items
   const fetchMedicineList = async () => {
     try {
       setLoading(true);
-      const res = await api.get("MedicalInventory");
-
-      // Xử lý response với cấu trúc mới có $values
+      const res = await api.get("MedicineRequest/items");
       const medicineData = res.data.$values || [];
-      console.log("Medical inventory data:", medicineData);
       setMedicineList(medicineData);
     } catch (error) {
-      console.error("Lỗi lấy danh sách thuốc và vật tư:", error);
-      message.error("Không thể tải danh sách thuốc và vật tư");
+      console.error("Lỗi lấy danh sách thuốc:", error);
+      message.error("Không thể tải danh sách thuốc");
       setMedicineList([]);
     } finally {
       setLoading(false);
@@ -87,11 +84,12 @@ const MedicationForm = () => {
       const res = await api.get(`MedicineRequest/sent/${parentID}`);
       console.log("Lịch sử đơn thuốc trả về:", res.data);
       let rawHistory = res.data.$values || [];
-      // Lọc lại chỉ lấy đơn thuốc của các học sinh thuộc parentID này
-      const studentIDs = students.map((s) => s.studentID);
-      rawHistory = rawHistory.filter((item) =>
-        studentIDs.includes(item.studentID)
-      );
+      // Tạm thời không filter theo students để kiểm tra
+      // const studentIDs = students.map((s) => s.studentID);
+      // rawHistory = rawHistory.filter((item) =>
+      //   studentIDs.includes(item.studentID)
+      // );
+      console.log("rawHistory không filter:", rawHistory);
       setHistoryData(rawHistory);
     } catch (error) {
       console.error("Lỗi lấy lịch sử:", error);
@@ -136,15 +134,18 @@ const MedicationForm = () => {
       const parentID = parentResponse.data.parentID;
 
       const payload = {
-        studentID: values.studentID,
-        parentID: parentID,
-        instructions: values.note || "",
-        items: medicinePages.map((_, idx) => {
+        StudentID: values.studentID,
+        ParentID: parentID,
+        Note: values.note || "",
+        MedicineDetails: medicinePages.map((_, idx) => {
           const selectedItemID = values.itemName?.[idx]?.medicineName;
           return {
-            itemID: selectedItemID,
-            dosage: values.dosageIntructions?.[idx]?.dosage || "",
-            quantity: values.quantity?.[idx]?.quantity || 1,
+            RequestItemID: selectedItemID,
+            DosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
+            Quantity: values.quantity?.[idx]?.quantity || 1,
+            Time: (form.getFieldValue(["medicines", idx, "time"]) || []).join(
+              ", "
+            ),
           };
         }),
       };
@@ -397,10 +398,10 @@ const MedicationForm = () => {
                             const item = option?.data;
                             if (!item) return false;
                             return (
-                              item.itemName
+                              item.requestItemName
                                 .toLowerCase()
                                 .includes(input.toLowerCase()) ||
-                              item.location
+                              (item.description || "")
                                 .toLowerCase()
                                 .includes(input.toLowerCase())
                             );
@@ -424,24 +425,19 @@ const MedicationForm = () => {
                             form.setFieldsValue({ itemName });
                           }}
                         >
-                          {medicineList
-                            .filter(
-                              (item) =>
-                                item.unit === "Chai" ||
-                                item.unit === "Viên" ||
-                                item.unit === "chai" ||
-                                item.unit === "viên"
-                            )
-                            .map((item) => (
-                              <Select.Option
-                                key={item.itemID}
-                                value={item.itemID}
-                                data={item}
-                                label={item.itemName}
-                              >
-                                {item.itemName}
-                              </Select.Option>
-                            ))}
+                          {medicineList.map((item) => (
+                            <Select.Option
+                              key={item.requestItemID}
+                              value={item.requestItemID}
+                              data={item}
+                              label={item.requestItemName}
+                            >
+                              {item.requestItemName}{" "}
+                              <span style={{ color: "#888", fontSize: 12 }}>
+                                {item.description}
+                              </span>
+                            </Select.Option>
+                          ))}
                         </Select>
                         <Button
                           type="dashed"
@@ -610,7 +606,12 @@ const MedicationForm = () => {
               },
             },
             { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
-            { title: "Ghi chú", dataIndex: "note", key: "note" },
+            {
+              title: "Ghi chú",
+              dataIndex: "note",
+              key: "note",
+              render: (text) => text || "Không có",
+            },
           ]}
           expandable={{
             expandedRowRender: (record) => (
