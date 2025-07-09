@@ -295,14 +295,7 @@ const Header = () => {
                     >
                       Quản lý
                     </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleUserClose();
-                        navigate("/dang-blog");
-                      }}
-                    >
-                     Đăng blog học đường 
-                    </MenuItem>
+               
                     <MenuItem
                       onClick={() => {
                         handleUserClose();

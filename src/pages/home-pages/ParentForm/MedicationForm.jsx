@@ -15,7 +15,7 @@ import {
   Modal,
   Table,
 } from "antd";
-import { PhoneOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { PhoneOutlined, ArrowLeftOutlined, UserOutlined, MedicineBoxOutlined, InfoCircleOutlined, FileTextOutlined, PlusCircleOutlined, DeleteOutlined, HistoryOutlined, CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import "./MedicationForm.css";
 import api from "../../../config/axios";
@@ -35,12 +35,15 @@ const MedicationForm = () => {
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.user); // Lấy user từ Redux
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyStudentID, setHistoryStudentID] = useState(null);
   const [historyData, setHistoryData] = useState([]);
+  const [selectedHistoryRequest, setSelectedHistoryRequest] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [createMedicineModal, setCreateMedicineModal] = useState(false);
   const [newMedicineName, setNewMedicineName] = useState("");
   const [newMedicineDesc, setNewMedicineDesc] = useState("");
   const [creatingMedicine, setCreatingMedicine] = useState(false);
+  const [selectedStudentID, setSelectedStudentID] = useState(null); // Thêm state chọn học sinh cho modal lịch sử
 
   const fetchStudents = async () => {
     try {
@@ -78,24 +81,20 @@ const MedicationForm = () => {
     }
   };
 
-  const fetchHistory = async (parentID) => {
-    setHistoryLoading(true);
+  const fetchHistoryByStudent = async (studentID) => {
     try {
-      const res = await api.get(`MedicineRequest/sent/${parentID}`);
-      console.log("Lịch sử đơn thuốc trả về:", res.data);
-      let rawHistory = res.data.$values || [];
-      // Tạm thời không filter theo students để kiểm tra
-      // const studentIDs = students.map((s) => s.studentID);
-      // rawHistory = rawHistory.filter((item) =>
-      //   studentIDs.includes(item.studentID)
-      // );
-      console.log("rawHistory không filter:", rawHistory);
-      setHistoryData(rawHistory);
-    } catch (error) {
-      console.error("Lỗi lấy lịch sử:", error);
+      if (!studentID) {
+        setHistoryData([]);
+        return;
+      }
+      const res = await api.get("/MedicineRequest/getAll");
+      let allHistory = res.data.$values || res.data || [];
+      // Lọc theo studentID
+      const filtered = allHistory.filter(item => item.studentID === studentID);
+      setHistoryData(filtered);
+    } catch {
       setHistoryData([]);
     }
-    setHistoryLoading(false);
   };
 
   useEffect(() => {
@@ -154,7 +153,7 @@ const MedicationForm = () => {
       await api.post("/MedicineRequest", payload);
       toast.success("Đơn gửi thuốc đã được gửi cho nhân viên y tá.");
       // Sau khi gửi thành công, tự động mở modal lịch sử và reload
-      fetchHistory(parentID);
+      fetchHistoryByStudent(values.studentID);
       setHistoryVisible(true);
     } catch (error) {
       console.error("Lỗi gửi đơn thuốc:", error);
@@ -192,7 +191,7 @@ const MedicationForm = () => {
     <div
       className="medication-form-container"
       style={{
-        maxWidth: "1200px",
+        maxWidth: "1400px",
         margin: "0 auto",
         padding: "20px",
         backgroundColor: "white",
@@ -225,15 +224,20 @@ const MedicationForm = () => {
             color: "#1677ff",
             borderBottom: "2px solid #1677ff",
             paddingBottom: "10px",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8
           }}
         >
+          <FileTextOutlined style={{fontSize: 28, color: '#1677ff'}} />
           {user
             ? `Phụ huynh ${user.fullName} tạo đơn gửi thuốc uống`
             : "ĐƠN GỬI THUỐC UỐNG"}
         </h2>
 
         <Row gutter={32}>
-          <Col span={12}>
+          <Col span={9}>
             <div
               className="student-info"
               style={{
@@ -243,20 +247,11 @@ const MedicationForm = () => {
                 height: "100%",
               }}
             >
-              <h3
-                style={{
-                  color: "#1677ff",
-                  marginBottom: "20px",
-                  borderBottom: "1px solid #e0e0e0",
-                  paddingBottom: "10px",
-                }}
-              >
-                Thông tin học sinh
-              </h3>
+              <h3 className="section-title"><UserOutlined style={{color:'#1677ff', marginRight:8}}/> Thông tin học sinh</h3>
 
               <Form.Item
                 name="studentID"
-                label="Chọn học sinh"
+                label={<span><UserOutlined /> Chọn học sinh</span>}
                 rules={[{ required: true, message: "Vui lòng chọn học sinh" }]}
               >
                 <Select
@@ -287,16 +282,16 @@ const MedicationForm = () => {
                 </Select>
               </Form.Item>
 
-              <Form.Item name="studentName" label="Họ và tên">
+              <Form.Item name="studentName" label={<span><InfoCircleOutlined /> Họ và tên</span>}>
                 <Input disabled />
               </Form.Item>
 
-              <Form.Item name="className" label="Lớp ">
+              <Form.Item name="className" label={<span><InfoCircleOutlined /> Lớp</span>}>
                 <Input disabled />
               </Form.Item>
 
               {/* NOTE */}
-              <Form.Item name="note" label="Ghi chú">
+              <Form.Item name="note" label={<span><FileTextOutlined /> Ghi chú</span>}>
                 <TextArea
                   rows={2}
                   placeholder="Nhập các lưu ý đặc biệt (nếu có)"
@@ -305,7 +300,7 @@ const MedicationForm = () => {
             </div>
           </Col>
 
-          <Col span={12}>
+          <Col span={15}>
             <div
               className="medicine-info"
               style={{
@@ -322,24 +317,17 @@ const MedicationForm = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                   marginBottom: "20px",
+                  gap: 16,
                 }}
               >
-                <h3
-                  style={{
-                    color: "#1677ff",
-                    margin: 0,
-                    borderBottom: "1px solid #e0e0e0",
-                    paddingBottom: "10px",
-                  }}
-                >
-                  Thông tin thuốc và vật tư
-                </h3>
-                <div>
+                <h3 className="section-title"><MedicineBoxOutlined style={{color:'#1677ff', marginRight:8}}/> Thông tin thuốc hoặc vật dụng</h3>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <Button
                     size="small"
                     style={{ marginRight: "10px" }}
                     onClick={handleRemoveMedicinePage}
                     disabled={medicinePages.length <= 1}
+                    icon={<DeleteOutlined />}
                   >
                     Xóa trang
                   </Button>
@@ -347,6 +335,7 @@ const MedicationForm = () => {
                     type="primary"
                     size="small"
                     onClick={handleAddMedicinePage}
+                    icon={<PlusCircleOutlined />}
                   >
                     Thêm trang
                   </Button>
@@ -382,11 +371,11 @@ const MedicationForm = () => {
 
                     <Form.Item
                       name={["itemName", idx, "medicineName"]}
-                      label="Tên thuốc/vật tư"
+                      label={<span><MedicineBoxOutlined /> Tên thuốc/vật dụng y tế</span>}
                       rules={[
                         {
                           required: true,
-                          message: "Vui lòng chọn tên thuốc/vật tư",
+                          message: "Vui lòng chọn tên thuốc/vật dụng",
                         },
                       ]}
                     >
@@ -443,6 +432,7 @@ const MedicationForm = () => {
                           type="dashed"
                           onClick={() => setCreateMedicineModal(true)}
                           style={{ width: 130, marginLeft: 8 }}
+                          icon={<PlusCircleOutlined />}
                         >
                           Phụ huynh tạo thuốc
                         </Button>
@@ -451,7 +441,7 @@ const MedicationForm = () => {
 
                     <Form.Item
                       name={["quantity", idx, "quantity"]}
-                      label="Số lượng"
+                      label={<span><InfoCircleOutlined /> Số lượng</span>}
                       rules={[
                         { required: true, message: "Vui lòng nhập số lượng" },
                       ]}
@@ -465,7 +455,7 @@ const MedicationForm = () => {
 
                     <Form.Item
                       name={["dosageIntructions", idx, "dosage"]}
-                      label="Liều lượng/Hướng dẫn sử dụng"
+                      label={<span><InfoCircleOutlined /> Liều lượng/Hướng dẫn sử dụng</span>}
                       rules={[
                         {
                           required: true,
@@ -478,7 +468,7 @@ const MedicationForm = () => {
 
                     <Form.Item
                       name={["medicines", idx, "time"]}
-                      label="Thời điểm sử dụng"
+                      label={<span><CalendarOutlined /> Thời điểm sử dụng</span>}
                       rules={[
                         {
                           required: true,
@@ -545,6 +535,7 @@ const MedicationForm = () => {
                 setMedicinePages(["1"]);
                 setCurrentPage(1);
               }}
+              icon={<DeleteOutlined />}
             >
               Nhập lại
             </Button>
@@ -553,6 +544,7 @@ const MedicationForm = () => {
               htmlType="submit"
               size="large"
               loading={loading}
+              icon={<CheckCircleOutlined />}
             >
               Xác nhận
             </Button>
@@ -563,99 +555,105 @@ const MedicationForm = () => {
       <Button
         type="default"
         style={{ marginBottom: 16 }}
-        onClick={async () => {
-          // Lấy parentID trước khi gọi API
-          let parentID = null;
-          try {
-            const parentResponse = await api.get(
-              `Parent/ByAccount/${user.userID}`
-            );
-            parentID = parentResponse.data.parentID;
-          } catch (error) {
-            console.error("Lỗi lấy parentID:", error);
-          }
-          if (parentID) fetchHistory(parentID);
+        onClick={() => {
           setHistoryVisible(true);
+          setHistoryStudentID(null);
+          setHistoryData([]);
         }}
+        icon={<HistoryOutlined />}
       >
         Lịch sử gửi thuốc
       </Button>
       <Modal
         open={historyVisible}
         onCancel={() => setHistoryVisible(false)}
-        title="Lịch sử gửi thuốc"
+        title={<span><HistoryOutlined /> Lịch sử gửi thuốc</span>}
         footer={null}
-        width={1200}
+        width={900}
       >
-        <Table
-          dataSource={historyData}
-          loading={historyLoading}
-          rowKey="requestID"
-          columns={[
-            {
-              title: "Ngày gửi",
-              key: "approvalDate",
-              render: (_, record) => {
-                const d = record.approvalDate || record.date;
-                if (!d) return "";
-                const date = new Date(d);
-                const vietnamTime = new Date(
-                  date.getTime() + 7 * 60 * 60 * 1000
-                );
-                return vietnamTime.toLocaleString("vi-VN");
-              },
-            },
-            { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
-            {
-              title: "Ghi chú",
-              dataIndex: "note",
-              key: "note",
-              render: (text) => text || "Không có",
-            },
-          ]}
-          expandable={{
-            expandedRowRender: (record) => (
-              <Table
-                dataSource={
-                  Array.isArray(record.medicineDetails)
-                    ? record.medicineDetails
-                    : Array.isArray(record.medicineDetails?.$values)
-                    ? record.medicineDetails.$values
-                    : []
-                }
-                pagination={false}
-                rowKey="requestDetailID"
-                columns={[
-                  {
-                    title: "Tên thuốc/Vật tư ",
-                    dataIndex: "requestItemName",
-                    key: "requestItemName",
-                  },
-                  { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
-                  {
-                    title: "Liều dùng/Cách sử dụng ",
-                    dataIndex: "dosageInstructions",
-                    key: "dosageInstructions",
-                  },
-                  {
-                    title: "Thời điểm",
-                    dataIndex: "time",
-                    key: "time",
-                    render: timeToVN,
-                  },
-                ]}
-              />
-            ),
-            rowExpandable: () => true,
-          }}
-        />
+        <div style={{ marginBottom: 16 }}>
+          <Select
+            showSearch
+            placeholder="Chọn học sinh để xem lịch sử"
+            style={{ width: 300 }}
+            value={historyStudentID || undefined}
+            onChange={studentID => {
+              setHistoryStudentID(studentID);
+              setSelectedHistoryRequest(null);
+              fetchHistoryByStudent(studentID);
+            }}
+            allowClear
+          >
+            {students.map((student) => (
+              <Select.Option key={student.studentID} value={student.studentID}>
+                {student.fullName}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+        {historyStudentID ? (
+          <div style={{ display: 'flex', gap: 24 }}>
+            {/* Cột trái: Danh sách ngày gửi */}
+            <div style={{ width: 250, borderRight: '1px solid #eee', paddingRight: 16, maxHeight: 400, overflowY: 'auto' }}>
+              <h4><CalendarOutlined /> Ngày gửi</h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {historyData.length === 0 && <li>Không có dữ liệu</li>}
+                {historyData.map((item) => {
+                  const d = item.approvalDate || item.date;
+                  const dateStr = d ? new Date(d).toLocaleString('vi-VN') : '';
+                  return (
+                    <li key={item.requestID} style={{ marginBottom: 8 }}>
+                      <Button
+                        type={selectedHistoryRequest?.requestID === item.requestID ? 'primary' : 'default'}
+                        block
+                        onClick={() => setSelectedHistoryRequest(item)}
+                        style={{ textAlign: 'left', whiteSpace: 'normal' }}
+                      >
+                        {dateStr}
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            {/* Cột phải: Chi tiết đơn gửi thuốc */}
+            <div style={{ flex: 1, paddingLeft: 16 }}>
+              <h4><MedicineBoxOutlined /> Chi tiết đơn gửi thuốc</h4>
+              {selectedHistoryRequest ? (
+                <Table
+                  dataSource={
+                    Array.isArray(selectedHistoryRequest.medicineDetails)
+                      ? selectedHistoryRequest.medicineDetails
+                      : Array.isArray(selectedHistoryRequest.medicineDetails?.$values)
+                      ? selectedHistoryRequest.medicineDetails.$values
+                      : []
+                  }
+                  pagination={false}
+                  rowKey="requestDetailID"
+                  columns={[
+                    { title: "Tên thuốc/Vật tư ", dataIndex: "requestItemName", key: "requestItemName" },
+                    { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
+                    { title: "Liều dùng/Cách sử dụng ", dataIndex: "dosageInstructions", key: "dosageInstructions" },
+                    { title: "Thời điểm", dataIndex: "time", key: "time", render: timeToVN },
+                  ]}
+                />
+              ) : (
+                <div>Chọn ngày gửi để xem chi tiết đơn thuốc</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: '#888' }}>
+            Chọn học sinh để xem lịch sử gửi thuốc
+          </div>
+        )}
       </Modal>
 
       {/* Modal tạo thuốc mới */}
       <Modal
         open={createMedicineModal}
         onCancel={() => setCreateMedicineModal(false)}
-        title="Tạo thuốc/vật tư mới"
+        title={<span><PlusCircleOutlined /> Tạo thuốc/vật tư mới</span>}
         onOk={async () => {
           setCreatingMedicine(true);
           try {
@@ -707,13 +705,13 @@ const MedicationForm = () => {
         confirmLoading={creatingMedicine}
       >
         <Form layout="vertical">
-          <Form.Item label="Tên thuốc/vật tư" required>
+          <Form.Item label={<span><MedicineBoxOutlined /> Tên thuốc/vật tư</span>} required>
             <Input
               value={newMedicineName}
               onChange={(e) => setNewMedicineName(e.target.value)}
             />
           </Form.Item>
-          <Form.Item label="Mô tả">
+          <Form.Item label={<span><FileTextOutlined /> Mô tả</span>}>
             <Input
               value={newMedicineDesc}
               onChange={(e) => setNewMedicineDesc(e.target.value)}
