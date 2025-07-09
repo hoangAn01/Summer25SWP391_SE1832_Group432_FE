@@ -6,7 +6,7 @@ import {
   Input,
   Select,
   DatePicker,
-  Space
+  Space,
 } from "antd";
 
 import { FaEye, FaEyeSlash, FaGoogle, FaArrowLeft } from "react-icons/fa";
@@ -18,7 +18,6 @@ import { useDispatch } from "react-redux";
 import { login } from "../../redux/features/userSlice";
 import axios from "axios";
 import { useEffect, useState } from "react";
-
 
 function RegisterForm() {
   const [form] = Form.useForm();
@@ -34,7 +33,7 @@ function RegisterForm() {
 
   // Lấy danh sách tỉnh/thành và phường/xã từ API VietnamLabs
   useEffect(() => {
-    axios.get("https://vietnamlabs.com/api/vietnamprovince").then(res => {
+    axios.get("https://vietnamlabs.com/api/vietnamprovince").then((res) => {
       if (res.data && res.data.data) {
         setProvinces(res.data.data);
       }
@@ -45,7 +44,7 @@ function RegisterForm() {
     setSelectedProvince(value);
     setSelectedWard("");
     // Tìm tỉnh/thành được chọn và cập nhật danh sách phường/xã
-    const found = provinces.find(p => p.province === value);
+    const found = provinces.find((p) => p.province === value);
     setWards(found ? found.wards : []);
   };
 
@@ -64,7 +63,7 @@ function RegisterForm() {
       const payload = {
         ...rest,
         dateOfBirth: dateOfBirth.toISOString(),
-        address
+        address,
       };
       console.log("Payload địa chỉ:", payload.address);
       const response = await api.post("Auth/register", payload);
@@ -144,9 +143,11 @@ function RegisterForm() {
                 { required: true, message: "Vui lòng nhập mật khẩu" },
                 { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự" },
                 {
-                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/,
-                  message: "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt"
-                }
+                  pattern:
+                    /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).+$/,
+                  message:
+                    "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt",
+                },
               ]}
             >
               <Input.Password placeholder="Mật khẩu" />
@@ -166,7 +167,7 @@ function RegisterForm() {
                       new Error("Mật khẩu xác nhận không khớp")
                     );
                   },
-                })
+                }),
               ]}
             >
               <Input.Password placeholder="Xác nhận mật khẩu" />
@@ -189,16 +190,20 @@ function RegisterForm() {
               name="dateOfBirth"
               rules={[
                 { required: true, message: "Vui lòng chọn ngày sinh" },
-                ({ getFieldValue }) => ({
+                () => ({
                   validator(_, value) {
                     if (!value) return Promise.resolve();
                     const year = value.year();
                     if (year >= 1960 && year <= 2006) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error("Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."));
+                    return Promise.reject(
+                      new Error(
+                        "Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."
+                      )
+                    );
                   },
-                })
+                }),
               ]}
             >
               <DatePicker
@@ -211,7 +216,9 @@ function RegisterForm() {
             <Form.Item
               label="Tỉnh/Thành phố"
               name="province"
-              rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành phố" }]}
+              rules={[
+                { required: true, message: "Vui lòng chọn tỉnh/thành phố" },
+              ]}
             >
               <Select
                 showSearch
@@ -219,7 +226,9 @@ function RegisterForm() {
                 optionFilterProp="children"
                 onChange={handleProvinceChange}
                 filterOption={(input, option) =>
-                  (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+                  (option?.children ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
                 }
                 value={selectedProvince || undefined}
               >
@@ -243,7 +252,9 @@ function RegisterForm() {
                   optionFilterProp="children"
                   onChange={handleWardChange}
                   filterOption={(input, option) =>
-                    (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
+                    (option?.children ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
                   }
                   value={selectedWard || undefined}
                   disabled={!selectedProvince}
@@ -261,12 +272,14 @@ function RegisterForm() {
               <Form.Item
                 label="Địa chỉ chi tiết (số nhà, tên đường)"
                 name="street"
-                rules={[{ required: true, message: "Vui lòng nhập địa chỉ chi tiết" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết" },
+                ]}
               >
                 <Input
                   placeholder="Nhập số nhà, tên đường..."
                   value={street}
-                  onChange={e => setStreet(e.target.value)}
+                  onChange={(e) => setStreet(e.target.value)}
                 />
               </Form.Item>
             )}
@@ -283,13 +296,13 @@ function RegisterForm() {
               </Select>
             </Form.Item>
 
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <Button type="primary" htmlType="submit" block>
                 Đăng ký
               </Button>
-              <Button 
-                icon={<FaArrowLeft />} 
-                onClick={handleBackToLogin} 
+              <Button
+                icon={<FaArrowLeft />}
+                onClick={handleBackToLogin}
                 block
                 type="default"
               >

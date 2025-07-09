@@ -5,10 +5,12 @@ export const fetchParentByUserId = createAsyncThunk(
   "parent/fetchParentByUserId",
   async (userID, { rejectWithValue }) => {
     try {
-      const res = await api.get(`/Parent/user/${userID}`);
+      const res = await api.get(`Parent/ByAccount/${userID}`);
       return res.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || "Lỗi lấy thông tin phụ huynh");
+      return rejectWithValue(
+        err.response?.data || "Lỗi lấy thông tin phụ huynh"
+      );
     }
   }
 );

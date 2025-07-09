@@ -21,7 +21,6 @@ import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
 import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreate";
 import EventPage from "./pages/home-pages/ParentForm/Event";
-import Vaccine_event from "./dashboard/dashboad_element/Create_event/Vaccine_event";
 
 import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
@@ -30,24 +29,23 @@ import Header from "./components/Header/Header";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile";
 import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
 
-import Health_check from "./dashboard/dashboad_element/Create_event/create_health_check";
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
 import Created_event from "./dashboard/dashboad_element/Created_event";
 import StudentProfileList from "./nurse/StudentProfileList";
+import StudentSearch from "./dashboard/dashboad_element/StudentSearch";
 import NurseProfile from "./nurse/NurseProfile";
 import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
 import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
+import MedicalInventory from "./nurse/medical-inventory";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
-import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
-import Notification from "./dashboard/Notification";
-import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
-import BlogList from "./pages/home-pages/blog/BlogList";
-
-
+import EventCreate from "./dashboard/dashboad_element/Create_event/EventCreate";
+import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
+import VaccineEventReport from "./nurse/VaccineEventReport";
+import CheckUp from "./nurse/CheckUp";
 
 function App() {
   const router = createBrowserRouter([
@@ -77,14 +75,6 @@ function App() {
     {
       path: "/register",
       element: <RegisterForm />,
-    },
-    {
-      path: "/dang-blog",
-      element: <>
-   
-          <BlogCreateForm />,
-      </>
-  
     },
     {
       path: "/blog/hoat-dong-ngoai-khoa",
@@ -140,14 +130,7 @@ function App() {
         </>
       ),
     },
-    {
-      path: "/blog/list",
-      element: <BlogList />,
-    },
-    {
-      path: "/blog/:blogID",
-      element: <BlogDetailDynamic />,
-    },
+
     {
       path: "/create-health-profile",
       element: <HealthProfileCreatePage />,
@@ -178,31 +161,19 @@ function App() {
         },
         {
           path: "/nurse/medicine-receive",
-          element: (
-            <MedicineReceiveForm
-              medicineRequest={{
-                studentName: "Nguyễn Văn A",
-                className: "1A",
-                parentName: "Trần Thị B",
-                phone: "0123456789",
-                medicineDetails: [
-                  {
-                    medicineName: "Paracetamol",
-                    dosage: "1 viên/lần",
-                    time: "Sáng, Trưa",
-                    note: "Uống sau ăn"
-                  },
-                  {
-                    medicineName: "Amoxicillin",
-                    dosage: "2 viên/lần",
-                    time: "Tối",
-                    note: "Không dùng nếu dị ứng penicillin"
-                  }
-                ]
-              }}
-              onConfirm={() => {}}
-            />
-          ),
+          element: <MedicineReceiveForm />,
+        },
+        {
+          path: "/nurse/medical-inventory",
+          element: <MedicalInventory />,
+        },
+        {
+          path: "/nurse/checkup",
+          element: <CheckUp />,
+        },
+        {
+          path: "/nurse/vaccine-event-report",
+          element: <VaccineEventReport />,
         },
         {
           path: "/nurse/blog",
@@ -215,12 +186,8 @@ function App() {
       element: <Dashboard />,
       children: [
         {
-          path: "create_health_check",
-          element: <Health_check />,
-        },
-        {
-          path: "vaccine_event",
-          element: <Vaccine_event />,
+          path: "create_event",
+          element: <EventCreate />,
         },
         {
           path: "manage_account",
@@ -243,13 +210,9 @@ function App() {
           element: <EventNow />,
         },
         {
-          path: "approve_blog",
-          element: <ManagerBlog />,
+          path: "student_profile",
+          element: <StudentSearch />,
         },
-        {
-          path: "notification",
-          element: <Notification/>,
-        }
       ],
     },
     {
@@ -277,6 +240,15 @@ function App() {
     {
       path: "/student-health-profile/edit",
       element: <HealthProfileEdit />,
+    },
+    {
+      path: "/confirm-event",
+      element: (
+        <>
+          <Header />
+          <ConfirmEvent />
+        </>
+      ),
     },
   ]);
   return (

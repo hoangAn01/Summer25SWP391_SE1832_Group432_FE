@@ -49,7 +49,7 @@ const HealthProfileEdit = () => {
         setLoading(true);
 
         // Lấy thông tin phụ huynh trước
-        const parentResponse = await api.get(`/Parent/user/${userId}`);
+        const parentResponse = await api.get(`Parent/ByAccount/${userId}`);
         const parentID = parentResponse.data.parentID;
 
         // Sau đó lấy danh sách học sinh theo parentID
@@ -257,18 +257,43 @@ const HealthProfileEdit = () => {
             form={form}
             layout="vertical"
             onFinish={onFinish}
-            style={{ marginTop: 24, fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif" }}
+            style={{
+              marginTop: 24,
+              fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif",
+            }}
           >
             <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 340, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 340,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 24,
+                }}
+              >
                 <Card
-                  title={<span><UserOutlined /> Thông tin học sinh</span>}
+                  title={
+                    <span>
+                      <UserOutlined /> Thông tin học sinh
+                    </span>
+                  }
                   style={{ borderRadius: 12, background: "#f6faff" }}
                   bodyStyle={{ padding: 24 }}
                 >
                   <Form.Item
                     name="fullName"
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Họ và tên</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Họ và tên
+                      </span>
+                    }
                     rules={[
                       { required: true, message: "Vui lòng nhập tên học sinh" },
                     ]}
@@ -276,11 +301,28 @@ const HealthProfileEdit = () => {
                     <Input
                       disabled
                       placeholder="Tên học sinh"
-                      style={{ width: "100%", fontSize: 16, color: "#222", borderRadius: 8 }}
+                      style={{
+                        width: "100%",
+                        fontSize: 16,
+                        color: "#222",
+                        borderRadius: 8,
+                      }}
                     />
                   </Form.Item>
 
-                  <Form.Item label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Lớp</span>}>
+                  <Form.Item
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Lớp
+                      </span>
+                    }
+                  >
                     <Input
                       name="className"
                       value={selectedStudent?.className || ""}
@@ -290,34 +332,80 @@ const HealthProfileEdit = () => {
                     />
                   </Form.Item>
 
-                  <Form.Item name="dob" label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Ngày tháng năm sinh</span>}>
+                  <Form.Item
+                    name="dob"
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Ngày tháng năm sinh
+                      </span>
+                    }
+                  >
                     <DatePicker
                       format="DD/MM/YYYY"
                       disabled
-                      style={{ width: "100%", borderRadius: 8, fontSize: 16, color: "#222" }}
+                      style={{
+                        width: "100%",
+                        borderRadius: 8,
+                        fontSize: 16,
+                        color: "#222",
+                      }}
                       placeholder="Chưa có thông tin"
                     />
                   </Form.Item>
-
-                 
                 </Card>
               </div>
               <div style={{ flex: 1, minWidth: 340 }}>
                 <Card
-                  title={<span><HeartOutlined /> Thông tin sức khỏe</span>}
+                  title={
+                    <span>
+                      <HeartOutlined /> Thông tin sức khỏe
+                    </span>
+                  }
                   style={{ borderRadius: 12, background: "#f9f9f9" }}
                   bodyStyle={{ padding: 24 }}
                 >
                   <Form.Item
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Thị lực</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Thị lực
+                      </span>
+                    }
                     name="visionTest"
-                    rules={[{ required: true, message: "Vui lòng nhập thị lực" }]}
+                    rules={[
+                      { required: true, message: "Vui lòng nhập thị lực" },
+                    ]}
                   >
-                    <Input disabled={!isEdit} placeholder="Nhập thị lực" style={{ fontSize: 16, color: "#222", borderRadius: 8 }} />
+                    <Input
+                      disabled={!isEdit}
+                      placeholder="Nhập thị lực"
+                      style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                    />
                   </Form.Item>
 
                   <Form.Item
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Ngày khám gần nhất</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Ngày khám gần nhất
+                      </span>
+                    }
                     name="lastCheckupDate"
                     rules={[
                       { required: true, message: "Vui lòng chọn ngày khám" },
@@ -326,12 +414,27 @@ const HealthProfileEdit = () => {
                     <DatePicker
                       disabled={!isEdit}
                       format="YYYY-MM-DD"
-                      style={{ width: "100%", fontSize: 16, color: "#222", borderRadius: 8 }}
+                      style={{
+                        width: "100%",
+                        fontSize: 16,
+                        color: "#222",
+                        borderRadius: 8,
+                      }}
                     />
                   </Form.Item>
 
                   <Form.Item
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Chiều cao</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Chiều cao
+                      </span>
+                    }
                     name="height"
                     rules={[
                       {
@@ -349,7 +452,17 @@ const HealthProfileEdit = () => {
                   </Form.Item>
 
                   <Form.Item
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Cân nặng</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Cân nặng
+                      </span>
+                    }
                     name="weight"
                     rules={[
                       {
@@ -367,7 +480,17 @@ const HealthProfileEdit = () => {
                   </Form.Item>
 
                   <Form.Item
-                    label={<span style={{ fontWeight: 600, color: "#1677ff", fontSize: 16 }}>Bệnh Mãn Tính</span>}
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Bệnh Mãn Tính
+                      </span>
+                    }
                     name="chronicDisease"
                     rules={[
                       {

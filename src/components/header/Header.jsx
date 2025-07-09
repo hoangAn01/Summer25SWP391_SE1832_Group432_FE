@@ -18,12 +18,14 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import LogoutIcon from "@mui/icons-material/Logout";
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/features/userSlice";
 import { Modal } from "antd";
 import api from "../../config/axios";
+import { toast } from "react-toastify";
 
 const Header = () => {
   const [userAnchorEl, setUserAnchorEl] = useState(null);
@@ -35,12 +37,30 @@ const Header = () => {
   const dispatch = useDispatch();
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
   const [hasHealthProfile, setHasHealthProfile] = useState(false);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkForm, setLinkForm] = useState({ studentID: "", studentName: "" });
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [parentId, setParentId] = useState(null);
 
   useEffect(() => {
     if (user) {
       // Logic for when user is logged in
     } else {
       // Logic for when user is not logged in
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && user.userID) {
+      // Lấy parentID theo userID
+      (async () => {
+        try {
+          const res = await api.get(`Parent/ByAccount/${user.userID}`);
+          setParentId(res.data.parentID);
+        } catch (err) {
+          console.error("Không tìm thấy parent:", err);
+        }
+      })();
     }
   }, [user]);
 
@@ -235,6 +255,12 @@ const Header = () => {
                   >
                     <NotificationsIcon sx={{ fontSize: 32 }} />
                   </IconButton>
+                  <IconButton
+                    sx={{ ml: 1, p: 0.5, "&:hover": { color: "#ffd600" } }}
+                    onClick={() => setShowLogoutModal(true)}
+                  >
+                    <LogoutIcon sx={{ fontSize: 32 }} />
+                  </IconButton>
                   <Menu
                     anchorEl={userAnchorEl}
                     open={Boolean(userAnchorEl)}
@@ -284,6 +310,30 @@ const Header = () => {
                       }}
                     >
                       Đăng xuất
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        setShowLinkDialog(true);
+                      }}
+                    >
+                      Liên kết học sinh
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        navigate("/event");
+                      }}
+                    >
+                      Tham gia sự kiện
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        navigate("/confirm-event");
+                      }}
+                    >
+                      Xác nhận sự kiện
                     </MenuItem>
                   </Menu>
                 </>
@@ -372,6 +422,63 @@ const Header = () => {
             variant="contained"
           >
             Tạo hồ sơ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={showLinkDialog} onClose={() => setShowLinkDialog(false)}>
+        <DialogTitle>Liên kết học sinh với phụ huynh</DialogTitle>
+        <DialogContent
+          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+        >
+          <InputBase
+            placeholder="Mã học sinh"
+            value={linkForm.studentID}
+            onChange={(e) =>
+              setLinkForm({ ...linkForm, studentID: e.target.value })
+            }
+            sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
+          />
+          <InputBase
+            placeholder="Họ tên học sinh"
+            value={linkForm.studentName}
+            onChange={(e) =>
+              setLinkForm({ ...linkForm, studentName: e.target.value })
+            }
+            sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowLinkDialog(false)} color="secondary">
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            disabled={linkLoading}
+            onClick={async () => {
+              if (!parentId) return;
+              setLinkLoading(true);
+              try {
+                await api.post("/Student/link-parent", {
+                  parentID: parentId,
+                  studentID: parseInt(linkForm.studentID),
+                  studentName: linkForm.studentName.trim(),
+                });
+                toast.success("Liên kết học sinh thành công!");
+                setShowLinkDialog(false);
+              } catch (err) {
+                console.error(err);
+                const msg =
+                  err.response?.data ||
+                  "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
+                toast.error(msg);
+              } finally {
+                setLinkLoading(false);
+              }
+            }}
+            color="primary"
+          >
+            {linkLoading ? "Đang liên kết..." : "Liên kết"}
           </Button>
         </DialogActions>
       </Dialog>

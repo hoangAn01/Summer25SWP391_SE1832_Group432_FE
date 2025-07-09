@@ -41,7 +41,7 @@ function HealthProfileCreatePage() {
         setLoading(true);
 
         // Lấy thông tin phụ huynh trước
-        const parentResponse = await api.get(`/Parent/user/${userId}`);
+        const parentResponse = await api.get(`Parent/ByAccount/${userId}`);
         const parentID = parentResponse.data.parentID;
 
         // Sau đó lấy danh sách học sinh theo parentID

@@ -71,10 +71,19 @@ const ApproveMedicine = () => {
   const handleApprove = async (requestID) => {
     try {
       setApproving(true);
-      console.log(user.userID);
-      console.log(noteNurse);
+      // Lấy nurseID từ API Nurse
+      const nurseRes = await api.get("Nurse");
+      const nurseInfo = nurseRes.data.$values.find(
+        (n) => n.accountID === user.userID
+      );
+      const nurseID = nurseInfo?.nurseID;
+      if (!nurseID) {
+        message.error("Không tìm thấy thông tin y tá!");
+        setApproving(false);
+        return;
+      }
       await api.put(`/MedicineRequest/${requestID}/approve`, {
-        approvedBy: user.userID,
+        approvedBy: nurseID,
         nurseNote: noteNurse,
       });
       toast.success("Đã gửi phụ huynh!");
@@ -136,7 +145,7 @@ const ApproveMedicine = () => {
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          hour12: false
+          hour12: false,
         });
       },
     },
@@ -228,7 +237,15 @@ const ApproveMedicine = () => {
     if (!val) return "";
     return val
       .split(",")
-      .map(t => t.trim() === "morning" ? "Sáng" : t.trim() === "noon" ? "Trưa" : t.trim() === "evening" ? "Tối" : t.trim())
+      .map((t) =>
+        t.trim() === "morning"
+          ? "Sáng"
+          : t.trim() === "noon"
+          ? "Trưa"
+          : t.trim() === "evening"
+          ? "Tối"
+          : t.trim()
+      )
       .join(", ");
   };
 
@@ -268,7 +285,7 @@ const ApproveMedicine = () => {
               <Descriptions.Item label="ID đơn">
                 {detailModal.record.requestID || "Không có"}
               </Descriptions.Item>
-  
+
               <Descriptions.Item label="Học sinh">
                 {detailModal.record.studentName || "Không có"}
               </Descriptions.Item>
@@ -323,7 +340,7 @@ const ApproveMedicine = () => {
                     title: "Thời điểm",
                     dataIndex: "time",
                     key: "time",
-                    render: timeToVN
+                    render: timeToVN,
                   },
                 ]}
                 dataSource={
@@ -369,7 +386,8 @@ const ApproveMedicine = () => {
                 gap: 8,
               }}
             >
-              {statusVN(detailModal.record.requestStatus) === "Đã nhận đơn thuốc" && (
+              {statusVN(detailModal.record.requestStatus) ===
+                "Đã nhận đơn thuốc" && (
                 <Button
                   type="primary"
                   loading={approving}
@@ -377,14 +395,11 @@ const ApproveMedicine = () => {
                 >
                   {approving ? "Đang gửi..." : "Gửi phụ huynh"}
                 </Button>
-                
               )}
             </div>
           </>
         )}
       </Modal>
-
-      
     </div>
   );
 };

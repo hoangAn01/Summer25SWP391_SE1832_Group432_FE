@@ -17,40 +17,36 @@ function getItem(label, key, icon, children, isParentOnly = false) {
     icon,
     children,
     label:
-      key === "logout"
-        ? label
-        : isParentOnly
-        ? label
-        : <Link to={`/dashboard/${key}`}>{label}</Link>,
+      key === "logout" ? (
+        label
+      ) : isParentOnly ? (
+        label
+      ) : (
+        <Link to={`/dashboard/${key}`}>{label}</Link>
+      ),
   };
 }
 const items = [
   getItem("Tìm kiếm học sinh", "student_profile", <DesktopOutlined />),
-  getItem("Tạo sự kiện", "create_event_group", <CalendarOutlined />, [
-    getItem("Tạo sự kiện tiêm chủng", "Vaccine_event", <MedicineBoxOutlined />),
-    getItem(
-      "Tạo lịch kiểm tra sức khỏe",
-      "create_health_check",
-      <MedicineBoxOutlined />
-    ),
-    getItem("Sự kiện khác", "other_event", <MedicineBoxOutlined />),
-  ], true),
-  getItem("Quản lí sự kiện", "event_group", <DesktopOutlined />, [
-    getItem("Sự kiện đã tạo", "created_event", <DesktopOutlined />),
-    getItem("Sự kiện đang diễn ra", "event_now", <DesktopOutlined />),
-  ], true),
+  getItem("Tạo sự kiện mới", "create_event", <CalendarOutlined />),
+  getItem(
+    "Quản lý sự kiện",
+    "event_group",
+    <DesktopOutlined />,
+    [
+      getItem("Sự kiện đã tạo", "created_event", <DesktopOutlined />),
+      getItem("Sự kiện đang diễn ra", "event_now", <DesktopOutlined />),
+    ],
+    true
+  ),
   getItem("Thông báo ", "notification", <DesktopOutlined />),
   getItem(
-    "Quản lí tài khoản phụ huynh ",
+    "Quản lý tài khoản phụ huynh ",
     "manage_account",
     <DesktopOutlined />
   ),
- 
- 
-
   getItem("Báo cáo ", "report", <DesktopOutlined />),
   getItem("Duyệt blog ", "approve_blog", <DesktopOutlined />),
-
   getItem("Đăng xuất ", "logout", <DesktopOutlined />),
 ];
 const Dashboard = () => {

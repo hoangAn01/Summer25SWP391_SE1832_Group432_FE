@@ -34,8 +34,6 @@ const MedicationForm = () => {
   const [medicineList, setMedicineList] = useState([]); // Danh sách thuốc và vật tư
   const [loading, setLoading] = useState(false);
   const user = useSelector((state) => state.user); // Lấy user từ Redux
-  const [otherMedicineNames, setOtherMedicineNames] = useState({}); // Lưu tên thuốc khác cho từng trang
-  const [forceUpdate, setForceUpdate] = useState(false); // ép re-render khi chọn 'Khác'
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -47,11 +45,11 @@ const MedicationForm = () => {
   const fetchStudents = async () => {
     try {
       // Lấy thông tin phụ huynh trước
-      const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+      const parentResponse = await api.get(`Parent/ByAccount/${user.userID}`);
       const parentID = parentResponse.data.parentID;
 
       // Sau đó lấy danh sách học sinh theo parentID
-      const studentsResponse = await api.get(`/Student/${parentID}`);
+      const studentsResponse = await api.get(`Student/by-parent/${parentID}`);
 
       // Xử lý response với cấu trúc mới có $values
       const studentsData =
@@ -64,19 +62,16 @@ const MedicationForm = () => {
     }
   };
 
-  // Lấy danh sách thuốc và vật tư y tế từ MedicalInventory
+  // Lấy danh sách thuốc và vật tư y tế từ MedicineRequest/items
   const fetchMedicineList = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/MedicineRequest/items");
-
-      // Xử lý response với cấu trúc mới có $values
+      const res = await api.get("MedicineRequest/items");
       const medicineData = res.data.$values || [];
-      console.log("Medical inventory data:", medicineData);
       setMedicineList(medicineData);
     } catch (error) {
-      console.error("Lỗi lấy danh sách thuốc và vật tư:", error);
-      message.error("Không thể tải danh sách thuốc và vật tư");
+      console.error("Lỗi lấy danh sách thuốc:", error);
+      message.error("Không thể tải danh sách thuốc");
       setMedicineList([]);
     } finally {
       setLoading(false);
@@ -86,14 +81,18 @@ const MedicationForm = () => {
   const fetchHistory = async (parentID) => {
     setHistoryLoading(true);
     try {
-      const res = await api.get(`/MedicineRequest/sent/${parentID}`);
+      const res = await api.get(`MedicineRequest/sent/${parentID}`);
       console.log("Lịch sử đơn thuốc trả về:", res.data);
       let rawHistory = res.data.$values || [];
-      // Lọc lại chỉ lấy đơn thuốc của các học sinh thuộc parentID này
-      const studentIDs = students.map(s => s.studentID);
-      rawHistory = rawHistory.filter(item => studentIDs.includes(item.studentID));
+      // Tạm thời không filter theo students để kiểm tra
+      // const studentIDs = students.map((s) => s.studentID);
+      // rawHistory = rawHistory.filter((item) =>
+      //   studentIDs.includes(item.studentID)
+      // );
+      console.log("rawHistory không filter:", rawHistory);
       setHistoryData(rawHistory);
-    } catch (e) {
+    } catch (error) {
+      console.error("Lỗi lấy lịch sử:", error);
       setHistoryData([]);
     }
     setHistoryLoading(false);
@@ -124,12 +123,6 @@ const MedicationForm = () => {
     setCurrentPage(page);
   };
 
-  const handleOtherMedicineChange = (idx, value) => {
-    setOtherMedicineNames((prev) => ({ ...prev, [idx]: value }));
-    // Gán giá trị vào form để validate
-    form.setFieldsValue({ [`otherMedicineName_${idx}`]: value });
-  };
-
   const handleSubmit = async (values) => {
     console.log("Form values:", values);
     console.log("Medicine list:", medicineList);
@@ -137,35 +130,22 @@ const MedicationForm = () => {
 
     try {
       // Lấy parentID từ thông tin phụ huynh
-      const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+      const parentResponse = await api.get(`Parent/ByAccount/${user.userID}`);
       const parentID = parentResponse.data.parentID;
 
       const payload = {
-        studentID: values.studentID,
-        parentID: parentID,
-        note: values.note || "",
-        approvalDate: new Date().toISOString(),
-        medicineDetails: medicinePages.map((_, idx) => {
-          const otherName = values[`otherMedicineName_${idx}`];
-          let medicineName = '';
-          let requestItemID = null;
-          if (otherName) {
-            medicineName = otherName;
-            requestItemID = null;
-          } else {
-            const selectedItemID = values.itemName?.[idx]?.medicineName;
-            requestItemID = selectedItemID;
-            const selectedItem = medicineList.find(
-              (item) => item.requestItemID === selectedItemID
-            );
-            medicineName = selectedItem ? selectedItem.requestItemName : '';
-          }
+        StudentID: values.studentID,
+        ParentID: parentID,
+        Note: values.note || "",
+        MedicineDetails: medicinePages.map((_, idx) => {
+          const selectedItemID = values.itemName?.[idx]?.medicineName;
           return {
-            requestItemID: requestItemID,
-            medicineName: medicineName,
-            quantity: values.quantity?.[idx]?.quantity || 1,
-            dosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
-            time: (values.medicines?.[idx]?.time || []).join(", "),
+            RequestItemID: selectedItemID,
+            DosageInstructions: values.dosageIntructions?.[idx]?.dosage || "",
+            Quantity: values.quantity?.[idx]?.quantity || 1,
+            Time: (form.getFieldValue(["medicines", idx, "time"]) || []).join(
+              ", "
+            ),
           };
         }),
       };
@@ -196,7 +176,15 @@ const MedicationForm = () => {
     if (!val) return "";
     return val
       .split(",")
-      .map(t => t.trim() === "morning" ? "Sáng" : t.trim() === "noon" ? "Trưa" : t.trim() === "evening" ? "Tối" : t.trim())
+      .map((t) =>
+        t.trim() === "morning"
+          ? "Sáng"
+          : t.trim() === "noon"
+          ? "Trưa"
+          : t.trim() === "evening"
+          ? "Tối"
+          : t.trim()
+      )
       .join(", ");
   };
 
@@ -366,8 +354,6 @@ const MedicationForm = () => {
               </div>
 
               {medicinePages.map((_, idx) => {
-                // ép sử dụng forceUpdate để tránh linter warning
-                void forceUpdate;
                 return (
                   <div
                     key={idx}
@@ -412,19 +398,29 @@ const MedicationForm = () => {
                             const item = option?.data;
                             if (!item) return false;
                             return (
-                              item.requestItemName.toLowerCase().includes(input.toLowerCase()) ||
-                              item.description.toLowerCase().includes(input.toLowerCase())
+                              item.requestItemName
+                                .toLowerCase()
+                                .includes(input.toLowerCase()) ||
+                              (item.description || "")
+                                .toLowerCase()
+                                .includes(input.toLowerCase())
                             );
                           }}
                           allowClear
                           loading={loading}
                           optionLabelProp="label"
                           showArrow={true}
-                          style={{ width: 'calc(100% - 140px)' }}
-                          value={form.getFieldValue(["itemName", idx, "medicineName"])}
-                          onChange={value => {
+                          style={{ width: "calc(100% - 140px)" }}
+                          value={form.getFieldValue([
+                            "itemName",
+                            idx,
+                            "medicineName",
+                          ])}
+                          onChange={(value) => {
                             // Cập nhật giá trị vào form khi chọn thuốc
-                            const itemName = [...(form.getFieldValue("itemName") || [])];
+                            const itemName = [
+                              ...(form.getFieldValue("itemName") || []),
+                            ];
                             itemName[idx] = { medicineName: value };
                             form.setFieldsValue({ itemName });
                           }}
@@ -436,16 +432,18 @@ const MedicationForm = () => {
                               data={item}
                               label={item.requestItemName}
                             >
-                              <div>
-                                <div style={{ fontWeight: "bold" }}>{item.requestItemName}</div>
-                                <div style={{ fontSize: "12px", color: "#666" }}>
-                                  {item.description}
-                                </div>
-                              </div>
+                              {item.requestItemName}{" "}
+                              <span style={{ color: "#888", fontSize: 12 }}>
+                                {item.description}
+                              </span>
                             </Select.Option>
                           ))}
                         </Select>
-                        <Button type="dashed" onClick={() => setCreateMedicineModal(true)} style={{ width: 130, marginLeft: 8 }}>
+                        <Button
+                          type="dashed"
+                          onClick={() => setCreateMedicineModal(true)}
+                          style={{ width: 130, marginLeft: 8 }}
+                        >
                           Phụ huynh tạo thuốc
                         </Button>
                       </Input.Group>
@@ -507,17 +505,17 @@ const MedicationForm = () => {
                       >
                         <Option
                           value="morning"
-                          disabled={
-                            (form.getFieldValue(["medicines", idx, "time"]) || []).includes("morning")
-                          }
+                          disabled={(
+                            form.getFieldValue(["medicines", idx, "time"]) || []
+                          ).includes("morning")}
                         >
                           Sáng
                         </Option>
                         <Option
                           value="noon"
-                          disabled={
-                            (form.getFieldValue(["medicines", idx, "time"]) || []).includes("noon")
-                          }
+                          disabled={(
+                            form.getFieldValue(["medicines", idx, "time"]) || []
+                          ).includes("noon")}
                         >
                           Trưa
                         </Option>
@@ -569,9 +567,13 @@ const MedicationForm = () => {
           // Lấy parentID trước khi gọi API
           let parentID = null;
           try {
-            const parentResponse = await api.get(`/Parent/user/${user.userID}`);
+            const parentResponse = await api.get(
+              `Parent/ByAccount/${user.userID}`
+            );
             parentID = parentResponse.data.parentID;
-          } catch {}
+          } catch (error) {
+            console.error("Lỗi lấy parentID:", error);
+          }
           if (parentID) fetchHistory(parentID);
           setHistoryVisible(true);
         }}
@@ -590,20 +592,26 @@ const MedicationForm = () => {
           loading={historyLoading}
           rowKey="requestID"
           columns={[
-            { 
-              title: "Ngày gửi", 
+            {
+              title: "Ngày gửi",
               key: "approvalDate",
               render: (_, record) => {
                 const d = record.approvalDate || record.date;
                 if (!d) return "";
                 const date = new Date(d);
-                const vietnamTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+                const vietnamTime = new Date(
+                  date.getTime() + 7 * 60 * 60 * 1000
+                );
                 return vietnamTime.toLocaleString("vi-VN");
-              }
+              },
             },
             { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
-            { title: "Ghi chú", dataIndex: "note", key: "note" },
-       
+            {
+              title: "Ghi chú",
+              dataIndex: "note",
+              key: "note",
+              render: (text) => text || "Không có",
+            },
           ]}
           expandable={{
             expandedRowRender: (record) => (
@@ -612,16 +620,29 @@ const MedicationForm = () => {
                   Array.isArray(record.medicineDetails)
                     ? record.medicineDetails
                     : Array.isArray(record.medicineDetails?.$values)
-                      ? record.medicineDetails.$values
-                      : []
+                    ? record.medicineDetails.$values
+                    : []
                 }
                 pagination={false}
                 rowKey="requestDetailID"
                 columns={[
-                  { title: "Tên thuốc/Vật tư ", dataIndex: "requestItemName", key: "requestItemName" },
+                  {
+                    title: "Tên thuốc/Vật tư ",
+                    dataIndex: "requestItemName",
+                    key: "requestItemName",
+                  },
                   { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
-                  { title: "Liều dùng/Cách sử dụng ", dataIndex: "dosageInstructions", key: "dosageInstructions" },
-                  { title: "Thời điểm", dataIndex: "time", key: "time", render: timeToVN },
+                  {
+                    title: "Liều dùng/Cách sử dụng ",
+                    dataIndex: "dosageInstructions",
+                    key: "dosageInstructions",
+                  },
+                  {
+                    title: "Thời điểm",
+                    dataIndex: "time",
+                    key: "time",
+                    render: timeToVN,
+                  },
                 ]}
               />
             ),
@@ -638,9 +659,11 @@ const MedicationForm = () => {
         onOk={async () => {
           setCreatingMedicine(true);
           try {
-            await api.post("/RequestItemList", {
-              requestItemName: newMedicineName,
-              description: newMedicineDesc
+            await api.post("MedicalInventory", {
+              itemName: newMedicineName,
+              quantity: 0,
+              unit: "Cái",
+              location: "Kho y tế",
             });
             toast.success("Tạo thuốc mới thành công!");
             setCreateMedicineModal(false);
@@ -648,27 +671,35 @@ const MedicationForm = () => {
             setNewMedicineDesc("");
             await fetchMedicineList();
             // Tự động chọn thuốc vừa tạo cho trang hiện tại
-            const updatedList = await api.get("/RequestItemList");
+            const updatedList = await api.get("MedicalInventory");
             const created = (updatedList.data.$values || updatedList.data).find(
-              (item) => item.requestItemName === newMedicineName
+              (item) => item.itemName === newMedicineName
             );
             if (created) {
               // Tạo mảng mới để trigger re-render
               const itemName = [...(form.getFieldValue("itemName") || [])];
-              itemName[currentPage - 1] = { medicineName: created.requestItemID };
+              itemName[currentPage - 1] = {
+                medicineName: created.itemID,
+              };
               form.setFieldsValue({ itemName });
-              console.log("itemName sau khi set:", form.getFieldValue("itemName"));
+              console.log(
+                "itemName sau khi set:",
+                form.getFieldValue("itemName")
+              );
               // Trigger validate lại trường này sau khi setFieldsValue
               setTimeout(async () => {
                 try {
-                  await form.validateFields([["itemName", currentPage - 1, "medicineName"]]);
+                  await form.validateFields([
+                    ["itemName", currentPage - 1, "medicineName"],
+                  ]);
                   console.log("Validate OK");
                 } catch (err) {
                   console.log("Validate lỗi:", err);
                 }
               }, 0);
             }
-          } catch (e) {
+          } catch (error) {
+            console.error("Lỗi tạo thuốc:", error);
             toast.error("Tạo thuốc thất bại!");
           }
           setCreatingMedicine(false);
@@ -679,13 +710,13 @@ const MedicationForm = () => {
           <Form.Item label="Tên thuốc/vật tư" required>
             <Input
               value={newMedicineName}
-              onChange={e => setNewMedicineName(e.target.value)}
+              onChange={(e) => setNewMedicineName(e.target.value)}
             />
           </Form.Item>
           <Form.Item label="Mô tả">
             <Input
               value={newMedicineDesc}
-              onChange={e => setNewMedicineDesc(e.target.value)}
+              onChange={(e) => setNewMedicineDesc(e.target.value)}
             />
           </Form.Item>
         </Form>

@@ -14,19 +14,30 @@ const columns = [
   },
   {
     title: "Bệnh mãn tính",
-    dataIndex: "chronicDisease",
-    key: "chronicDisease",
+    dataIndex: "chronicDiseases",
+    key: "chronicDiseases",
     render: (text) => text || <span style={{ color: "#ccc" }}>Không có</span>,
   },
   {
     title: "Thị lực",
-    dataIndex: "visionTest",
-    key: "visionTest",
+    dataIndex: "visionDetails",
+    key: "visionDetails",
+  },
+  {
+    title: "Thính lực",
+    dataIndex: "hearingDetails",
+    key: "hearingDetails",
   },
   {
     title: "Dị ứng",
-    dataIndex: "allergy",
-    key: "allergy",
+    dataIndex: "allergies",
+    key: "allergies",
+    render: (text) => text || <span style={{ color: "#ccc" }}>Không có</span>,
+  },
+  {
+    title: "Tiền sử điều trị",
+    dataIndex: "treatmentHistory",
+    key: "treatmentHistory",
     render: (text) => text || <span style={{ color: "#ccc" }}>Không có</span>,
   },
   {
@@ -44,11 +55,11 @@ const columns = [
     sorter: (a, b) => a.height - b.height,
   },
   {
-    title: "Ngày khám gần nhất",
-    dataIndex: "lastCheckupDate",
-    key: "lastCheckupDate",
+    title: "Cập nhật lần cuối",
+    dataIndex: "lastUpdated",
+    key: "lastUpdated",
     render: (date) => new Date(date).toLocaleDateString("vi-VN"),
-    sorter: (a, b) => new Date(a.lastCheckupDate) - new Date(b.lastCheckupDate),
+    sorter: (a, b) => new Date(a.lastUpdated) - new Date(b.lastUpdated),
   },
 ];
 
@@ -124,7 +135,7 @@ const StudentProfileList = () => {
       <Table
         columns={columns}
         dataSource={filteredData}
-        rowKey="profileID"
+        rowKey="healthProfileID"
         pagination={{ pageSize: 10, showSizeChanger: true }}
         scroll={{ x: "max-content" }}
         locale={{

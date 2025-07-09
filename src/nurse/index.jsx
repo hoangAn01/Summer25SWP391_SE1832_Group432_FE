@@ -51,11 +51,9 @@ const items = [
     "/nurse/medical-inventory",
     <MedicineBoxOutlined />
   ),
-  getItem(
-    "Đăng blog học đường",
-    "/nurse/blog",
-    <FileOutlined />
-  ),
+  getItem("Khám định kỳ", "/nurse/checkup", <FileOutlined />),
+  getItem("Báo cáo vaccine", "/nurse/vaccine-event-report", <FileOutlined />),
+  getItem("Đăng blog", "/nurse/blog", <FileOutlined />),
 ];
 
 // Mapping path to breadcrumb name
@@ -65,7 +63,10 @@ const breadcrumbNameMap = {
   "/nurse/student-profile-list": "Danh sách hồ sơ học sinh",
   "/nurse/approve-medicine": "Duyệt đơn thuốc",
   "/nurse/profile": "Thông tin cá nhân",
+  "/nurse/checkup": "Khám định kỳ",
+  "/nurse/vaccine-event-report": "Báo cáo Vaccine",
   "/nurse/medical-inventory": "Quản lí kho thuốc",
+  "/nurse/blog": "Đăng blog học đường",
 };
 
 const Nurse = () => {

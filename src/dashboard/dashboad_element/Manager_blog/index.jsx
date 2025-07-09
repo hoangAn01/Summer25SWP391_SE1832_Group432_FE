@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Table, Tag, Button, Image, message, Space, Popconfirm, Modal } from "antd";
+import {
+  Table,
+  Tag,
+  Button,
+  Image,
+  message,
+  Space,
+  Popconfirm,
+  Modal,
+} from "antd";
 import api from "../../../config/axios";
 
 const ManagerBlog = () => {
@@ -39,7 +48,7 @@ const ManagerBlog = () => {
   const handleApprove = async (blogID) => {
     try {
       await api.patch(`/Blog/publish/${blogID}`, true, {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" },
       });
       message.success("Duyệt blog thành công!");
       fetchData();
@@ -69,7 +78,15 @@ const ManagerBlog = () => {
       title: "Ảnh",
       dataIndex: "imageUrl",
       key: "imageUrl",
-      render: (url) => <Image src={url} alt="blog" width={80} height={50} style={{ objectFit: 'cover', borderRadius: 6 }} />,
+      render: (url) => (
+        <Image
+          src={url}
+          alt="blog"
+          width={80}
+          height={50}
+          style={{ objectFit: "cover", borderRadius: 6 }}
+        />
+      ),
     },
     {
       title: "Tác giả",
@@ -92,7 +109,12 @@ const ManagerBlog = () => {
       title: "Trạng thái",
       dataIndex: "isPublished",
       key: "isPublished",
-      render: (published) => published ? <Tag color="green">Đã duyệt</Tag> : <Tag color="orange">Chờ duyệt</Tag>,
+      render: (published) =>
+        published ? (
+          <Tag color="green">Đã duyệt</Tag>
+        ) : (
+          <Tag color="orange">Chờ duyệt</Tag>
+        ),
     },
     {
       title: "Hành động",
@@ -107,7 +129,9 @@ const ManagerBlog = () => {
                 okText="Duyệt"
                 cancelText="Hủy"
               >
-                <Button type="primary" size="small">Duyệt</Button>
+                <Button type="primary" size="small">
+                  Duyệt
+                </Button>
               </Popconfirm>
               <Popconfirm
                 title="Bạn chắc chắn muốn từ chối blog này?"
@@ -115,7 +139,9 @@ const ManagerBlog = () => {
                 okText="Từ chối"
                 cancelText="Hủy"
               >
-                <Button danger size="small">Từ chối</Button>
+                <Button danger size="small">
+                  Từ chối
+                </Button>
               </Popconfirm>
             </>
           )}
@@ -126,10 +152,16 @@ const ManagerBlog = () => {
               okText="Xóa"
               cancelText="Hủy"
             >
-              <Button danger size="small">Xóa</Button>
+              <Button danger size="small">
+                Xóa
+              </Button>
             </Popconfirm>
           )}
-          <Button type="link" size="small" onClick={() => setDetailModal({ open: true, record })}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => setDetailModal({ open: true, record })}
+          >
             Xem chi tiết
           </Button>
         </Space>
