@@ -158,4 +158,6 @@ export function Footer() {
       </Container>
     </Box>
   );
-} 
+}
+
+export default Footer; 

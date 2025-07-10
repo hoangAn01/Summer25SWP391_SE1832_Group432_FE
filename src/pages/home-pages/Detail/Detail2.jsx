@@ -21,7 +21,7 @@ import LocalDiningIcon from "@mui/icons-material/LocalDining";
 import TimerIcon from "@mui/icons-material/Timer";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PersonIcon from "@mui/icons-material/Person";
-
+import { Footer } from "../../../components/Footer/Footer";
 const Detail2 = () => {
   const scrollToSection = (elementId) => {
     const element = document.getElementById(elementId);

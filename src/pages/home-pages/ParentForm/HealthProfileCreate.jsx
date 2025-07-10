@@ -9,6 +9,7 @@ import {
   DatePicker,
   Select,
   message,
+  InputNumber,
 } from "antd";
 import {
   PlusOutlined,
@@ -83,24 +84,30 @@ function HealthProfileCreatePage() {
     try {
       const data = {
         studentID: selectedStudent.studentID,
-        fullName: selectedStudent.fullName,
-        className: selectedStudent.className,
-        dob: values.dob ? values.dob.format("YYYY-MM-DD") : null,
-        chronicDisease: values.chronicDisease || "",
-        visionTest: values.visionTest,
-        allergy: values.allergy,
+        studentFullName: selectedStudent.fullName,
+        allergies: values.allergy,
+        chronicDiseases: values.chronicDisease || "",
+        treatmentHistory: values.treatmentHistory,
+        visionDetails: values.visionTest ? `${values.visionTest}/10` : "",
+        hearingDetails: values.hearingDetails ? `${values.hearingDetails}/10` : "",
         weight: values.weight,
         height: values.height,
-        lastCheckupDate: values.lastCheckupDate
-          ? values.lastCheckupDate.format("YYYY-MM-DD")
-          : new Date().toISOString().split("T")[0],
+        lastUpdated: new Date().toISOString(),
       };
 
       console.log("Health profile data:", data);
-      const res = await api.post(`/HealthProfile`, data);
+      await api.post(`/HealthProfile`, data);
 
-      message.success("Tạo hồ sơ thành công! Mã hồ sơ: " + res.data.profileID);
-      navigate(`/student-health-profile/${res.data.studentID}`);
+      // Hiển thị thông báo thành công ở giữa màn hình
+      message.success({
+        content: `Đã tạo hồ sơ sức khỏe cho học sinh ${selectedStudent.fullName} thành công!`,
+        style: { marginTop: '20vh', fontSize: 18 },
+        duration: 1.5,
+      });
+
+      setTimeout(() => {
+        navigate(`/student-health-profile/edit`);
+      }, 1500);
 
       // Reset form sau khi tạo thành công
       // setTimeout(() => {
@@ -175,16 +182,39 @@ function HealthProfileCreatePage() {
                 <Select
                   placeholder="Chọn học sinh"
                   loading={loading}
-                  onChange={(value) => {
+                  onChange={async (value) => {
                     const student = students.find((s) => s.studentID === value);
                     if (student) {
+                      let className = student.className;
+                      if (!className && student.classID) {
+                        try {
+                          const classRes = await api.get(`/Class/${student.classID}`);
+                          className = classRes.data.className || "Chưa có thông tin";
+                        } catch {
+                          className = "Chưa có thông tin";
+                        }
+                      }
+
+                      let parentFullName = student.parentFullName;
+                      if (!parentFullName && student.parentID) {
+                        try {
+                          const parentRes = await api.get(`/Parent/${student.parentID}`);
+                          parentFullName = parentRes.data.fullName || "";
+                        } catch {
+                          parentFullName = "";
+                        }
+                      }
+
                       form.setFieldsValue({
-                        className: student.className,
-                        dob: student.dateOfBirth
-                          ? moment(student.dateOfBirth)
-                          : null,
+                        className,
+                        dob: student.dateOfBirth ? moment(student.dateOfBirth) : null,
+                        // Có thể set thêm parentFullName nếu cần
                       });
-                      setSelectedStudent(student);
+                      setSelectedStudent({
+                        ...student,
+                        className,
+                        parentFullName,
+                      });
                     }
                   }}
                   style={{ width: "100%" }}
@@ -198,10 +228,8 @@ function HealthProfileCreatePage() {
                 </Select>
               </Form.Item>
 
-              <Form.Item label="Lớp">
+              <Form.Item label="Lớp" name="className">
                 <Input
-                  name="className"
-                  value={selectedStudent?.className || ""}
                   disabled
                   placeholder="Chưa có thông tin"
                 />
@@ -231,9 +259,45 @@ function HealthProfileCreatePage() {
               <Form.Item
                 label="Thị lực"
                 name="visionTest"
-                rules={[{ required: true, message: "Vui lòng nhập thị lực" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập thị lực" },
+                  {
+                    type: "number",
+                    min: 1,
+                    max: 10,
+                    message: "Chỉ nhập số từ 1 đến 10",
+                  },
+                ]}
               >
-                <Input placeholder="Nhập thị lực" />
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  addonAfter="/10"
+                  placeholder="Nhập thị lực"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Thính lực"
+                name="hearingDetails"
+                rules={[
+                  { required: true, message: "Vui lòng nhập thính lực" },
+                  {
+                    type: "number",
+                    min: 1,
+                    max: 10,
+                    message: "Chỉ nhập số từ 1 đến 10",
+                  },
+                ]}
+              >
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  addonAfter="/10"
+                  placeholder="Nhập thính lực"
+                />
               </Form.Item>
 
               <Form.Item
@@ -242,6 +306,14 @@ function HealthProfileCreatePage() {
                 rules={[{ required: true, message: "Vui lòng chọn ngày khám" }]}
               >
                 <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+              </Form.Item>
+
+              <Form.Item
+                label="Lịch sử điều trị"
+                name="treatmentHistory"
+                rules={[{ required: true, message: "Vui lòng nhập lịch sử điều trị" }]}
+              >
+                <Input.TextArea rows={2} placeholder="Nhập lịch sử điều trị (nếu có)" />
               </Form.Item>
 
               <Form.Item

@@ -47,6 +47,8 @@ import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
 import CheckUp from "./nurse/CheckUp";
 
+// import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
+
 function App() {
   const router = createBrowserRouter([
     {
@@ -213,6 +215,14 @@ function App() {
           path: "student_profile",
           element: <StudentSearch />,
         },
+        // {
+        //   path: "manageBlog",
+        //   element: <ManagerBlog />,
+        // },
+        // {
+        //   path: "approve_blog",
+        //   element: <ApproveBlog />,
+        // },
       ],
     },
     {

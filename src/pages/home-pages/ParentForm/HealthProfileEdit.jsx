@@ -53,7 +53,8 @@ const HealthProfileEdit = () => {
         const parentID = parentResponse.data.parentID;
 
         // Sau đó lấy danh sách học sinh theo parentID
-        const studentsResponse = await api.get(`/Student/${parentID}`);
+        console.log('parentID dùng để lấy học sinh:', parentID);
+        const studentsResponse = await api.get(`/Student/by-parent/${parentID}`);
 
         // Lấy danh sách học sinh chưa được tạo profile
         // const studentsResponse = await api.get(
@@ -62,10 +63,9 @@ const HealthProfileEdit = () => {
 
         // Xử lý response với cấu trúc mới có $values
         if (studentsResponse.status === 200) {
-          const studentsData =
-            studentsResponse.data.$values || studentsResponse.data;
-          setStudents(studentsData);
-          setSelectedStudent(studentsData[0]);
+          const studentsData = studentsResponse.data.$values || studentsResponse.data;
+          setStudents(Array.isArray(studentsData) ? studentsData : []);
+          setSelectedStudent(Array.isArray(studentsData) && studentsData[0] ? studentsData[0] : null);
         }
 
         setLoading(false);
@@ -93,35 +93,29 @@ const HealthProfileEdit = () => {
     if (selectedStudent) {
       const fetchProfileBySelectedStudent = async () => {
         try {
-          const res = await api.get(
-            `/HealthProfile/search/${selectedStudent.studentID}`
+          const response = await api.get(
+            `/HealthProfile/student/${selectedStudent.studentID}`
           );
-          if (res.status === 200) {
-            if (res.data.$values.length === 0) {
-              form.setFieldsValue({
-                chronicDisease: "",
-                visionTest: "",
-                allergy: "",
-                weight: "",
-                height: "",
-                lastCheckupDate: null,
-              });
-              setProfile(null);
-            }
-            const profile = res.data.$values[0];
+          if (response.status === 200 && response.data) {
+            setProfile(response.data);
             form.setFieldsValue({
-              chronicDisease: profile.chronicDisease || "",
-              visionTest: profile.visionTest,
-              allergy: profile.allergy,
-              weight: profile.weight,
-              height: profile.height,
-              lastCheckupDate:
-                profile.lastCheckupDate && dayjs(profile.lastCheckupDate),
+              chronicDisease: response.data.chronicDiseases || "",
+              visionTest: response.data.visionDetails ? parseInt(response.data.visionDetails) : undefined,
+              allergy: response.data.allergies,
+              weight: response.data.weight,
+              height: response.data.height,
+              lastCheckupDate: response.data.lastUpdated && dayjs(response.data.lastUpdated),
+              treatmentHistory: response.data.treatmentHistory,
+              hearingDetails: response.data.hearingDetails ? parseInt(response.data.hearingDetails) : undefined,
             });
-            setProfile(profile);
+          } else {
+            setProfile(null);
+            form.resetFields(); // Reset form khi không có profile
           }
         } catch {
-          setError("Không thể tải hồ sơ sức khỏe!");
+          setProfile(null);
+          form.resetFields(); // Reset form khi lỗi
+          message.error("Không thể tải hồ sơ sức khỏe!");
         } finally {
           setLoading(false);
         }
@@ -156,7 +150,7 @@ const HealthProfileEdit = () => {
       };
 
       console.log("Health profile data:", data);
-      const res = await api.put(`/HealthProfile/${profile.profileID}`, data);
+      await api.put(`/HealthProfile/${profile.profileID}`, data);
 
       toast.success("Lưu hồ sơ thành công! Mã hồ sơ: " + profile.profileID);
     } catch (error) {
@@ -222,14 +216,14 @@ const HealthProfileEdit = () => {
             placeholder="Chọn học sinh"
             loading={loading}
             onChange={(value) => {
-              const student = students.find((s) => s.studentID === value);
+              const student = Array.isArray(students) ? students.find((s) => s.studentID === value) : null;
               if (student) {
                 setSelectedStudent(student);
               }
             }}
             style={{ width: "30%" }}
           >
-            {students.map((student) => (
+            {Array.isArray(students) && students.map((student) => (
               <Option key={student.studentID} value={student.studentID}>
                 {student.fullName}
               </Option>
@@ -571,7 +565,7 @@ const HealthProfileEdit = () => {
             }}
           >
             <p>
-              Chưa tạo hồ sơ sức khỏe.{" "}
+              Học sinh <b>{selectedStudent?.fullName}</b> chưa có hồ sơ sức khỏe.{" "}
               <span
                 onClick={() => navigate("/create-health-profile")}
                 style={{ color: "blue", fontWeight: "bold", cursor: "pointer" }}

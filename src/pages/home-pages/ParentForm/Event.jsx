@@ -295,43 +295,43 @@ function Event() {
         border: '1px solid #e6f4ff',
       }}>
         <Title level={2} style={{ marginBottom: 12, textAlign: 'left', color: '#1677ff', fontWeight: 700, letterSpacing: 1 }}>
-          Thông Báo Sự Kiện
-        </Title>
+        Thông Báo Sự Kiện
+      </Title>
         <Divider style={{ margin: '12px 0 24px 0' }} />
-        {/* Bộ lọc loại thông báo */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontWeight: 500, marginBottom: 4 }}>
-              Loại thông báo
-            </span>
-            <Select
-              value={typeFilter}
-              onChange={setTypeFilter}
-              style={{ width: 220 }}
-              placeholder="Chọn loại thông báo"
-              options={[
-                { value: "ALL", label: "Tất cả" },
-                { value: "VACCINATION", label: "Tiêm chủng" },
-                { value: "CHECKUP", label: "Khám sức khỏe" },
-                { value: "MEDICAL_REQUEST", label: "Gửi thuốc" },
-                { value: "OTHER", label: "Khác" },
-              ]}
-            />
-          </div>
+      {/* Bộ lọc loại thông báo */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <span style={{ fontWeight: 500, marginBottom: 4 }}>
+            Loại thông báo
+          </span>
+          <Select
+            value={typeFilter}
+            onChange={setTypeFilter}
+            style={{ width: 220 }}
+            placeholder="Chọn loại thông báo"
+            options={[
+              { value: "ALL", label: "Tất cả" },
+              { value: "VACCINATION", label: "Tiêm chủng" },
+              { value: "CHECKUP", label: "Khám sức khỏe" },
+              { value: "MEDICAL_REQUEST", label: "Gửi thuốc" },
+              { value: "OTHER", label: "Khác" },
+            ]}
+          />
         </div>
+      </div>
 
-        {/* Loading state */}
-        {loading && (
-          <div style={{ textAlign: "center", padding: "20px" }}>
-            <Text type="secondary">Đang tải thông báo...</Text>
-          </div>
-        )}
+      {/* Loading state */}
+      {loading && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <Text type="secondary">Đang tải thông báo...</Text>
+        </div>
+      )}
 
-        {/* Danh sách thông báo đã lọc */}
-        {!loading && filteredData.length > 0 ? (
+      {/* Danh sách thông báo đã lọc */}
+      {!loading && filteredData.length > 0 ? (
           <div>
-            {filteredData.map((item) => {
-              const status = item.status || "Chờ phản hồi";
+          {filteredData.map((item) => {
+            const status = item.status || "Chờ phản hồi";
               // Xác định nếu là thông báo duyệt thuốc đã approved
               const isMedicineApproved =
                 (item.notificationType === "Duyệt thuốc" ||
@@ -345,50 +345,50 @@ function Event() {
                   studentName = match[1].trim();
                 }
               }
-              return (
-                <Card
-                  key={item.notificationID}
-                  style={{
+            return (
+              <Card
+                key={item.notificationID}
+                style={{
                     marginBottom: 24,
-                    background: readIds.includes(item.notificationID)
+                  background: readIds.includes(item.notificationID)
                       ? '#f6faff'
                       : '#e6f7ff',
                     borderRadius: 14,
                     boxShadow: '0 2px 12px #e0e7ef33',
                     border: '1px solid #bae7ff',
                     padding: 0,
-                  }}
+                }}
                   bodyStyle={{ padding: 0 }}
-                  onClick={() => handleOpen(item)}
-                >
+                onClick={() => handleOpen(item)}
+              >
                   <div style={{ padding: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1 }}>
                         <span style={{ fontWeight: 600, fontSize: 18, color: '#222' }}>
                           {isMedicineApproved && studentName
                             ? `Thông báo học sinh ${studentName} đã được nhân viên y tế cho sử dụng thuốc, vật dụng y tế thành công`
                             : item.title}
                         </span>
                         <div style={{ color: '#888', fontSize: 14, marginTop: 4 }}>
-                          {item.sentDate
+                      {item.sentDate
                             ? `Đã nhận: ${new Date(item.sentDate).toLocaleString('vi-VN')}`
                             : ''}
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                       {/* Ẩn tag trạng thái nếu là duyệt thuốc đã approved */}
                       {!isMedicineApproved && (
-                        <Tag
-                          color={
+                  <Tag
+                    color={
                             status === 'Đã đồng ý'
                               ? 'success'
                               : status === 'Đã từ chối'
                               ? 'error'
                               : 'default'
-                          }
+                    }
                           style={{ fontWeight: 600, fontSize: 15 }}
-                        >
-                          {status}
-                        </Tag>
+                  >
+                    {status}
+                  </Tag>
                       )}
                     </div>
                     {openedId === item.notificationID && (
@@ -456,6 +456,16 @@ function Event() {
                               <div style={{ fontWeight: 500, marginBottom: 8 }}>
                                 <span style={{ color: '#1677ff' }}>Trạng thái:</span> {status}
                               </div>
+                              {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc đã approved */}
+                              {!isMedicineApproved && (
+                    <Button
+                      type="primary"
+                      style={{ marginTop: 12 }}
+                                  onClick={() => window.location.href = "/confirm-event"}
+                    >
+                      Xác nhận sự kiện
+                    </Button>
+                              )}
                             </>
                           )}
                         </div>
@@ -463,19 +473,19 @@ function Event() {
                       </div>
                     )}
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        ) : !loading ? (
+              </Card>
+            );
+          })}
+        </div>
+      ) : !loading ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Text type="secondary">
+          <Text type="secondary">
               {typeFilter === 'ALL'
                 ? 'Không có thông báo nào.'
-                : `Không có thông báo loại "${typeFilter}" nào.`}
-            </Text>
-          </div>
-        ) : null}
+              : `Không có thông báo loại "${typeFilter}" nào.`}
+          </Text>
+        </div>
+      ) : null}
       </div>
 
       {/* Modal attendance */}
