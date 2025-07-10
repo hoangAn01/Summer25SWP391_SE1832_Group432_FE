@@ -13,6 +13,9 @@ import {
   message,
   Modal,
   Input,
+  Table,
+  Descriptions,
+  Spin,
 } from "antd";
 import {
   CalendarOutlined,
@@ -22,7 +25,6 @@ import {
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -50,7 +52,9 @@ function Event() {
     studentID: null,
     studentName: "",
   });
-  const navigate = useNavigate();
+  const [medicineDetail, setMedicineDetail] = useState(null);
+  const [nurseName, setNurseName] = useState("");
+  const [studentClass, setStudentClass] = useState("");
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
@@ -142,12 +146,54 @@ function Event() {
     ).sort((a, b) => new Date(b.sentDate) - new Date(a.sentDate));
   }, [data, typeFilter]);
 
-  const handleOpen = (item) => {
+  const handleOpen = async (item) => {
     setOpenedId(item.notificationID);
     if (!readIds.includes(item.notificationID)) {
       const newReadIds = [...readIds, item.notificationID];
       setReadIds(newReadIds);
       localStorage.setItem("readNotificationIds", JSON.stringify(newReadIds));
+    }
+    // Nếu là duyệt thuốc đã approved thì fetch chi tiết đơn thuốc
+    const status = item.status || "Chờ phản hồi";
+    const isMedicineApproved =
+      (item.notificationType === "Duyệt thuốc" ||
+        (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
+      (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
+    if (isMedicineApproved && item.relatedEntityID) {
+      try {
+        const res = await api.get(`/MedicineRequest/${item.relatedEntityID}`);
+        setMedicineDetail(res.data);
+        // Lấy tên y tá nếu có approvedBy
+        if (res.data.approvedBy) {
+          try {
+            const nurseRes = await api.get(`/Nurse/${res.data.approvedBy}`);
+            setNurseName(nurseRes.data.fullName || "");
+          } catch {
+            setNurseName("");
+          }
+        } else {
+          setNurseName("");
+        }
+        
+        if (res.data.studentID) {
+          try {
+            const studentRes = await api.get(`/Student/${res.data.studentID}`);
+            setStudentClass(studentRes.data.className || studentRes.data.class || "");
+          } catch {
+            setStudentClass("");
+          }
+        } else {
+          setStudentClass("");
+        }
+      } catch {
+        setMedicineDetail(null);
+        setNurseName("");
+        setStudentClass("");
+      }
+    } else {
+      setMedicineDetail(null);
+      setNurseName("");
+      setStudentClass("");
     }
   };
 
@@ -228,126 +274,209 @@ function Event() {
   return (
     <div
       style={{
-        padding: 24,
-        background: "#f0f2f5",
-        minHeight: "calc(100vh - 64px)",
-        marginTop: "64px",
+        padding: 32,
+        background: '#f4f8fb',
+        minHeight: 'calc(100vh - 64px)',
+        marginTop: 64,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
-      <Title level={2} style={{ marginBottom: 24, textAlign: "center" }}>
-        Thông Báo Sự Kiện
-      </Title>
-
-      {/* Bộ lọc loại thông báo */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={{ fontWeight: 500, marginBottom: 4 }}>
-            Loại thông báo
-          </span>
-          <Select
-            value={typeFilter}
-            onChange={setTypeFilter}
-            style={{ width: 220 }}
-            placeholder="Chọn loại thông báo"
-            options={[
-              { value: "ALL", label: "Tất cả" },
-              { value: "VACCINATION", label: "Tiêm chủng" },
-              { value: "CHECKUP", label: "Khám sức khỏe" },
-              { value: "MEDICAL_REQUEST", label: "Gửi thuốc" },
-              { value: "OTHER", label: "Khác" },
-            ]}
-          />
+      <div style={{
+        maxWidth: 900,
+        width: '100%',
+        margin: '0 auto',
+        marginBottom: 32,
+        background: '#fff',
+        borderRadius: 18,
+        boxShadow: '0 4px 24px #dbeafe44',
+        padding: 32,
+        border: '1px solid #e6f4ff',
+      }}>
+        <Title level={2} style={{ marginBottom: 12, textAlign: 'left', color: '#1677ff', fontWeight: 700, letterSpacing: 1 }}>
+          Thông Báo Sự Kiện
+        </Title>
+        <Divider style={{ margin: '12px 0 24px 0' }} />
+        {/* Bộ lọc loại thông báo */}
+        <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontWeight: 500, marginBottom: 4 }}>
+              Loại thông báo
+            </span>
+            <Select
+              value={typeFilter}
+              onChange={setTypeFilter}
+              style={{ width: 220 }}
+              placeholder="Chọn loại thông báo"
+              options={[
+                { value: "ALL", label: "Tất cả" },
+                { value: "VACCINATION", label: "Tiêm chủng" },
+                { value: "CHECKUP", label: "Khám sức khỏe" },
+                { value: "MEDICAL_REQUEST", label: "Gửi thuốc" },
+                { value: "OTHER", label: "Khác" },
+              ]}
+            />
+          </div>
         </div>
+
+        {/* Loading state */}
+        {loading && (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            <Text type="secondary">Đang tải thông báo...</Text>
+          </div>
+        )}
+
+        {/* Danh sách thông báo đã lọc */}
+        {!loading && filteredData.length > 0 ? (
+          <div>
+            {filteredData.map((item) => {
+              const status = item.status || "Chờ phản hồi";
+              // Xác định nếu là thông báo duyệt thuốc đã approved
+              const isMedicineApproved =
+                (item.notificationType === "Duyệt thuốc" ||
+                  (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
+                (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
+              // Lấy tên học sinh từ title
+              let studentName = "";
+              if (isMedicineApproved) {
+                const match = item.title.match(/con bạn ([^\d]+) đã được/i);
+                if (match && match[1]) {
+                  studentName = match[1].trim();
+                }
+              }
+              return (
+                <Card
+                  key={item.notificationID}
+                  style={{
+                    marginBottom: 24,
+                    background: readIds.includes(item.notificationID)
+                      ? '#f6faff'
+                      : '#e6f7ff',
+                    borderRadius: 14,
+                    boxShadow: '0 2px 12px #e0e7ef33',
+                    border: '1px solid #bae7ff',
+                    padding: 0,
+                  }}
+                  bodyStyle={{ padding: 0 }}
+                  onClick={() => handleOpen(item)}
+                >
+                  <div style={{ padding: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 600, fontSize: 18, color: '#222' }}>
+                          {isMedicineApproved && studentName
+                            ? `Thông báo học sinh ${studentName} đã được nhân viên y tế cho sử dụng thuốc, vật dụng y tế thành công`
+                            : item.title}
+                        </span>
+                        <div style={{ color: '#888', fontSize: 14, marginTop: 4 }}>
+                          {item.sentDate
+                            ? `Đã nhận: ${new Date(item.sentDate).toLocaleString('vi-VN')}`
+                            : ''}
+                        </div>
+                      </div>
+                      {/* Ẩn tag trạng thái nếu là duyệt thuốc đã approved */}
+                      {!isMedicineApproved && (
+                        <Tag
+                          color={
+                            status === 'Đã đồng ý'
+                              ? 'success'
+                              : status === 'Đã từ chối'
+                              ? 'error'
+                              : 'default'
+                          }
+                          style={{ fontWeight: 600, fontSize: 15 }}
+                        >
+                          {status}
+                        </Tag>
+                      )}
+                    </div>
+                    {openedId === item.notificationID && (
+                      <div style={{ marginTop: 18 }}>
+                        <Divider style={{ margin: '8px 0' }} />
+                        <div style={{ color: '#444', fontSize: 15, marginBottom: 12 }}>
+                          {isMedicineApproved && medicineDetail ? (
+                            <>
+                              <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                                <span style={{ color: '#1677ff' }}>Ngày phụ huynh gửi đơn:</span> {medicineDetail.date ? new Date(medicineDetail.date).toLocaleString('vi-VN') : ''}
+                              </div>
+                              <div style={{
+                                background: '#f6ffed',
+                                border: '1px solid #b7eb8f',
+                                borderRadius: 10,
+                                padding: 20,
+                                marginBottom: 8,
+                                boxShadow: '0 2px 8px #f0f1f2',
+                                maxWidth: 600,
+                              }}>
+                                <div style={{ marginBottom: 10, fontSize: 17 }}>
+                                  <b>Học sinh:</b> {medicineDetail.studentName}
+                                </div>
+                                <div style={{ marginBottom: 10, fontSize: 17 }}>
+                                  {studentClass || 'Không rõ'}
+                                </div>
+                                {/* Thông tin đơn thuốc/vật dụng */}
+                                {Array.isArray(medicineDetail.medicineDetails) && medicineDetail.medicineDetails.length > 0 && (
+                                  <div style={{
+                                    background: '#fffbe6',
+                                    border: '1px solid #ffe58f',
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    marginBottom: 10,
+                                  }}>
+                                    <b>Đơn thuốc/vật dụng:</b>
+                                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                                      {medicineDetail.medicineDetails.map((med) => (
+                                        <li key={med.requestDetailID} style={{ marginBottom: 6 }}>
+                                          <span><b>Tên:</b> {med.requestItemName}; </span>
+                                          <span><b>Số lượng:</b> {med.quantity}; </span>
+                                          <span><b>Liều dùng/Cách sử dụng:</b> {med.dosageInstructions}; </span>
+                                          <span><b>Thời điểm:</b> {med.time}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                <div style={{ marginBottom: 10, fontSize: 17 }}>
+                                  <b>Nhân viên y tế:</b> {nurseName || medicineDetail.approvedBy || 'Không rõ'}
+                                </div>
+                                <div style={{ fontSize: 17 }}>
+                                  <b>Ghi chú của nhân viên y tế:</b> {medicineDetail.nurseNote || 'Không có'}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                                <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title}
+                              </div>
+                              <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                                <span style={{ color: '#1677ff' }}>Ngày tổ chức:</span> {item.sentDate ? new Date(item.sentDate).toLocaleDateString('vi-VN') : ''}
+                              </div>
+                              <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                                <span style={{ color: '#1677ff' }}>Trạng thái:</span> {status}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <Divider style={{ margin: '16px 0' }} />
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : !loading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Text type="secondary">
+              {typeFilter === 'ALL'
+                ? 'Không có thông báo nào.'
+                : `Không có thông báo loại "${typeFilter}" nào.`}
+            </Text>
+          </div>
+        ) : null}
       </div>
-
-      {/* Loading state */}
-      {loading && (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <Text type="secondary">Đang tải thông báo...</Text>
-        </div>
-      )}
-
-      {/* Danh sách thông báo đã lọc */}
-      {!loading && filteredData.length > 0 ? (
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          {filteredData.map((item) => {
-            const status = item.status || "Chờ phản hồi";
-            return (
-              <Card
-                key={item.notificationID}
-                style={{
-                  marginBottom: 16,
-                  background: readIds.includes(item.notificationID)
-                    ? "#f8faff"
-                    : "#e6f7ff",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-                onClick={() => handleOpen(item)}
-              >
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <div style={{ flex: 1 }}>
-                    <b style={{ fontSize: 16 }}>{item.title}</b>
-                    <div style={{ color: "#888", fontSize: 13, marginTop: 2 }}>
-                      {item.sentDate
-                        ? `Gửi lúc: ${new Date(item.sentDate).toLocaleString(
-                            "vi-VN"
-                          )}`
-                        : ""}
-                    </div>
-                  </div>
-                  <Tag
-                    color={
-                      status === "Đã đồng ý"
-                        ? "success"
-                        : status === "Đã từ chối"
-                        ? "error"
-                        : "default"
-                    }
-                    style={{ fontWeight: 600, fontSize: 14 }}
-                  >
-                    {status}
-                  </Tag>
-                </div>
-                {openedId === item.notificationID && (
-                  <div style={{ marginTop: 12 }}>
-                    <Divider style={{ margin: "8px 0" }} />
-                    <Paragraph style={{ margin: "8px 0" }}>
-                      {item.content}
-                    </Paragraph>
-                    <div style={{ margin: "8px 0", color: "#555" }}>
-                      <b>Sự kiện:</b> {item.title}
-                      <br />
-                      <b>Ngày tổ chức:</b>{" "}
-                      {item.sentDate
-                        ? new Date(item.sentDate).toLocaleDateString("vi-VN")
-                        : ""}
-                      <br />
-                      <b>Trạng thái:</b> {status}
-                    </div>
-                    <Button
-                      type="primary"
-                      style={{ marginTop: 12 }}
-                      onClick={() => navigate("/confirm-event")}
-                    >
-                      Xác nhận sự kiện
-                    </Button>
-                    <Divider style={{ margin: "16px 0" }} />
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      ) : !loading ? (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <Text type="secondary">
-            {typeFilter === "ALL"
-              ? "Không có thông báo nào."
-              : `Không có thông báo loại "${typeFilter}" nào.`}
-          </Text>
-        </div>
-      ) : null}
 
       {/* Modal attendance */}
       <Modal
