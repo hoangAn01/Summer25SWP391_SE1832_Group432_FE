@@ -27,6 +27,21 @@ const BlogCreateForm = () => {
         duration: 2,
         onClose: () => navigate("/nurse/blog"),
       });
+      // Tạo notification cho nurse
+      const stored = localStorage.getItem(`notifications_${user?.userID || "nurse"}`);
+      const notifications = stored ? JSON.parse(stored) : [];
+      const newNotification = {
+        id: Date.now() + Math.random(),
+        type: "blog_create",
+        title: "Đăng blog thành công",
+        message: "Bạn đã đăng một blog mới lên hệ thống.",
+        data: {},
+        time: new Date().toISOString(),
+        read: false,
+        timestamp: Date.now(),
+      };
+      const updatedNotifications = [newNotification, ...notifications].slice(0, 50);
+      localStorage.setItem(`notifications_${user?.userID || "nurse"}`, JSON.stringify(updatedNotifications));
       form.resetFields();
       setImageUrl("");
     } catch {
