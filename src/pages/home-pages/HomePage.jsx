@@ -33,7 +33,7 @@ const HomePage = () => {
           : Array.isArray(res.data.$values)
           ? res.data.$values
           : [];
-        setBlogs(data.filter(blog => blog.isPublished));
+        setBlogs(data.filter(blog => blog.status === "Đã xuất bản" || blog.status === "Published"));
       } catch {
         setBlogs([]);
       }
@@ -645,7 +645,7 @@ const HomePage = () => {
                 if (top3Blogs.length === 1) md = 6;
                 else if (top3Blogs.length === 2) md = 5;
                 return (
-                  <Grid item xs={12} md={md} key={blog.blogID} sx={{display: 'flex', justifyContent: 'center', minWidth: 320, maxWidth: 500}}>
+                  <Grid item xs={12} md={md} key={blog.blogPostId} sx={{display: 'flex', justifyContent: 'center', minWidth: 320, maxWidth: 500}}>
                     <Card
                       sx={{
                         width: '100%',
@@ -662,7 +662,7 @@ const HomePage = () => {
                         alignItems: 'stretch',
                         mx: 'auto',
                       }}
-                      onClick={() => navigate(`/blog/${blog.blogID}`)}
+                      onClick={() => navigate(`/blog/${blog.blogPostId}`)}
                     >
                       <Box sx={{ width: "100%", aspectRatio: "16/9", position: "relative", bgcolor: '#f0f0f0' }}>
                         <Box
@@ -722,7 +722,7 @@ const HomePage = () => {
                             size="large"
                             onClick={e => {
                               e.stopPropagation();
-                              navigate(`/blog/${blog.blogID}`);
+                              navigate(`/blog/${blog.blogPostId}`);
                             }}
                             sx={{ fontSize: { xs: "1rem", md: "1.15rem" }, px: 3, py: 1 }}
                           >

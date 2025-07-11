@@ -5,6 +5,7 @@ import api from "../../config/axios";
 import { UploadOutlined } from '@ant-design/icons';
 import axios from "axios";
 import { toast } from "react-toastify";
+import { notification } from "antd";
 
 const { Title } = Typography;
 
@@ -19,10 +20,15 @@ const BlogCreateForm = () => {
     setLoading(true);
     try {
       await api.post("/Blog", { ...values, imageUrl });
-      toast.success("Bạn đã đăng blog thành công!");
+      notification.success({
+        message: "Tạo blog thành công!",
+        description: "Blog của bạn đã được gửi lên hệ thống và chờ duyệt.",
+        placement: "topRight",
+        duration: 2,
+        onClose: () => navigate("/nurse/blog"),
+      });
       form.resetFields();
       setImageUrl("");
-      setTimeout(() => navigate("/nurse/blog"), 700);
     } catch {
       message.error("Tạo blog thất bại!");
     } finally {

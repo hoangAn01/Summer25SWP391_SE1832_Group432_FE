@@ -13,9 +13,7 @@ import Dashboard from "./dashboard/dashboard";
 import Export_pdf from "./dashboard/dashboad_element/export_pdf";
 import Manage_account from "./dashboard/dashboad_element/Manager_Account/Manage_account";
 import Report from "./dashboard/dashboad_element/report";
-import Blog1Detail from "./pages/home-pages/blog/Blog1Detail";
-import Blog2Detail from "./pages/home-pages/blog/Blog2Detail";
-import Blog3Detail from "./pages/home-pages/blog/Blog3Detail";
+
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
@@ -47,7 +45,8 @@ import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
 import CheckUp from "./nurse/CheckUp";
 
-// import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
+import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
+import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
 
 function App() {
   const router = createBrowserRouter([
@@ -78,33 +77,7 @@ function App() {
       path: "/register",
       element: <RegisterForm />,
     },
-    {
-      path: "/blog/hoat-dong-ngoai-khoa",
-      element: (
-        <>
-          <Header />
-          <Blog1Detail />
-        </>
-      ),
-    },
-    {
-      path: "/blog/ky-nang-song",
-      element: (
-        <>
-          <Header />
-          <Blog2Detail />
-        </>
-      ),
-    },
-    {
-      path: "/blog/cong-nghe-giao-duc",
-      element: (
-        <>
-          <Header />
-          <Blog3Detail />
-        </>
-      ),
-    },
+
     {
       path: "/blog/phong-ngua-benh",
       element: (
@@ -131,6 +104,10 @@ function App() {
           <Detail3 />
         </>
       ),
+    },
+    {
+      path: "/blog/:blogPostId",
+      element: <BlogDetailDynamic />,
     },
 
     {
@@ -214,6 +191,10 @@ function App() {
         {
           path: "student_profile",
           element: <StudentSearch />,
+        },
+        {
+          path: "manager_blog",
+          element: <ManagerBlog />,
         },
         // {
         //   path: "manageBlog",

@@ -6,20 +6,20 @@ import Header from "../../../components/Header/Header";
 import { Footer } from "../../../components/Footer/Footer";
 
 const BlogDetailDynamic = () => {
-  const { blogID } = useParams();
+  const { blogPostId } = useParams();
   const [blog, setBlog] = useState(null);
 
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await api.get(`/Blog/${blogID}`);
+        const res = await api.get(`/Blog/${blogPostId}`);
         setBlog(res.data);
       } catch {
         setBlog(null);
       }
     };
     fetchBlog();
-  }, [blogID]);
+  }, [blogPostId]);
 
   if (!blog) return <div>Đang tải...</div>;
 

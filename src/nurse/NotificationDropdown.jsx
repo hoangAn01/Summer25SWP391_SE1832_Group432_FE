@@ -159,46 +159,46 @@ const NotificationDropdown = () => {
   };
 
   // Kiểm tra sự kiện y tế mới
-  const checkNewHealthEvents = async () => {
-    try {
-      const res = await api.get("/HealthCheck/getAll");
-      const healthEvents = res.data.$values || [];
-
-      const lastCheck = localStorage.getItem(
-        `lastHealthCheck_${user?.userID || "nurse"}`
-      );
-      const currentTime = Date.now();
-
-      if (!lastCheck) {
-        localStorage.setItem(
-          `lastHealthCheck_${user?.userID || "nurse"}`,
-          currentTime.toString()
-        );
-        return;
-      }
-
-      const newEvents = healthEvents.filter((event) => {
-        const eventTime = new Date(event.date).getTime();
-        return eventTime > parseInt(lastCheck);
-      });
-
-      newEvents.forEach((event) => {
-        createNotification(
-          "health_event",
-          "Sự kiện y tế mới",
-          `Sự kiện y tế "${event.eventName}" đã được tạo`,
-          { eventID: event.eventID, type: "health_event" }
-        );
-      });
-
-      localStorage.setItem(
-        `lastHealthCheck_${user?.userID || "nurse"}`,
-        currentTime.toString()
-      );
-    } catch (error) {
-      console.error("Lỗi khi kiểm tra sự kiện y tế:", error);
-    }
-  };
+  // const checkNewHealthEvents = async () => {
+  //   try {
+  //     const res = await api.get("/HealthCheck/getAll");
+  //     const healthEvents = res.data.$values || [];
+  //
+  //     const lastCheck = localStorage.getItem(
+  //       `lastHealthCheck_${user?.userID || "nurse"}`
+  //     );
+  //     const currentTime = Date.now();
+  //
+  //     if (!lastCheck) {
+  //       localStorage.setItem(
+  //         `lastHealthCheck_${user?.userID || "nurse"}`,
+  //         currentTime.toString()
+  //       );
+  //       return;
+  //     }
+  //
+  //     const newEvents = healthEvents.filter((event) => {
+  //       const eventTime = new Date(event.date).getTime();
+  //       return eventTime > parseInt(lastCheck);
+  //     });
+  //
+  //     newEvents.forEach((event) => {
+  //       createNotification(
+  //         "health_event",
+  //         "Sự kiện y tế mới",
+  //         `Sự kiện y tế "${event.eventName}" đã được tạo`,
+  //         { eventID: event.eventID, type: "health_event" }
+  //       );
+  //     });
+  //
+  //     localStorage.setItem(
+  //       `lastHealthCheck_${user?.userID || "nurse"}`,
+  //       currentTime.toString()
+  //     );
+  //   } catch (error) {
+  //     console.error("Lỗi khi kiểm tra sự kiện y tế:", error);
+  //   }
+  // };
 
   // Khởi tạo thông báo
   const initializeNotifications = () => {
@@ -261,12 +261,12 @@ const NotificationDropdown = () => {
     // Kiểm tra dữ liệu mới mỗi 30 giây
     const interval = setInterval(() => {
       checkNewMedicineRequests();
-      checkNewHealthEvents();
+      // checkNewHealthEvents();
     }, 30000);
 
     // Kiểm tra ngay lập tức
     checkNewMedicineRequests();
-    checkNewHealthEvents();
+    // checkNewHealthEvents();
 
     return () => clearInterval(interval);
   }, [user]);

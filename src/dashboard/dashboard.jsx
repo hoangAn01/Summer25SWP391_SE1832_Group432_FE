@@ -46,7 +46,7 @@ const items = [
     <DesktopOutlined />
   ),
   getItem("Báo cáo ", "report", <DesktopOutlined />),
-  getItem("Duyệt blog ", "approve_blog", <DesktopOutlined />),
+  getItem("Duyệt blog ", "manager_blog", <DesktopOutlined />),
   getItem("Đăng xuất ", "logout", <DesktopOutlined />),
 ];
 const Dashboard = () => {
