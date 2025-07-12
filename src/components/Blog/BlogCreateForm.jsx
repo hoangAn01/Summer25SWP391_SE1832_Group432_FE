@@ -20,6 +20,7 @@ const BlogCreateForm = () => {
     setLoading(true);
     try {
       await api.post("/Blog", { ...values, imageUrl });
+      toast.success("Tạo blog thành công!");
       Modal.success({
         title: "Tạo blog thành công!",
         content: "Blog của bạn đã được gửi lên hệ thống và chờ duyệt.",

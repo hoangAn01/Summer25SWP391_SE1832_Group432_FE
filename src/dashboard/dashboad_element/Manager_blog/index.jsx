@@ -97,20 +97,21 @@ const ManagerBlog = () => {
     },
     {
       title: "Tác giả",
-      dataIndex: "authorFullName",
-      key: "authorFullName",
+      dataIndex: "accountName",
+      key: "accountName",
+      render: (name) => name || "Không xác định",
     },
     {
       title: "Ngày tạo",
-      dataIndex: "createdDate",
-      key: "createdDate",
-      render: (date) => date ? new Date(date).toLocaleString() : "",
-    },
-    {
-      title: "Ngày cập nhật",
-      dataIndex: "updatedDate",
-      key: "updatedDate",
-      render: (date) => date ? new Date(date).toLocaleString() : "",
+      dataIndex: "publishDate",
+      key: "publishDate",
+      render: (date) => date ? new Date(date).toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }) : "Không có",
     },
     {
       title: "Trạng thái",
