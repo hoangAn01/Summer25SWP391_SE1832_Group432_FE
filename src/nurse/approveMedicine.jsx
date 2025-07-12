@@ -137,15 +137,14 @@ const ApproveMedicine = () => {
       render: (_, record) => {
         const d = record.approvalDate || record.date;
         if (!d) return "Không có";
-        const utc = new Date(d);
-        const vietnamTime = new Date(utc.getTime() + 7 * 60 * 60 * 1000);
-        return vietnamTime.toLocaleString("vi-VN", {
+        return new Date(d).toLocaleString("vi-VN", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
           hour12: false,
+          timeZone: "Asia/Ho_Chi_Minh",
         });
       },
     },

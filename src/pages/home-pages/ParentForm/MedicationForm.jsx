@@ -155,6 +155,9 @@ const MedicationForm = () => {
       // Sau khi gửi thành công, tự động mở modal lịch sử và reload
       fetchHistoryByStudent(values.studentID);
       setHistoryVisible(true);
+      form.resetFields();
+      setMedicinePages(["1"]);
+      setCurrentPage(1);
     } catch (error) {
       console.error("Lỗi gửi đơn thuốc:", error);
       message.error(

@@ -5,7 +5,7 @@ import api from "../../config/axios";
 import { UploadOutlined } from '@ant-design/icons';
 import axios from "axios";
 import { toast } from "react-toastify";
-import { notification } from "antd";
+import { notification, Modal } from "antd";
 
 const { Title } = Typography;
 
@@ -20,12 +20,15 @@ const BlogCreateForm = () => {
     setLoading(true);
     try {
       await api.post("/Blog", { ...values, imageUrl });
-      notification.success({
-        message: "Tạo blog thành công!",
-        description: "Blog của bạn đã được gửi lên hệ thống và chờ duyệt.",
-        placement: "topRight",
-        duration: 2,
-        onClose: () => navigate("/nurse/blog"),
+      Modal.success({
+        title: "Tạo blog thành công!",
+        content: "Blog của bạn đã được gửi lên hệ thống và chờ duyệt.",
+        okText: "Đóng",
+        onOk: () => {
+          form.resetFields();
+          setImageUrl("");
+          navigate("/nurse/blog");
+        },
       });
       // Tạo notification cho nurse
       const stored = localStorage.getItem(`notifications_${user?.userID || "nurse"}`);
@@ -42,8 +45,6 @@ const BlogCreateForm = () => {
       };
       const updatedNotifications = [newNotification, ...notifications].slice(0, 50);
       localStorage.setItem(`notifications_${user?.userID || "nurse"}`, JSON.stringify(updatedNotifications));
-      form.resetFields();
-      setImageUrl("");
     } catch {
       message.error("Tạo blog thất bại!");
     } finally {
