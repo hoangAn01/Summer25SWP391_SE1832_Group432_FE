@@ -313,6 +313,29 @@ const CheckUp = () => {
               <p>
                 <b>Cân nặng:</b> {viewedCheckup.weight} kg
               </p>
+              {/* BMI hiển thị */}
+              <p>
+                <b>BMI:</b>{" "}
+                {(() => {
+                  if (viewedCheckup.height && viewedCheckup.weight) {
+                    const h = Number(viewedCheckup.height) / 100;
+                    if (h > 0) {
+                      const bmi = (
+                        Number(viewedCheckup.weight) /
+                        (h * h)
+                      ).toFixed(2);
+                      const bmiVal = Number(bmi);
+                      let bmiType = "";
+                      if (bmiVal < 18.5) bmiType = "Gầy";
+                      else if (bmiVal < 23) bmiType = "Bình thường";
+                      else if (bmiVal < 25) bmiType = "Thừa cân";
+                      else bmiType = "Béo phì";
+                      return `${bmi} (${bmiType}) kg/m²`;
+                    }
+                  }
+                  return "";
+                })()}
+              </p>
               <p>
                 <b>Huyết áp:</b> {viewedCheckup.bloodPressure}
               </p>
@@ -363,52 +386,104 @@ const CheckUp = () => {
             name="height"
             rules={[{ required: true, message: "Nhập chiều cao" }]}
           >
-            <InputNumber min={0} />
+            <InputNumber
+              min={100}
+              max={150}
+              step={0.1}
+              placeholder="100 - 150 (cm)"
+              style={{ width: "100%" }}
+              formatter={(value) =>
+                value && Number(value) % 1 === 0
+                  ? Number(value).toString()
+                  : value
+              }
+            />
           </Form.Item>
           <Form.Item
             label="Cân nặng (kg)"
             name="weight"
             rules={[{ required: true, message: "Nhập cân nặng" }]}
           >
-            <InputNumber min={0} />
+            <InputNumber
+              min={20}
+              max={50}
+              step={0.1}
+              placeholder="20-50 (kg)"
+              style={{ width: "100%" }}
+              formatter={(value) =>
+                value && Number(value) % 1 === 0
+                  ? Number(value).toString()
+                  : value
+              }
+            />
+          </Form.Item>
+          {/* BMI tự động tính */}
+          <Form.Item label="BMI (kg/m²)" shouldUpdate>
+            {() => {
+              const height = form.getFieldValue("height");
+              const weight = form.getFieldValue("weight");
+              let bmi = "";
+              let bmiType = "";
+              if (height && weight) {
+                const h = Number(height) / 100;
+                if (h > 0) {
+                  bmi = (Number(weight) / (h * h)).toFixed(2);
+                  const bmiVal = Number(bmi);
+                  if (bmiVal < 18.5) bmiType = "Gầy";
+                  else if (bmiVal < 23) bmiType = "Bình thường";
+                  else if (bmiVal < 25) bmiType = "Thừa cân";
+                  else bmiType = "Béo phì";
+                }
+              }
+              return (
+                <Input
+                  value={bmi ? `${bmi} (${bmiType})` : ""}
+                  readOnly
+                  placeholder="BMI sẽ tự động tính"
+                />
+              );
+            }}
           </Form.Item>
           <Form.Item
             label="Huyết áp"
             name="bloodPressure"
             rules={[{ required: true, message: "Nhập huyết áp" }]}
           >
-            <Input />
+            <Input placeholder="Ví dụ: 110/70 mmHg" />
           </Form.Item>
           <Form.Item
             label="Thị lực trái"
             name="visionLeft"
             rules={[{ required: true, message: "Nhập thị lực trái" }]}
           >
-            <Input />
+            <Input placeholder="Ví dụ: 10/10" />
           </Form.Item>
           <Form.Item
             label="Thị lực phải"
             name="visionRight"
             rules={[{ required: true, message: "Nhập thị lực phải" }]}
           >
-            <Input />
+            <Input placeholder="Ví dụ: 10/10" />
           </Form.Item>
           <Form.Item
             label="Thính lực trái"
             name="hearingLeft"
             rules={[{ required: true, message: "Nhập thính lực trái" }]}
           >
-            <Input />
+            <Input placeholder="Ví dụ: 10/10" />
           </Form.Item>
           <Form.Item
             label="Thính lực phải"
             name="hearingRight"
             rules={[{ required: true, message: "Nhập thính lực phải" }]}
           >
-            <Input />
+            <Input placeholder="Ví dụ: 10/10" />
           </Form.Item>
           <Form.Item label="Phát hiện khác" name="otherFindings">
-            <Input.TextArea rows={2} />
+            <Input.TextArea
+              rows={2}
+              placeholder="Nhập phát hiện khác về học sinh"
+            />
           </Form.Item>
           <Form.Item name="consultationRequired" valuePropName="checked">
             <Checkbox>Cần tư vấn thêm</Checkbox>
