@@ -24,7 +24,7 @@ import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
 
 import Header from "./components/Header/Header";
-import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile";
+
 import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
 
 import Nurse from "./nurse";
@@ -48,6 +48,7 @@ import CheckUp from "./nurse/CheckUp";
 import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
 import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
 import BlogList from "./pages/home-pages/blog/BlogList";
+import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile/ParentProfile";
 
 function App() {
   const router = createBrowserRouter([

@@ -26,7 +26,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
 
 const { Title } = Typography;

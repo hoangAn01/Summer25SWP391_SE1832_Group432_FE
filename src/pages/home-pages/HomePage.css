@@ -22,39 +22,140 @@
   background-color: #1976d2;
 }
 
+/* Hero Section */
 .heroSection {
-  background-color: #2196f3;
-  color: white;
-  padding: 64px 0;
-  text-align: center;
   position: relative;
-  background-image: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  width: 100%;
 }
 
-.heroSection::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("/public/vi-tri-truong-hoc.webp");
-  opacity: 0.1;
-  pointer-events: none;
+.hero-container {
+  position: relative;
+  z-index: 2;
 }
 
-.heroTitle {
-  margin-bottom: 24px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-}
-
-.heroSubtitle {
-  margin-bottom: 32px;
-  opacity: 0.9;
+.hero-overlay-box {
+  padding: 2rem;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
   max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+  margin-bottom: 1rem;
+}
+
+.hero-description {
+  margin-bottom: 2rem;
+}
+
+/* Introduction Section */
+.introduction-section {
+  padding: 5rem 0;
+}
+
+.introduction-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4rem;
+}
+
+.introduction-image {
+  flex: 0 0 400px;
+  height: 400px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.introduction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.introduction-text {
+  flex: 1;
+  padding-left: 1rem;
+}
+
+@media (max-width: 900px) {
+  .introduction-content {
+    flex-direction: column;
+  }
+  
+  .introduction-image {
+    flex: 0 0 300px;
+    height: 300px;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+  }
+  
+  .introduction-text {
+    padding-left: 0;
+    text-align: center;
+  }
+}
+
+/* Slider custom styles */
+.slick-dots {
+  bottom: 25px;
+}
+
+.slick-dots li button:before {
+  color: white;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.slick-dots li.slick-active button:before {
+  color: white;
+  opacity: 1;
+}
+
+.slick-prev, .slick-next {
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+}
+
+.slick-prev {
+  left: 20px;
+}
+
+.slick-next {
+  right: 20px;
+}
+
+.slick-prev:before, .slick-next:before {
+  font-size: 40px;
+}
+
+/* Responsive slider */
+@media (max-width: 768px) {
+  .slick-prev, .slick-next {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .slick-prev {
+    left: 10px;
+  }
+  
+  .slick-next {
+    right: 10px;
+  }
+  
+  .slick-prev:before, .slick-next:before {
+    font-size: 30px;
+  }
 }
 
 .searchField {
@@ -183,44 +284,11 @@ html, body {
 } 
 
 /* Thêm các style mới cho HomePage */
-.hero-container {
-  position: relative;
-  z-index: 2;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
 @media (min-width: 600px) {
   .hero-container {
     padding-left: 16px;
     padding-right: 16px;
   }
-}
-
-.hero-overlay-box {
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 16px;
-  background: rgba(0,0,0,0.45);
-  box-shadow: 0 8px 32px 0 rgba(31,38,135,0.37);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  margin: 0 auto;
-}
-
-@media (min-width: 600px) {
-  .hero-overlay-box {
-    padding: 16px 24px;
-  }
-}
-
-.hero-title {
-  margin-bottom: 12px;
-  font-weight: 900;
-  color: #fff;
-  text-shadow: 4px 4px 16px rgba(0,0,0,0.7), 0 2px 8px #1976d2;
-  letter-spacing: 1.5px;
-  line-height: 1.1;
 }
 
 @media (max-width: 600px) {
@@ -235,19 +303,6 @@ html, body {
   }
 }
 
-.hero-subtitle {
-  margin-bottom: 16px;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-  color: #fff;
-  opacity: 0.98;
-  text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  line-height: 1.5;
-}
-
 @media (max-width: 600px) {
   .hero-subtitle {
     font-size: 1.1rem;
@@ -260,19 +315,6 @@ html, body {
   }
 }
 
-.hero-description {
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-  color: #fff;
-  opacity: 0.98;
-  text-shadow: 1px 1px 6px rgba(0,0,0,0.7);
-  font-style: italic;
-  line-height: 1.6;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-}
-
 @media (max-width: 600px) {
   .hero-description {
     font-size: 1.1rem;
@@ -283,36 +325,4 @@ html, body {
   .hero-description {
     font-size: 1.4rem;
   }
-}
-
-.introduction-section {
-  padding-top: 80px;
-  padding-bottom: 80px;
-  background-color: #fff;
-}
-
-.introduction-content {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 48px;
-}
-
-.introduction-image {
-  flex: 0 0 500px;
-  height: 500px;
-  overflow: hidden;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-}
-
-.introduction-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.introduction-text {
-  flex: 1;
-  padding-left: 32px;
 } 

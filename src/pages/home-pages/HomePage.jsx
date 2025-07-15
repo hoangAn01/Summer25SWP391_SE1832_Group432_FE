@@ -7,22 +7,29 @@ import {
   Card,
   CardContent,
   Button,
-
   IconButton,
+  Paper,
 } from "@mui/material";
 import Header from "../../components/Header/Header";
 import { Footer } from "../../components/Footer/Footer";
-
+import { useEffect, useState, useRef } from "react";
 
 import "./HomePage.css";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import api from "../../config/axios";
 
 const HomePage = () => {
   const navigate = useNavigate();
-
   const [blogs, setBlogs] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const timerRef = useRef(null);
+
+  // Mảng chứa các ảnh nền
+  const backgroundImages = [
+    "/images/hinh-anh-mam-non_23202317.jpg",
+    "/images/ngoai_khoa.webp",
+    "/images/3embe.jpg"
+  ];
 
   useEffect(() => {
     const fetchBlogs = async () => {
@@ -41,11 +48,46 @@ const HomePage = () => {
     fetchBlogs();
   }, []);
 
+  // Thiết lập hẹn giờ để thay đổi ảnh nền
+  useEffect(() => {
+    // Xóa timer cũ nếu có
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    // Tạo timer mới để chuyển ảnh mỗi 5 giây
+    timerRef.current = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        (prevIndex + 1) % backgroundImages.length
+      );
+    }, 5000);
+
+    // Cleanup khi component unmount
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   const scrollToSection = (elementId) => {
     const element = document.getElementById(elementId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  // Chuyển đổi ảnh thủ công
+  const goToNextImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      (prevIndex + 1) % backgroundImages.length
+    );
+  };
+
+  const goToPrevImage = () => {
+    setCurrentImageIndex((prevIndex) => 
+      (prevIndex - 1 + backgroundImages.length) % backgroundImages.length
+    );
   };
 
   // Sắp xếp blogs theo ngày tạo mới nhất và chỉ lấy 3 blog đầu tiên
@@ -71,12 +113,13 @@ const HomePage = () => {
             py: { xs: 6, md: 10 },
             textAlign: "center",
             color: "white",
-            backgroundImage: "url('/images/hinh-anh-mam-non_23202317.jpg')",
+            backgroundImage: `url(${backgroundImages[currentImageIndex]})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            minHeight: { xs: "60vh", md: "80vh" },
+            minHeight: { xs: "70vh", md: "85vh" },
             display: "flex",
             alignItems: "center",
+            transition: "background-image 1.5s ease-in-out",
             "&::before": {
               content: '""',
               position: "absolute",
@@ -84,37 +127,153 @@ const HomePage = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              backgroundColor: "rgba(0, 0, 0, 0.4)",
               zIndex: 1,
             },
           }}
         >
+          {/* Nút điều hướng */}
+          <Box 
+            className="slider-nav prev" 
+            onClick={goToPrevImage}
+            sx={{
+              position: "absolute",
+              left: 20,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 10,
+              cursor: "pointer",
+              color: "white",
+              width: 50,
+              height: 50,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0,0,0,0.3)",
+              transition: "all 0.3s",
+              "&:hover": {
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }
+            }}
+          >
+            <span style={{ fontSize: 30 }}>‹</span>
+          </Box>
+          
+          <Box 
+            className="slider-nav next" 
+            onClick={goToNextImage}
+            sx={{
+              position: "absolute",
+              right: 20,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 10,
+              cursor: "pointer",
+              color: "white",
+              width: 50,
+              height: 50,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0,0,0,0.3)",
+              transition: "all 0.3s",
+              "&:hover": {
+                backgroundColor: "rgba(0,0,0,0.6)",
+              }
+            }}
+          >
+            <span style={{ fontSize: 30 }}>›</span>
+          </Box>
+
+          {/* Chỉ số ảnh */}
+          <Box sx={{ 
+            position: "absolute", 
+            bottom: 20, 
+            left: 0, 
+            right: 0, 
+            zIndex: 10,
+            display: "flex",
+            justifyContent: "center",
+            gap: 2
+          }}>
+            {backgroundImages.map((_, index) => (
+              <Box 
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor: index === currentImageIndex ? "white" : "rgba(255,255,255,0.5)",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  "&:hover": {
+                    backgroundColor: "white",
+                  }
+                }}
+              />
+            ))}
+          </Box>
+
           <Container
             maxWidth="lg"
-            className="hero-container"
+            sx={{
+              position: "relative",
+              zIndex: 2,
+              width: "100%",
+            }}
           >
-            <Box
-              className="hero-overlay-box"
+            <Paper
+              elevation={3}
+              sx={{
+                py: 5,
+                px: { xs: 3, md: 6 },
+                borderRadius: 4,
+                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                backdropFilter: "blur(5px)",
+                width: { xs: "90%", sm: "85%", md: "80%" },
+                maxWidth: 1000,
+                mx: "auto",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                transform: "translateY(0)",
+                animation: "float 3s ease-in-out infinite",
+                "@keyframes float": {
+                  "0%": { transform: "translateY(0px)" },
+                  "50%": { transform: "translateY(-10px)" },
+                  "100%": { transform: "translateY(0px)" },
+                }
+              }}
             >
               <Typography
-                variant="h2"
+                variant="h3"
                 component="h1"
-                className="hero-title"
-              ></Typography>
-              <Typography
-                variant="h5"
-                className="hero-subtitle"
+                sx={{
+                  fontWeight: 700,
+                  mb: 3,
+                  fontSize: { xs: "1.8rem", md: "2.5rem" },
+                  color: "primary.main",
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+                }}
               >
-                Nâng cao sức khỏe, phát triển toàn diện cho học sinh
+                Nâng cao sức khỏe, phát triển toàn diện
               </Typography>
               <Typography
                 variant="h6"
-                className="hero-description"
+                sx={{
+                  mb: 4,
+                  fontSize: { xs: "1rem", md: "1.25rem" },
+                  fontWeight: 500,
+                  color: "text.primary",
+                  lineHeight: 1.6,
+                }}
               >
                 Cùng chung tay xây dựng môi trường học đường khỏe mạnh và hạnh
                 phúc cho các em học sinh thân yêu
               </Typography>
-            </Box>
+ 
+            </Paper>
           </Container>
         </Box>
 
