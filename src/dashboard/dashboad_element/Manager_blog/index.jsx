@@ -11,6 +11,9 @@ import {
 } from "antd";
 import api from "../../../config/axios";
 
+import '../../../components/Blog/BlogContent.css';
+
+
 const ManagerBlog = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -72,6 +75,23 @@ const ManagerBlog = () => {
     } catch {
       message.error("Từ chối (xóa) blog thất bại!");
     }
+  };
+
+  const renderBlogContent = (content) => {
+    // Tạo một div để parse HTML an toàn
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+
+    // Kiểm tra và xử lý các thẻ img
+    const images = tempDiv.getElementsByTagName('img');
+    for (let img of images) {
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.borderRadius = '8px';
+      img.style.marginBottom = '16px';
+    }
+
+    return tempDiv.innerHTML;
   };
 
   const columns = [
@@ -205,21 +225,22 @@ const ManagerBlog = () => {
       />
       <Modal
         open={detailModal.open}
-        title={detailModal.record?.title}
-        footer={null}
         onCancel={() => setDetailModal({ open: false, record: null })}
-        width={600}
+        footer={null}
+        width={900}
+        bodyStyle={{ padding: 32, borderRadius: 16 }}
       >
         {detailModal.record && (
           <div>
-            <img
-              src={detailModal.record.imageUrl}
-              alt="Ảnh blog"
-              style={{ width: "100%", borderRadius: 8, marginBottom: 16 }}
-            />
-            <div style={{ whiteSpace: "pre-line", marginBottom: 16 }}>
-              {detailModal.record.content}
-            </div>
+            <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 16 }}>{detailModal.record.title}</h2>
+            {detailModal.record.imageUrl && (
+              <img
+                src={detailModal.record.imageUrl}
+                alt="Ảnh minh họa"
+                style={{ display: 'block', margin: '0 auto 24px auto', borderRadius: 8, maxWidth: 400, width: '100%', height: 'auto' }}
+              />
+            )}
+            <div className="blog-content" dangerouslySetInnerHTML={{ __html: renderBlogContent(detailModal.record.content) }} />
           </div>
         )}
       </Modal>

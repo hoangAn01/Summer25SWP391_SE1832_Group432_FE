@@ -1,0 +1,17 @@
+/* Ảnh trong vùng soạn thảo Quill editor sẽ to gấp đôi mặc định */
+.ql-editor img {
+  max-width: 4000px !important;
+  width: 400px !important;
+  height: auto !important;
+  display: inline-block;
+}
+
+.ql-editor img.float-right {
+  float: right;
+  margin-left: 16px;
+  margin-bottom: 8px;
+  max-width: 400px !important;
+  width: 400px !important;
+  height: auto !important;
+  display: inline-block;
+} 

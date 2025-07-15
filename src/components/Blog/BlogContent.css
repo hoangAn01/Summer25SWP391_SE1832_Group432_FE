@@ -1,0 +1,9 @@
+/* Style ảnh trong nội dung blog chi tiết giống Quill editor */
+.blog-content img {
+  max-width: 400px !important;
+  width: 400px !important;
+  height: auto !important;
+  display: inline-block;
+  border-radius: 8px;
+  margin: 16px 0;
+} 

@@ -14,14 +14,35 @@ const BlogList = () => {
     const fetchBlogs = async () => {
       setLoading(true);
       try {
+        // Loại bỏ '/list' khỏi endpoint
         const res = await api.get("/Blog");
+        console.log("API Response:", res.data); // Log toàn bộ response để kiểm tra
+        
+        // Xử lý dữ liệu trả về
         const data = Array.isArray(res.data)
           ? res.data
           : Array.isArray(res.data.$values)
           ? res.data.$values
           : [];
-        setBlogs(data.filter(blog => blog.isPublished));
-      } catch {
+        
+        // Lọc blog đã xuất bản
+        const publishedBlogs = data.filter(blog => 
+          blog.status === "Đã xuất bản" || 
+          blog.status === "Published" ||
+          blog.status === "published"
+        );
+        
+        // Sắp xếp blog theo thời gian gần nhất
+        const sortedBlogs = publishedBlogs.sort((a, b) => {
+          const dateA = new Date(a.createdDate || a.publishDate || a.account?.createdAt || 0);
+          const dateB = new Date(b.createdDate || b.publishDate || b.account?.createdAt || 0);
+          return dateB - dateA; // Sắp xếp giảm dần (mới nhất lên đầu)
+        });
+        
+        console.log("Published Blogs:", sortedBlogs);
+        setBlogs(sortedBlogs);
+      } catch (error) {
+        console.error("Lỗi tải blog:", error.response ? error.response.data : error);
         setBlogs([]);
       } finally {
         setLoading(false);
@@ -66,7 +87,7 @@ const BlogList = () => {
                   boxShadow: 4,
                   mx: 'auto',
                 }}
-                onClick={() => navigate(`/blog/${blog.blogID}`)}
+                onClick={() => navigate(`/blog/${blog.blogPostId}`)}
               >
                 <Box sx={{ width: "100%", aspectRatio: "16/9", position: "relative", bgcolor: '#f0f0f0' }}>
                   <Box
@@ -114,7 +135,19 @@ const BlogList = () => {
                     {blog.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.9rem' }}>
-                    Ngày đăng: {new Date(blog.createdDate).toLocaleDateString("vi-VN")}
+                    Ngày đăng: {(() => {
+                      try {
+                        const date = blog.createdDate || blog.publishDate || blog.account?.createdAt;
+                        return date ? new Date(date).toLocaleString("vi-VN", {
+                          day: "2-digit",
+                          month: "2-digit", 
+                          year: "numeric"
+                        }) : "Không có ngày đăng";
+                      } catch (error) {
+                        console.error("Lỗi định dạng ngày:", error);
+                        return "Không xác định";
+                      }
+                    })()}
                   </Typography>
                   <Button
                     variant="outlined"
@@ -122,7 +155,7 @@ const BlogList = () => {
                     size="small"
                     onClick={e => {
                       e.stopPropagation();
-                      navigate(`/blog/${blog.blogID}`);
+                      navigate(`/blog/${blog.blogPostId}`);
                     }}
                     sx={{ fontSize: '0.9rem', px: 2, py: 0.5 }}
                   >

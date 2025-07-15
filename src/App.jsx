@@ -47,6 +47,7 @@ import CheckUp from "./nurse/CheckUp";
 
 import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
 import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
+import BlogList from "./pages/home-pages/blog/BlogList";
 
 function App() {
   const router = createBrowserRouter([
@@ -108,6 +109,15 @@ function App() {
     {
       path: "/blog/:blogPostId",
       element: <BlogDetailDynamic />,
+    },
+    {
+      path: "/blog",
+      element: (
+        <>
+          <Header />
+          <BlogList />
+        </>
+      ),
     },
 
     {

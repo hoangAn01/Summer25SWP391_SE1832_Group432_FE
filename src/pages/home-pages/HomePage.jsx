@@ -48,9 +48,12 @@ const HomePage = () => {
     }
   };
 
-  // Trước phần render blogs
   // Sắp xếp blogs theo ngày tạo mới nhất và chỉ lấy 3 blog đầu tiên
-  const sortedBlogs = [...blogs].sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+  const sortedBlogs = [...blogs].sort((a, b) => {
+    const dateA = new Date(a.createdDate || a.publishDate || a.account?.createdAt || 0);
+    const dateB = new Date(b.createdDate || b.publishDate || b.account?.createdAt || 0);
+    return dateB - dateA; // Sắp xếp giảm dần (mới nhất lên đầu)
+  });
   const top3Blogs = sortedBlogs.slice(0, 3);
 
   return (
@@ -88,65 +91,25 @@ const HomePage = () => {
         >
           <Container
             maxWidth="lg"
-            sx={{ position: "relative", zIndex: 2, px: { xs: 2, md: 4 } }}
+            className="hero-container"
           >
             <Box
-              sx={{
-                display: "inline-block",
-                px: { xs: 2, md: 6 },
-                py: { xs: 2, md: 4 },
-                borderRadius: 4,
-                background: "rgba(0,0,0,0.45)",
-                boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
-                backdropFilter: "blur(2px)",
-                WebkitBackdropFilter: "blur(2px)",
-                mx: "auto",
-              }}
+              className="hero-overlay-box"
             >
               <Typography
                 variant="h2"
                 component="h1"
-                sx={{
-                  mb: 3,
-                  fontWeight: 900,
-                  color: "#fff",
-                  textShadow: "4px 4px 16px rgba(0,0,0,0.7), 0 2px 8px #1976d2",
-                  fontSize: { xs: "2rem", md: "3rem" },
-                  letterSpacing: "1.5px",
-                  lineHeight: 1.1,
-                }}
+                className="hero-title"
               ></Typography>
               <Typography
                 variant="h5"
-                sx={{
-                  mb: 4,
-                  maxWidth: "900px",
-                  mx: "auto",
-                  color: "#fff",
-                  opacity: 0.98,
-                  textShadow: "2px 2px 8px rgba(0,0,0,0.7)",
-                  fontSize: { xs: "1.1rem", md: "1.5rem" },
-                  fontWeight: 700,
-                  letterSpacing: "0.5px",
-                  lineHeight: 1.5,
-                }}
+                className="hero-subtitle"
               >
                 Nâng cao sức khỏe, phát triển toàn diện cho học sinh
               </Typography>
               <Typography
                 variant="h6"
-                sx={{
-                  maxWidth: "900px",
-                  mx: "auto",
-                  color: "#fff",
-                  opacity: 0.98,
-                  textShadow: "1px 1px 6px rgba(0,0,0,0.7)",
-                  fontStyle: "italic",
-                  fontSize: { xs: "1.1rem", md: "1.4rem" },
-                  lineHeight: 1.6,
-                  fontWeight: 400,
-                  letterSpacing: "0.5px",
-                }}
+                className="hero-description"
               >
                 Cùng chung tay xây dựng môi trường học đường khỏe mạnh và hạnh
                 phúc cho các em học sinh thân yêu
@@ -158,43 +121,24 @@ const HomePage = () => {
         {/* Introduction Section */}
         <Box
           id="info"
-          sx={{
-            py: 10,
-            bgcolor: "#fff",
-          }}
+          className="introduction-section"
         >
           <Container maxWidth="lg" sx={{ px: 4 }}>
             <Box
-              sx={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-              }}
+              className="introduction-content"
             >
               {/* Ảnh bên trái */}
               <Box
-                sx={{
-                  flex: "0 0 500px",
-                  height: 500,
-                  overflow: "hidden",
-                  borderRadius: 4,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                }}
+                className="introduction-image"
               >
                 <Box
                   component="img"
                   src="/images/tap-the-duc.jpg"
                   alt="Hoạt động của trường"
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
                 />
               </Box>
               {/* Văn bên phải */}
-              <Box sx={{ flex: 1, pl: 4 }}>
+              <Box className="introduction-text">
                 <Typography
                   variant="h4"
                   component="h2"
@@ -249,9 +193,8 @@ const HomePage = () => {
                     fontSize: "1.1rem",
                   }}
                 >
-                  Với phương châm "Học sinh là trung tâm – Chất lượng là mục
-                  tiêu", Trường Tiểu học ABC luôn là nơi gửi gắm niềm tin của
-                  phụ huynh và là nền tảng vững chắc cho tương lai của học sinh.
+                  Chúng tôi cam kết mang đến cho các em một môi trường học tập
+                  an toàn, thân thiện và đầy đủ tiện nghi.
                 </Typography>
               </Box>
             </Box>
@@ -712,8 +655,20 @@ const HomePage = () => {
                         >
                           {blog.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'center', fontSize: '0.95rem' }}>
-                          Ngày đăng: {new Date(blog.createdDate).toLocaleDateString('vi-VN')}
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Ngày đăng: {(() => {
+                            try {
+                              const date = blog.createdDate || blog.publishDate || blog.account?.createdAt;
+                              return date ? new Date(date).toLocaleString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit", 
+                                year: "numeric"
+                              }) : "Không có ngày đăng";
+                            } catch (error) {
+                              console.error("Lỗi định dạng ngày:", error);
+                              return "Không xác định";
+                            }
+                          })()}
                         </Typography>
                         <Box sx={{ display: "flex", alignItems: "center", mt: "auto" }}>
                           <Button
@@ -748,7 +703,7 @@ const HomePage = () => {
                   borderRadius: 2,
                   fontSize: { xs: "0.9rem", md: "1.1rem" },
                 }}
-                onClick={() => navigate('/blog/list')}
+                onClick={() => navigate('/blog')}
               >
                 Xem thêm bài viết
               </Button>
