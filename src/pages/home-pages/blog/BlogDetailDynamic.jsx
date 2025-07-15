@@ -13,9 +13,9 @@ const BlogDetailDynamic = () => {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        // Loại bỏ '/list' khỏi endpoint
+   
         const res = await api.get(`/Blog/${blogPostId}`);
-        console.log("Blog Detail Response:", res.data); // Thêm log để kiểm tra
+        console.log("Blog Detail Response:", res.data); 
         setBlog(res.data);
       } catch (error) {
         console.error("Lỗi tải chi tiết blog:", error.response ? error.response.data : error);
@@ -26,6 +26,15 @@ const BlogDetailDynamic = () => {
   }, [blogPostId]);
 
   if (!blog) return <div>Đang tải...</div>;
+  
+  // Format date with validation
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có thông tin";
+    const date = new Date(dateString);
+    return !isNaN(date.getTime()) 
+      ? date.toLocaleDateString("vi-VN") 
+      : "Không có thông tin";
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -36,7 +45,7 @@ const BlogDetailDynamic = () => {
             {blog.title}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Ngày đăng: {new Date(blog.createdDate).toLocaleDateString("vi-VN")}
+            Ngày đăng: {formatDate(blog.publishDate)}
           </Typography>
           {blog.imageUrl && (
             <img

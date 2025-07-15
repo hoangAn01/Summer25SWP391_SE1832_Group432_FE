@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import api from "../../config/axios";
+import api from "../../../config/axios";
 import { Table, Tag, Typography, message, Select } from "antd";
 
 const { Paragraph } = Typography;
@@ -36,7 +36,7 @@ const EventNow = () => {
       setLoading(true);
       try {
         const res = await api.get(
-          `/StudentJoinEvent/${selectedEvent}/Accepted-students`
+          `/StudentJoinEvent/${selectedEvent}/student-join-events`
         );
         setData(res.data.$values || res.data || []);
       } catch {

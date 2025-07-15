@@ -29,18 +29,18 @@ import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
 
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
-import Created_event from "./dashboard/dashboad_element/Created_event";
+
 import StudentProfileList from "./nurse/StudentProfileList";
 import StudentSearch from "./dashboard/dashboad_element/StudentSearch";
 import NurseProfile from "./nurse/NurseProfile";
 import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
 import ApproveMedicine from "./nurse/approveMedicine";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
-import EventNow from "./dashboard/dashboad_element/Event_now";
+import EventNow from "./dashboard/dashboad_element/Event/Event_now";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
 import MedicalInventory from "./nurse/medical-inventory";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
-import EventCreate from "./dashboard/dashboad_element/Create_event/EventCreate";
+
 import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
 import CheckUp from "./nurse/CheckUp";
@@ -49,6 +49,7 @@ import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
 import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
 import BlogList from "./pages/home-pages/blog/BlogList";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile/ParentProfile";
+import EventCreate from "./dashboard/dashboad_element/Event/EventCreate";
 
 function App() {
   const router = createBrowserRouter([
@@ -191,10 +192,7 @@ function App() {
           path: "report",
           element: <Report />,
         },
-        {
-          path: "created_event",
-          element: <Created_event />,
-        },
+   
         {
           path: "event_now",
           element: <EventNow />,

@@ -16,6 +16,7 @@ import {
 } from "antd";
 import api from "../config/axios";
 import dayjs from "dayjs";
+import { toast } from "react-toastify";
 
 const { Title } = Typography;
 
@@ -109,6 +110,14 @@ const VaccineEventReport = () => {
     setModalStudent(student);
     setIsModalOpen(true);
     form.resetFields();
+    
+    // Set vaccine name from event name
+    const selectedEventData = events.find(e => e.eventID === selectedEvent);
+    if (selectedEventData) {
+      form.setFieldsValue({
+        vaccineName: selectedEventData.eventName
+      });
+    }
   };
 
   const handleCloseModal = () => {
@@ -138,11 +147,11 @@ const VaccineEventReport = () => {
         administeredByNurseID: nurseInfo.nurseID,
         notes: values.notes || "",
       });
-      message.success("Gửi báo cáo tiêm thành công!");
+      toast.success("Gửi báo cáo tiêm thành công!");
       handleCloseModal();
     } catch (err) {
       if (err?.errorFields) return; // validation error
-      message.error("Gửi báo cáo tiêm thất bại!");
+      toast.error("Gửi báo cáo tiêm thất bại!");
     } finally {
       setSubmitting(false);
     }
@@ -293,9 +302,9 @@ const VaccineEventReport = () => {
           <Form.Item
             label="Tên vaccine"
             name="vaccineName"
-            rules={[{ required: true, message: "Nhập tên vaccine" }]}
+            rules={[{ required: true, message: "Tên vaccine được lấy từ tên sự kiện" }]}
           >
-            <Input />
+            <Input disabled />
           </Form.Item>
           <Form.Item
             label="Ngày tiêm"
