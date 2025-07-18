@@ -50,6 +50,7 @@ import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
 import BlogList from "./pages/home-pages/blog/BlogList";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile/ParentProfile";
 import EventCreate from "./dashboard/dashboad_element/Event/EventCreate";
+import NurseWelcome from "./nurse/NurseWelcome";
 
 function App() {
   const router = createBrowserRouter([
@@ -134,6 +135,7 @@ function App() {
       path: "/nurse",
       element: <Nurse />,
       children: [
+        { index: true, element: <NurseWelcome /> },
         {
           path: "/nurse/medical-event",
           element: <MedicalEvent />,
@@ -192,7 +194,7 @@ function App() {
           path: "report",
           element: <Report />,
         },
-   
+
         {
           path: "event_now",
           element: <EventNow />,
