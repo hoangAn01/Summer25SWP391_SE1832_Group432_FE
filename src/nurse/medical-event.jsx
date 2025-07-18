@@ -227,13 +227,10 @@ const MedicalEvent = () => {
   const handleFinish = async (values) => {
     try {
       const selectedTime = values.eventTime;
-      const eventTime = dayjs()
-        .hour(selectedTime.hour())
-        .minute(selectedTime.minute())
-        .second(0)
-        .millisecond(0)
-        .utc()
-        .format();
+      const today = dayjs();
+      const eventTime = dayjs(
+        `${today.format("YYYY-MM-DD")}T${selectedTime.format("HH:mm")}`
+      ).format();
 
       // Lấy nurseID từ userID
       const nurseResponse = await api.get("Nurse");

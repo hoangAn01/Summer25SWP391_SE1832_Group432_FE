@@ -18,6 +18,7 @@ import {
 import api from "../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
 
 const { Title } = Typography;
 
@@ -197,16 +198,6 @@ const CheckUp = () => {
           {(record.status === "Pending" || record.status === "Accepted") && (
             <>
               <Button
-                type="primary"
-                size="small"
-                onClick={() =>
-                  handleStudentResponse(record.studentID, "Accepted")
-                }
-                disabled={record.status === "Accepted"}
-              >
-                Đã tham gia
-              </Button>
-              <Button
                 danger
                 size="small"
                 onClick={() =>
@@ -255,7 +246,7 @@ const CheckUp = () => {
       {error && (
         <Alert type="error" message={error} style={{ marginBottom: 16 }} />
       )}
-      <Space style={{ marginBottom: 24 }}>
+      <Space style={{ marginBottom: 8 }}>
         <span>Sự kiện:</span>
         <Select
           style={{ width: 260 }}
@@ -271,6 +262,18 @@ const CheckUp = () => {
           ))}
         </Select>
       </Space>
+      {selectedEvent &&
+        (() => {
+          const event = events.find((e) => e.eventID === selectedEvent);
+          return event ? (
+            <div style={{ marginBottom: 16 }}>
+              <b>Thời gian bắt đầu khám:</b>{" "}
+              {event.eventDate
+                ? dayjs(event.eventDate).format("DD/MM/YYYY HH:mm")
+                : "Chưa có thời gian"}
+            </div>
+          ) : null;
+        })()}
       <Spin spinning={loading}>
         {selectedEvent && (
           <Table

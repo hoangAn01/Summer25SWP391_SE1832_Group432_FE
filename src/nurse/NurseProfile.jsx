@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  Descriptions,
-  Avatar,
-  Spin,
-  message,
-  Typography,
-  Alert,
-} from "antd";
+import { Card, Descriptions, Avatar, Spin, Typography, Alert } from "antd";
 import {
   UserOutlined,
   PhoneOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
 import api from "../config/axios";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
@@ -21,6 +14,7 @@ const NurseProfile = () => {
   const [nurseInfo, setNurseInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const user = useSelector((state) => state.user); // Lấy userID từ redux
 
   useEffect(() => {
     const fetchNurseInfo = async () => {
@@ -28,7 +22,9 @@ const NurseProfile = () => {
       setError(null);
       try {
         const res = await api.get(`Nurse`);
-        setNurseInfo(res.data);
+        const nurses = res.data.$values || [];
+        const nurse = nurses.find((n) => n.accountID === user.userID);
+        setNurseInfo(nurse || null);
       } catch (err) {
         setError("Không thể tải thông tin cá nhân. Vui lòng thử lại sau.");
         console.error("Error fetching nurse info:", err);
@@ -38,7 +34,7 @@ const NurseProfile = () => {
     };
 
     fetchNurseInfo();
-  }, []);
+  }, [user.userID]);
 
   const renderContent = () => {
     if (loading) {
@@ -105,11 +101,11 @@ const NurseProfile = () => {
           <Descriptions.Item
             label={
               <>
-                <CalendarOutlined /> Ngày sinh
+                <CalendarOutlined /> Địa chỉ
               </>
             }
           >
-            {new Date(nurseInfo.dateOfBirth).toLocaleDateString("vi-VN")}
+            {nurseInfo.address}
           </Descriptions.Item>
         </Descriptions>
       </Card>

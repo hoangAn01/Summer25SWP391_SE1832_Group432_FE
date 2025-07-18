@@ -110,12 +110,12 @@ const VaccineEventReport = () => {
     setModalStudent(student);
     setIsModalOpen(true);
     form.resetFields();
-    
+
     // Set vaccine name from event name
-    const selectedEventData = events.find(e => e.eventID === selectedEvent);
+    const selectedEventData = events.find((e) => e.eventID === selectedEvent);
     if (selectedEventData) {
       form.setFieldsValue({
-        vaccineName: selectedEventData.eventName
+        vaccineName: selectedEventData.eventName,
       });
     }
   };
@@ -255,7 +255,7 @@ const VaccineEventReport = () => {
       {error && (
         <Alert type="error" message={error} style={{ marginBottom: 16 }} />
       )}
-      <Space style={{ marginBottom: 24 }}>
+      <Space style={{ marginBottom: 8 }}>
         <span>Sự kiện:</span>
         <Select
           style={{ width: 260 }}
@@ -271,6 +271,18 @@ const VaccineEventReport = () => {
           ))}
         </Select>
       </Space>
+      {selectedEvent &&
+        (() => {
+          const event = events.find((e) => e.eventID === selectedEvent);
+          return event ? (
+            <div style={{ marginBottom: 16 }}>
+              <b>Thời gian bắt đầu tiêm:</b>{" "}
+              {event.eventDate
+                ? dayjs(event.eventDate).format("DD/MM/YYYY HH:mm")
+                : "Chưa có thời gian"}
+            </div>
+          ) : null;
+        })()}
       <Spin spinning={loading}>
         {selectedEvent && (
           <Table
@@ -302,7 +314,12 @@ const VaccineEventReport = () => {
           <Form.Item
             label="Tên vaccine"
             name="vaccineName"
-            rules={[{ required: true, message: "Tên vaccine được lấy từ tên sự kiện" }]}
+            rules={[
+              {
+                required: true,
+                message: "Tên vaccine được lấy từ tên sự kiện",
+              },
+            ]}
           >
             <Input disabled />
           </Form.Item>
