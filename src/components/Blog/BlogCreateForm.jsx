@@ -33,6 +33,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Modal } from "antd";
 import './BlogCreateForm.css';
+import { useSelector } from 'react-redux';
 
 const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
@@ -45,6 +46,9 @@ const BlogCreateForm = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [content, setContent] = useState("");
   const [form] = Form.useForm();
+  
+  // Get current user info from Redux store
+  const user = useSelector((state) => state.user?.currentUser);
 
   // Hàm upload ảnh cho Quill
   const imageHandler = () => {
@@ -184,14 +188,16 @@ const BlogCreateForm = () => {
       console.log("Dữ liệu gửi đi:", {
         title: titleValue,
         content: content,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        accountName: user?.fullName || user?.username || localStorage.getItem("username")
       });
 
       // Đảm bảo gửi đúng định dạng mà API yêu cầu
       const blogData = {
         title: titleValue,
         content: content,
-        imageUrl: imageUrl
+        imageUrl: imageUrl,
+        accountName: user?.fullName || user?.username || localStorage.getItem("username")
       };
 
       await api.post("/Blog", blogData);
