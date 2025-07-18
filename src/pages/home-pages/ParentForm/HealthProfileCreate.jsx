@@ -90,8 +90,8 @@ function HealthProfileCreatePage() {
         treatmentHistory: values.treatmentHistory,
         visionDetails: values.visionTest ? `${values.visionTest}/10` : "",
         hearingDetails: values.hearingDetails ? `${values.hearingDetails}/10` : "",
-        weight: values.weight,
-        height: values.height,
+        weight: String(values.weight),
+        height: String(values.height),
         lastUpdated: new Date().toISOString(),
       };
 
@@ -275,6 +275,13 @@ function HealthProfileCreatePage() {
                   style={{ width: "100%" }}
                   addonAfter="/10"
                   placeholder="Nhập thị lực"
+                  precision={0}
+                  parser={(value) => {
+                    const parsed = parseInt(value, 10);
+                    if (isNaN(parsed)) return null;
+                    return parsed;
+                  }}
+                  formatter={(value) => (value ? `${value}` : '')}
                 />
               </Form.Item>
 
@@ -297,6 +304,13 @@ function HealthProfileCreatePage() {
                   style={{ width: "100%" }}
                   addonAfter="/10"
                   placeholder="Nhập thính lực"
+                  precision={0}
+                  parser={(value) => {
+                    const parsed = parseInt(value, 10);
+                    if (isNaN(parsed)) return null;
+                    return parsed;
+                  }}
+                  formatter={(value) => (value ? `${value}` : '')}
                 />
               </Form.Item>
 
@@ -324,9 +338,17 @@ function HealthProfileCreatePage() {
                     required: true,
                     message: "Vui lòng nhập thông tin chiều cao",
                   },
+                  {
+                    type: "number",
+                    message: "Chiều cao phải là số",
+                  },
                 ]}
               >
-                <Input placeholder="Nhập thông tin chiều cao (cm)" />
+                <InputNumber 
+                  style={{ width: "100%" }} 
+                  placeholder="Nhập thông tin chiều cao (cm)"
+                  min={1} 
+                />
               </Form.Item>
 
               <Form.Item
@@ -337,9 +359,19 @@ function HealthProfileCreatePage() {
                     required: true,
                     message: "Vui lòng nhập thông tin cân nặng",
                   },
+                  {
+                    type: "number",
+                    message: "Cân nặng phải là số",
+                  },
                 ]}
               >
-                <Input placeholder="Nhập thông tin cân nặng (kg)" />
+                <InputNumber 
+                  style={{ width: "100%" }} 
+                  placeholder="Nhập thông tin cân nặng (kg)"
+                  min={0.1}
+                  step={0.1}
+                  precision={1}
+                />
               </Form.Item>
 
               <Form.Item

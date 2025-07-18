@@ -96,6 +96,7 @@ const MedicalEvent = () => {
   }, []);
 
   const isEventEditable = (eventDate) => {
+    if (!eventDate) return true; // Nếu không có ngày, cho phép chỉnh sửa
     const creationTime = dayjs(eventDate);
     const now = dayjs();
     const hoursDiff = now.diff(creationTime, "hour");
@@ -113,6 +114,7 @@ const MedicalEvent = () => {
     if (record) {
       form.setFieldsValue({
         ...record,
+        // Chuyển đổi thời gian sự kiện sang đối tượng dayjs để hiển thị đúng
         eventTime: record.eventTime ? dayjs(record.eventTime) : null,
       });
       // Fetch and set items if editing
@@ -130,7 +132,7 @@ const MedicalEvent = () => {
               medicalEventID: record.medicalEventID,
               description: record.description,
               eventType: record.eventType,
-              eventTime: dayjs(record.eventTime).utc().format(),
+              eventTime: record.eventTime,  // Lưu nguyên giá trị gốc từ API
               studentID: record.studentID,
               outcome: record.outcome || "",
               followUpRequired: record.followUpRequired || false,
@@ -227,9 +229,9 @@ const MedicalEvent = () => {
   const handleFinish = async (values) => {
     try {
       const selectedTime = values.eventTime;
-      const eventTime = dayjs()
-        .hour(selectedTime.hour())
-        .minute(selectedTime.minute())
+      // Sửa lỗi: Đang lấy ngày hiện tại thay vì ngày được chọn
+      // Cần lấy cả ngày và giờ từ selectedTime
+      const eventTime = selectedTime
         .second(0)
         .millisecond(0)
         .utc()
@@ -599,10 +601,10 @@ const MedicalEvent = () => {
             rules={[{ required: true, message: "Vui lòng chọn thời gian!" }]}
           >
             <DatePicker
-              picker="time"
-              format="HH:mm"
+              showTime={{ format: 'HH:mm' }}
+              format="DD/MM/YYYY HH:mm"
               style={{ width: "100%" }}
-              placeholder="Chọn giờ phút xảy ra"
+              placeholder="Chọn ngày và giờ xảy ra"
             />
           </Form.Item>
           <Form.Item
