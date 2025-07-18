@@ -223,6 +223,19 @@ function Manage_account() {
         return "default";
     }
   };
+  
+  const getVietnameseRole = (role) => {
+    switch (role) {
+      case "Admin":
+        return "Quản trị viên";
+      case "Nurse":
+        return "Y tá";
+      case "Parent":
+        return "Phụ huynh";
+      default:
+        return role;
+    }
+  };
 
   const columns = [
     {
@@ -268,7 +281,7 @@ function Manage_account() {
       dataIndex: "role",
       key: "role",
       render: (role) => (
-        <Tag color={getRoleColor(role)}>{role}</Tag>
+        <Tag color={getRoleColor(role)}>{getVietnameseRole(role)}</Tag>
       ),
     },
     {

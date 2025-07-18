@@ -264,43 +264,43 @@ const BlogList = () => {
           }}>
             <Typography variant="h5" color="text.secondary" gutterBottom>
               Không tìm thấy bài viết nào
-            </Typography>
+        </Typography>
             <Typography variant="body1" color="text.secondary">
               Vui lòng thử lại với từ khóa khác
-            </Typography>
+              </Typography>
           </Box>
         ) : (
           <Grid container spacing={4}>
             {filteredBlogs.map((blog, index) => (
               <Grid item xs={12} sm={6} md={4} key={blog.blogID || index}>
                 <Fade in={true} style={{ transitionDelay: `${index * 100}ms` }}>
-                  <Card
-                    sx={{
+              <Card
+                sx={{
                       height: 350,
-                      display: "flex",
-                      flexDirection: "column",
+                  display: "flex",
+                  flexDirection: "column",
                       transition: "all 0.3s ease",
-                      cursor: "pointer",
+                  cursor: "pointer",
                       "&:hover": { 
                         transform: "translateY(-10px)", 
                         boxShadow: '0 12px 28px rgba(0,0,0,0.15)' 
                       },
-                      borderRadius: 4,
+                  borderRadius: 4,
                       boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                       overflow: 'hidden',
                       position: 'relative'
-                    }}
-                    onClick={() => navigate(`/blog/${blog.blogPostId}`)}
-                  >
+                }}
+                onClick={() => navigate(`/blog/${blog.blogPostId}`)}
+              >
                     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-                      <Box
-                        component="img"
+                  <Box
+                    component="img"
                         src={blog.imageUrl || 'https://placehold.co/600x400/e0e0e0/7d7d7d?text=No+Image'}
-                        alt={blog.title}
-                        sx={{
-                          width: "100%",
+                    alt={blog.title}
+                    sx={{
+                      width: "100%",
                           height: 180,
-                          objectFit: "cover",
+                      objectFit: "cover",
                           transition: 'transform 0.5s ease',
                           '&:hover': {
                             transform: 'scale(1.05)'
@@ -318,29 +318,29 @@ const BlogList = () => {
                           fontWeight: 500,
                           bgcolor: 'rgba(25, 118, 210, 0.85)',
                           backdropFilter: 'blur(4px)'
-                        }}
-                      />
-                    </Box>
+                    }}
+                  />
+                </Box>
                     
                     <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                      <Typography
-                        variant="h6"
-                        gutterBottom
-                        sx={{
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{
                           fontWeight: 600,
                           fontSize: '1.1rem',
                           lineHeight: 1.4,
                           mb: 2,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                           height: 50
-                        }}
-                      >
-                        {blog.title}
-                      </Typography>
+                    }}
+                  >
+                    {blog.title}
+                  </Typography>
                       
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                         <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: '#1976d2' }}>
@@ -355,18 +355,18 @@ const BlogList = () => {
                         <CalendarToday sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                         <Typography variant="body2" color="text.secondary">
                           {formatDate(blog.createdDate || blog.publishDate || blog.account?.createdAt)}
-                        </Typography>
+                  </Typography>
                       </Box>
                       
-                      <Button
+                  <Button
                         variant="contained"
-                        color="primary"
-                        size="small"
+                    color="primary"
+                    size="small"
                         endIcon={<ArrowForward />}
                         onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/blog/${blog.blogPostId}`);
-                        }}
+                      e.stopPropagation();
+                      navigate(`/blog/${blog.blogPostId}`);
+                    }}
                         sx={{ 
                           mt: 'auto', 
                           borderRadius: '50px',
@@ -376,15 +376,15 @@ const BlogList = () => {
                             boxShadow: '0 6px 12px rgba(25,118,210,0.35)'
                           }
                         }}
-                      >
-                        Xem chi tiết
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  >
+                    Xem chi tiết
+                  </Button>
+                </CardContent>
+              </Card>
                 </Fade>
-              </Grid>
-            ))}
-          </Grid>
+            </Grid>
+          ))}
+        </Grid>
         )}
       </Container>
       <Footer />
