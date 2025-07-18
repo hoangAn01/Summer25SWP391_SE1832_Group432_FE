@@ -8,17 +8,45 @@ import {
   Space,
   Popconfirm,
   Modal,
+  Card,
+  Typography,
+  Divider,
+  Spin,
+  Row,
+  Col,
+  Tabs,
+  Badge,
+  Empty,
+  Avatar,
+  Tooltip
 } from "antd";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EyeOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  FileTextOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ClockCircleOutlined
+} from "@ant-design/icons";
 import api from "../../../config/axios";
 
 import '../../../components/Blog/BlogContent.css';
 
+const { Title, Text } = Typography;
+const { TabPane } = Tabs;
 
 const ManagerBlog = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("pending"); // "pending" hoặc "published"
   const [detailModal, setDetailModal] = useState({ open: false, record: null });
+  const [stats, setStats] = useState({
+    pending: 0,
+    published: 0
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,6 +59,16 @@ const ManagerBlog = () => {
         : Array.isArray(res.data.$values)
         ? res.data.$values
         : [];
+      
+      // Tính toán số lượng blog theo trạng thái
+      const pendingCount = blogs.filter(blog => blog.status === "Pending").length;
+      const publishedCount = blogs.filter(blog => blog.status === "Đã xuất bản" || blog.status === "Published").length;
+      
+      setStats({
+        pending: pendingCount,
+        published: publishedCount
+      });
+      
       // Lọc theo status
       const filtered = blogs.filter((blog) => {
         if (filter === "pending") return blog.status === "Pending";
@@ -38,7 +76,8 @@ const ManagerBlog = () => {
         return true;
       });
       setData(filtered);
-    } catch {
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
       message.error("Không thể tải danh sách blog!");
     } finally {
       setLoading(false);
@@ -67,13 +106,24 @@ const ManagerBlog = () => {
     }
   };
 
-  const handleReject = async (blogID) => {
+  const handleReject = async (record) => {
     try {
+      // Kiểm tra và lấy ID đúng từ record
+      const blogID = record.blogPostId || record.blogPostID || record.blogID || record.id;
+      
+      if (!blogID) {
+        console.error("Không tìm thấy ID blog:", record);
+        message.error("Không thể xóa blog: Không tìm thấy ID");
+        return;
+      }
+      
+      console.log("Đang xóa blog với ID:", blogID);
       await api.delete(`/Blog/${blogID}`);
       message.success("Từ chối (xóa) blog thành công!");
       fetchData();
-    } catch {
-      message.error("Từ chối (xóa) blog thất bại!");
+    } catch (error) {
+      console.error("Lỗi khi xóa blog:", error);
+      message.error(`Từ chối (xóa) blog thất bại: ${error.message || "Lỗi không xác định"}`);
     }
   };
 
@@ -94,12 +144,28 @@ const ManagerBlog = () => {
     return tempDiv.innerHTML;
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Không có";
+    
+    return new Date(dateString).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const columns = [
     {
       title: "Tiêu đề",
       dataIndex: "title",
       key: "title",
-      render: (text) => <b>{text}</b>,
+      render: (text) => (
+        <Text strong ellipsis={{ tooltip: text }} style={{ maxWidth: 250 }}>
+          {text}
+        </Text>
+      ),
     },
     {
       title: "Ảnh",
@@ -107,11 +173,12 @@ const ManagerBlog = () => {
       key: "imageUrl",
       render: (url) => (
         <Image
-          src={url}
+          src={url || "https://placehold.co/80x50/e0e0e0/7d7d7d?text=No+Image"}
           alt="blog"
           width={80}
           height={50}
-          style={{ objectFit: "cover", borderRadius: 6 }}
+          style={{ objectFit: "cover", borderRadius: 8 }}
+          fallback="https://placehold.co/80x50/e0e0e0/7d7d7d?text=Error"
         />
       ),
     },
@@ -119,31 +186,29 @@ const ManagerBlog = () => {
       title: "Tác giả",
       dataIndex: "accountName",
       key: "accountName",
-      render: (name) => name || "Không xác định",
+      render: (name) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Avatar 
+            icon={<UserOutlined />} 
+            size="small" 
+            style={{ marginRight: 8, backgroundColor: '#1890ff' }} 
+          />
+          <Text>{name || "Không xác định"}</Text>
+        </div>
+      ),
     },
     {
       title: "Ngày tạo",
       dataIndex: "publishDate",
       key: "publishDate",
-      render: (date) => date ? new Date(date).toLocaleString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }) : "Không có",
+      render: (date) => (
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <CalendarOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+          <Text>{formatDate(date)}</Text>
+        </div>
+      ),
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      render: (status) =>
-        status === "Đã xuất bản" || status === "Published" ? (
-          <Tag color="green">Đã duyệt</Tag>
-        ) : (
-          <Tag color="orange">Chờ duyệt</Tag>
-        ),
-    },
+    
     {
       title: "Hành động",
       key: "action",
@@ -152,22 +217,36 @@ const ManagerBlog = () => {
           {filter === "pending" && (
             <>
               <Popconfirm
-                title="Bạn chắc chắn muốn duyệt blog này?"
+                title="Duyệt bài viết"
+                description="Bạn chắc chắn muốn duyệt blog này?"
                 onConfirm={() => handleApprove(record)}
                 okText="Duyệt"
                 cancelText="Hủy"
+                icon={<CheckCircleOutlined style={{ color: 'green' }} />}
               >
-                <Button type="primary" size="small">
+                <Button 
+                  type="primary" 
+                  size="middle" 
+                  icon={<CheckCircleOutlined />}
+                  style={{ borderRadius: '6px' }}
+                >
                   Duyệt
                 </Button>
               </Popconfirm>
               <Popconfirm
-                title="Bạn chắc chắn muốn từ chối blog này?"
-                onConfirm={() => handleReject(record.blogPostID || record.blogID)}
+                title="Từ chối bài viết"
+                description="Bạn chắc chắn muốn từ chối blog này?"
+                onConfirm={() => handleReject(record)}
                 okText="Từ chối"
                 cancelText="Hủy"
+                icon={<CloseCircleOutlined style={{ color: 'red' }} />}
               >
-                <Button danger size="small">
+                <Button 
+                  danger 
+                  size="middle" 
+                  icon={<CloseCircleOutlined />}
+                  style={{ borderRadius: '6px' }}
+                >
                   Từ chối
                 </Button>
               </Popconfirm>
@@ -175,72 +254,218 @@ const ManagerBlog = () => {
           )}
           {filter === "published" && (
             <Popconfirm
-              title="Bạn chắc chắn muốn xóa blog này?"
-              onConfirm={() => handleReject(record.blogPostID || record.blogID)}
+              title="Xóa bài viết"
+              description="Bạn chắc chắn muốn xóa blog này?"
+              onConfirm={() => handleReject(record)}
               okText="Xóa"
               cancelText="Hủy"
+              icon={<DeleteOutlined style={{ color: 'red' }} />}
             >
-              <Button danger size="small">
+              <Button 
+                danger 
+                size="middle" 
+                icon={<DeleteOutlined />}
+                style={{ borderRadius: '6px' }}
+              >
                 Xóa
               </Button>
             </Popconfirm>
           )}
           <Button
-            type="link"
-            size="small"
+            type="default"
+            size="middle"
+            icon={<EyeOutlined />}
             onClick={() => setDetailModal({ open: true, record })}
+            style={{ borderRadius: '6px' }}
           >
-            Xem chi tiết
+            Chi tiết
           </Button>
         </Space>
       ),
     },
   ];
 
+  const handleTabChange = (key) => {
+    setFilter(key);
+  };
+
   return (
-    <div>
-      <h2>Quản lý Blog chờ duyệt</h2>
-      <div style={{ marginBottom: 16 }}>
-        <Button
-          type={filter === "pending" ? "primary" : "default"}
-          onClick={() => setFilter("pending")}
-          style={{ marginRight: 8 }}
-        >
-          Chưa duyệt
-        </Button>
-        <Button
-          type={filter === "published" ? "primary" : "default"}
-          onClick={() => setFilter("published")}
-        >
-          Đã duyệt
-        </Button>
-      </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        rowKey="blogID"
-        loading={loading}
-        pagination={{ pageSize: 8 }}
-        bordered
-      />
+    <div className="blog-manager-container" style={{ padding: "20px" }}>
+      <Card 
+        className="blog-manager-card"
+        style={{ 
+          borderRadius: '12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+        }}
+      >
+        
+
+        <Tabs 
+          activeKey={filter}
+          onChange={handleTabChange}
+          type="card"
+          size="large"
+          className="blog-manager-tabs"
+          items={[
+            {
+              key: 'pending',
+              label: (
+                <span>
+                  <ClockCircleOutlined style={{ marginRight: '8px' }} />
+                  Blog chờ duyệt
+                  {stats.pending > 0 && <Badge count={stats.pending} style={{ marginLeft: '8px' }} />}
+                </span>
+              ),
+              children: (
+                <div className="blog-table-container">
+                  {loading ? (
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                      <Spin size="large" />
+                      <div style={{ marginTop: '16px' }}>Đang tải dữ liệu...</div>
+                    </div>
+                  ) : data.length > 0 ? (
+                    <Table
+                      columns={columns}
+                      dataSource={data}
+                      rowKey={record => record.blogPostID || record.blogID}
+                      loading={loading}
+                      pagination={{ 
+                        pageSize: 6,
+                        showSizeChanger: false,
+                        showTotal: (total) => `Tổng cộng ${total} bài viết` 
+                      }}
+                      style={{ 
+                        borderRadius: '8px',
+                        overflow: 'hidden'
+                      }}
+                    />
+                  ) : (
+                    <Empty 
+                      description="Không có bài viết nào đang chờ duyệt" 
+                      style={{ padding: '40px 0' }}
+                    />
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'published',
+              label: (
+                <span>
+                  <CheckCircleOutlined style={{ marginRight: '8px' }} />
+                  Blog đã xuất bản
+                  {stats.published > 0 && <Badge count={stats.published} style={{ marginLeft: '8px' }} />}
+                </span>
+              ),
+              children: (
+                <div className="blog-table-container">
+                  {loading ? (
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                      <Spin size="large" />
+                      <div style={{ marginTop: '16px' }}>Đang tải dữ liệu...</div>
+                    </div>
+                  ) : data.length > 0 ? (
+                    <Table
+                      columns={columns}
+                      dataSource={data}
+                      rowKey={record => record.blogPostID || record.blogID}
+                      loading={loading}
+                      pagination={{ 
+                        pageSize: 6,
+                        showSizeChanger: false,
+                        showTotal: (total) => `Tổng cộng ${total} bài viết` 
+                      }}
+                      style={{ 
+                        borderRadius: '8px',
+                        overflow: 'hidden'
+                      }}
+                    />
+                  ) : (
+                    <Empty 
+                      description="Không có bài viết nào đã xuất bản" 
+                      style={{ padding: '40px 0' }}
+                    />
+                  )}
+                </div>
+              )
+            }
+          ]}
+        />
+      </Card>
+
       <Modal
         open={detailModal.open}
         onCancel={() => setDetailModal({ open: false, record: null })}
-        footer={null}
+        footer={[
+          <Button 
+            key="close" 
+            onClick={() => setDetailModal({ open: false, record: null })}
+            size="large"
+            style={{ borderRadius: '6px' }}
+          >
+            Đóng
+          </Button>
+        ]}
         width={900}
-        bodyStyle={{ padding: 32, borderRadius: 16 }}
+        style={{ top: 20 }}
+        bodyStyle={{ padding: 0, borderRadius: 12, overflow: 'hidden' }}
+        className="blog-detail-modal"
       >
         {detailModal.record && (
           <div>
-            <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 16 }}>{detailModal.record.title}</h2>
-            {detailModal.record.imageUrl && (
-              <img
-                src={detailModal.record.imageUrl}
-                alt="Ảnh minh họa"
-                style={{ display: 'block', margin: '0 auto 24px auto', borderRadius: 8, maxWidth: 400, width: '100%', height: 'auto' }}
+            <div className="blog-header" style={{ 
+              backgroundColor: '#f5f5f5', 
+              padding: '24px 32px',
+              borderBottom: '1px solid #e8e8e8'
+            }}>
+              <Title level={2} style={{ margin: 0, color: '#262626' }}>
+                {detailModal.record.title}
+              </Title>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                marginTop: '16px',
+                color: '#8c8c8c'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginRight: '24px' }}>
+                  <UserOutlined style={{ marginRight: '8px' }} />
+                  <Text type="secondary">{detailModal.record.accountName || "Không xác định"}</Text>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <CalendarOutlined style={{ marginRight: '8px' }} />
+                  <Text type="secondary">{formatDate(detailModal.record.publishDate)}</Text>
+                </div>
+              </div>
+            </div>
+            
+            <div className="blog-body" style={{ padding: '32px' }}>
+              {detailModal.record.imageUrl && (
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                  <Image
+                    src={detailModal.record.imageUrl}
+                    alt="Ảnh minh họa"
+                    style={{ 
+                      borderRadius: 12, 
+                      maxWidth: '100%', 
+                      maxHeight: '400px',
+                      objectFit: 'contain'
+                    }}
+                    fallback="https://placehold.co/600x400/e0e0e0/7d7d7d?text=Image+Not+Available"
+                  />
+                </div>
+              )}
+              
+              <div 
+                className="blog-content" 
+                dangerouslySetInnerHTML={{ __html: renderBlogContent(detailModal.record.content) }}
+                style={{ 
+                  fontSize: '16px',
+                  lineHeight: '1.8',
+                  color: '#262626'
+                }}
               />
-            )}
-            <div className="blog-content" dangerouslySetInnerHTML={{ __html: renderBlogContent(detailModal.record.content) }} />
+            </div>
           </div>
         )}
       </Modal>

@@ -15,11 +15,57 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // Hàm kiểm tra trạng thái tài khoản từ API admin
+  const checkAccountStatus = async (accountId) => {
+    try {
+      // Gọi API admin để kiểm tra trạng thái tài khoản
+      const response = await api.get(`/admin/accounts/${accountId}`);
+      console.log("Account status check:", response.data);
+      
+      // Nếu API trả về status là inactive, trả về false (không cho đăng nhập)
+      if (response.data && response.data.status && 
+          response.data.status.toLowerCase() === "inactive") {
+        return false;
+      }
+      
+      // Mặc định cho phép đăng nhập
+      return true;
+    } catch (error) {
+      console.error("Error checking account status:", error);
+      // Nếu không kiểm tra được, mặc định cho phép đăng nhập
+      return true;
+    }
+  };
+
   const onFinish = async (values) => {
-    console.log(values);
     console.log("Form submitted:", values);
     try {
       const response = await api.post("Auth/login", values);
+      console.log("Login response:", response.data);
+      
+      // Lấy thông tin tài khoản từ response
+      const userData = response.data.user || {};
+      const userStatus = userData.status || "";
+      const accountId = userData.accountID || userData.userID || userData.id;
+      
+      console.log("Account status:", userStatus, "Account ID:", accountId);
+      
+      // Kiểm tra nếu status rõ ràng là "inactive"
+      if (userStatus.toLowerCase() === "inactive") {
+        toast.error("Tài khoản đã bị ngưng hoạt động, vui lòng liên hệ quản lí nhà trường");
+        return;
+      }
+      
+      // Nếu status là chuỗi rỗng hoặc không rõ ràng, kiểm tra thêm với API admin
+      if (userStatus === "" && accountId) {
+        const isActive = await checkAccountStatus(accountId);
+        if (!isActive) {
+          toast.error("Tài khoản đã bị ngưng hoạt động, vui lòng liên hệ quản lí nhà trường");
+          return;
+        }
+      }
+      
+      // Nếu mọi kiểm tra đều thành công, tiến hành đăng nhập
       const { accountID, ...rest } = response.data.user;
       const user = {
         ...rest,
@@ -42,10 +88,21 @@ const LoginForm = () => {
       navigate("/home");
       toast.success("Đăng nhập thành công!");
     } catch (error) {
-      toast.error(error.response.data.message);
+      console.error("Login error:", error);
+      
+      // Kiểm tra nếu API trả về thông báo liên quan đến tài khoản không hoạt động
+      if (error.response && error.response.data && error.response.data.message) {
+        if (error.response.data.message.toLowerCase().includes("inactive") || 
+            error.response.data.message.toLowerCase().includes("ngưng hoạt động")) {
+          toast.error("Tài khoản đã bị ngưng hoạt động, vui lòng liên hệ quản lí nhà trường");
+        } else {
+          // Mọi lỗi khác đều hiển thị thông báo sai tên tài khoản và mật khẩu
+          toast.error("Sai tên tài khoản hoặc mật khẩu");
+        }
+      } else {
+        toast.error("Sai tên tài khoản hoặc mật khẩu");
+      }
     }
-
-    console.log("Login successful!");
   };
 
   const onFinishFailed = (errorInfo) => {

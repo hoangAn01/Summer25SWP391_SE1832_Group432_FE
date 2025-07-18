@@ -64,10 +64,10 @@ const EventNow = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ marginBottom: 24 }}>Danh sách đồng thuận tiêm chủng</h2>
+      <h2 style={{ marginBottom: 24 }}>Danh sách sự kiện </h2>
       <Select
         style={{ width: 300, marginBottom: 24 }}
-        placeholder="Chọn sự kiện tiêm chủng"
+        placeholder="Chọn sự kiện đang diễn ra "
         value={selectedEvent}
         onChange={setSelectedEvent}
         allowClear

@@ -97,25 +97,41 @@ const HealthProfileEdit = () => {
             `/HealthProfile/student/${selectedStudent.studentID}`
           );
           if (response.status === 200 && response.data) {
-            setProfile(response.data);
+            console.log("Dữ liệu profile nhận được:", response.data);
+            
+            // Kiểm tra xem ID có tồn tại không
+            const profileData = response.data;
+            const profileID = profileData.id || profileData.healthProfileID || profileData.profileID;
+            
+            if (!profileID) {
+              console.warn("Không tìm thấy ID trong dữ liệu profile:", profileData);
+              // Nếu không tìm thấy ID, log toàn bộ đối tượng để kiểm tra
+              console.log("Toàn bộ đối tượng profile:", JSON.stringify(profileData));
+            } else {
+              console.log("Đã tìm thấy ID:", profileID);
+            }
+            
+            setProfile(profileData);
+            
             form.setFieldsValue({
-              chronicDisease: response.data.chronicDiseases || "",
-              visionTest: response.data.visionDetails ? parseInt(response.data.visionDetails) : undefined,
-              allergy: response.data.allergies,
-              weight: response.data.weight,
-              height: response.data.height,
-              lastCheckupDate: response.data.lastUpdated && dayjs(response.data.lastUpdated),
-              treatmentHistory: response.data.treatmentHistory,
-              hearingDetails: response.data.hearingDetails ? parseInt(response.data.hearingDetails) : undefined,
+              chronicDisease: profileData.chronicDiseases || "",
+              visionTest: profileData.visionDetails ? parseInt(profileData.visionDetails) : undefined,
+              allergy: profileData.allergies,
+              weight: profileData.weight,
+              height: profileData.height,
+              lastCheckupDate: profileData.lastUpdated && dayjs(profileData.lastUpdated),
+              treatmentHistory: profileData.treatmentHistory,
+              hearingDetails: profileData.hearingDetails ? parseInt(profileData.hearingDetails) : undefined,
             });
           } else {
             setProfile(null);
             form.resetFields(); // Reset form khi không có profile
           }
-        } catch {
+        } catch (error) {
+          console.error("Lỗi khi lấy thông tin profile:", error);
           setProfile(null);
           form.resetFields(); // Reset form khi lỗi
-          message.error("Không thể tải hồ sơ sức khỏe!");
+   
         } finally {
           setLoading(false);
         }
@@ -134,29 +150,56 @@ const HealthProfileEdit = () => {
     setSubmitting(true);
 
     try {
+      // Log chi tiết về profile để debug
+      console.log("Chi tiết profile:", profile);
+      
+      // Kiểm tra xem profile có tồn tại không
+      if (!profile) {
+        console.error("Không tìm thấy profile");
+        message.error("Không tìm thấy hồ sơ. Vui lòng thử lại.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Tìm ID từ các trường có thể có
+      const profileID = profile.id || profile.healthProfileID || profile.profileID;
+      
+      if (!profileID) {
+        console.error("Không tìm thấy ID trong profile:", profile);
+        message.error("Không tìm thấy ID hồ sơ. Vui lòng thử lại.");
+        setSubmitting(false);
+        return;
+      }
+      
+      console.log("ProfileID sẽ sử dụng:", profileID);
+      
       const data = {
-        studentID: selectedStudent.studentID,
-        fullName: selectedStudent.fullName,
-        className: selectedStudent.className,
-        dob: values.dob ? values.dob.format("YYYY-MM-DD") : null,
-        chronicDisease: values.chronicDisease || "",
-        visionTest: values.visionTest,
-        allergy: values.allergy,
-        weight: values.weight,
-        height: values.height,
-        lastCheckupDate: values.lastCheckupDate
-          ? values.lastCheckupDate.format("YYYY-MM-DD")
-          : new Date().toISOString().split("T")[0],
+        // Đảm bảo gửi đúng ID trong body request
+        id: profileID,
+        healthProfileID: profileID,
+        allergies: values.allergy || "",
+        chronicDiseases: values.chronicDisease || "",
+        treatmentHistory: values.treatmentHistory || "",
+        visionDetails: values.visionTest ? values.visionTest.toString() : "",
+        hearingDetails: values.hearingDetails || "",
+        weight: parseFloat(values.weight) || 0,
+        height: parseFloat(values.height) || 0
       };
 
-      console.log("Health profile data:", data);
-      await api.put(`/HealthProfile/${profile.profileID}`, data);
+      console.log("Health profile data gửi đi:", data);
+      
+      // Sửa lại cách gọi API - id là path parameter
+      const response = await api.put(`/HealthProfile/${profileID}`, data);
+      console.log("Response từ server:", response.data);
 
-      toast.success("Lưu hồ sơ thành công! Mã hồ sơ: " + profile.profileID);
+      toast.success("Lưu hồ sơ thành công! Mã hồ sơ: " + profileID);
     } catch (error) {
-      console.error("Lỗi tạo hồ sơ sức khỏe:", error);
+      console.error("Lỗi cập nhật hồ sơ sức khỏe:", error);
+      if (error.response && error.response.data) {
+        console.error("Chi tiết lỗi:", JSON.stringify(error.response.data));
+      }
       message.error(
-        error.response?.data?.message || "Tạo hồ sơ thất bại! Vui lòng thử lại."
+        error.response?.data?.message || "Cập nhật hồ sơ thất bại! Vui lòng thử lại."
       );
     } finally {
       setSubmitting(false);
@@ -381,11 +424,16 @@ const HealthProfileEdit = () => {
                       { required: true, message: "Vui lòng nhập thị lực" },
                     ]}
                   >
-                    <Input
-                      disabled={!isEdit}
-                      placeholder="Nhập thị lực"
-                      style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
-                    />
+                    {isEdit ? (
+                      <Input
+                        placeholder="Nhập thị lực"
+                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("visionTest") || <span style={{ color: "#888" }}>Chưa có thông tin</span>}
+                      </div>
+                    )}
                   </Form.Item>
 
                   <Form.Item
@@ -405,16 +453,21 @@ const HealthProfileEdit = () => {
                       { required: true, message: "Vui lòng chọn ngày khám" },
                     ]}
                   >
-                    <DatePicker
-                      disabled={!isEdit}
-                      format="YYYY-MM-DD"
-                      style={{
-                        width: "100%",
-                        fontSize: 16,
-                        color: "#222",
-                        borderRadius: 8,
-                      }}
-                    />
+                    {isEdit ? (
+                      <DatePicker
+                        format="YYYY-MM-DD"
+                        style={{
+                          width: "100%",
+                          fontSize: 16,
+                          color: "#222",
+                          borderRadius: 8,
+                        }}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("lastCheckupDate") ? form.getFieldValue("lastCheckupDate").format("YYYY-MM-DD") : <span style={{ color: "#888" }}>Chưa có thông tin</span>}
+                      </div>
+                    )}
                   </Form.Item>
 
                   <Form.Item
@@ -437,12 +490,17 @@ const HealthProfileEdit = () => {
                       },
                     ]}
                   >
-                    <Input
-                      disabled={!isEdit}
-                      placeholder="Nhập thông tin chiều cao"
-                      style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
-                      addonAfter="cm"
-                    />
+                    {isEdit ? (
+                      <Input
+                        placeholder="Nhập thông tin chiều cao"
+                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        addonAfter="cm"
+                      />
+                    ) : (
+                      <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("height") ? `${form.getFieldValue("height")} cm` : <span style={{ color: "#888" }}>Chưa có thông tin</span>}
+                      </div>
+                    )}
                   </Form.Item>
 
                   <Form.Item
@@ -465,12 +523,17 @@ const HealthProfileEdit = () => {
                       },
                     ]}
                   >
-                    <Input
-                      disabled={!isEdit}
-                      placeholder="Nhập thông tin cân nặng"
-                      style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
-                      addonAfter="kg"
-                    />
+                    {isEdit ? (
+                      <Input
+                        placeholder="Nhập thông tin cân nặng"
+                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        addonAfter="kg"
+                      />
+                    ) : (
+                      <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("weight") ? `${form.getFieldValue("weight")} kg` : <span style={{ color: "#888" }}>Chưa có thông tin</span>}
+                      </div>
+                    )}
                   </Form.Item>
 
                   <Form.Item
@@ -508,7 +571,17 @@ const HealthProfileEdit = () => {
                     )}
                   </Form.Item>
                   <Form.Item
-                    label="Dị ứng"
+                    label={
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          color: "#1677ff",
+                          fontSize: 16,
+                        }}
+                      >
+                        Dị ứng
+                      </span>
+                    }
                     name="allergy"
                     rules={[
                       {
@@ -517,10 +590,18 @@ const HealthProfileEdit = () => {
                       },
                     ]}
                   >
-                    <Input
-                      disabled={!isEdit}
-                      placeholder="Nhập dị ứng (nếu có)"
-                    />
+                    {isEdit ? (
+                      <Input
+                        placeholder="Nhập dị ứng (nếu có)"
+                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                      />
+                    ) : (
+                      <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
+                        {form.getFieldValue("allergy")?.trim()
+                          ? form.getFieldValue("allergy")
+                          : <span style={{ color: "#888" }}>Không có dị ứng</span>}
+                      </div>
+                    )}
                   </Form.Item>
                 </Card>
               </div>
