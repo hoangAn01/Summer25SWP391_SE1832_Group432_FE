@@ -75,7 +75,15 @@ const ManagerBlog = () => {
         if (filter === "published") return blog.status === "Đã xuất bản" || blog.status === "Published";
         return true;
       });
-      setData(filtered);
+
+      // Sắp xếp blog theo thời gian mới nhất (publishDate)
+      const sortedBlogs = [...filtered].sort((a, b) => {
+        const dateA = a.publishDate ? new Date(a.publishDate) : new Date(0);
+        const dateB = b.publishDate ? new Date(b.publishDate) : new Date(0);
+        return dateB - dateA; // Sắp xếp giảm dần (mới nhất lên đầu)
+      });
+      
+      setData(sortedBlogs);
     } catch (error) {
       console.error("Error fetching blogs:", error);
       message.error("Không thể tải danh sách blog!");
@@ -201,6 +209,13 @@ const ManagerBlog = () => {
       title: "Ngày tạo",
       dataIndex: "publishDate",
       key: "publishDate",
+      sorter: (a, b) => {
+        const dateA = a.publishDate ? new Date(a.publishDate) : new Date(0);
+        const dateB = b.publishDate ? new Date(b.publishDate) : new Date(0);
+        return dateA - dateB;
+      },
+      sortDirections: ['descend', 'ascend'],
+      defaultSortOrder: 'descend',
       render: (date) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <CalendarOutlined style={{ marginRight: 8, color: '#1890ff' }} />
@@ -338,6 +353,9 @@ const ManagerBlog = () => {
                         borderRadius: '8px',
                         overflow: 'hidden'
                       }}
+                      onChange={(pagination, filters, sorter) => {
+                        console.log('Table change:', sorter);
+                      }}
                     />
                   ) : (
                     <Empty 
@@ -378,6 +396,9 @@ const ManagerBlog = () => {
                       style={{ 
                         borderRadius: '8px',
                         overflow: 'hidden'
+                      }}
+                      onChange={(pagination, filters, sorter) => {
+                        console.log('Table change:', sorter);
                       }}
                     />
                   ) : (
