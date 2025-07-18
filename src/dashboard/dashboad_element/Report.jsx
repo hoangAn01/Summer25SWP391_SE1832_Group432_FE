@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Row, Col, Card, Statistic, List, Typography, Spin, Alert, Tabs, DatePicker, Button, Table, Tag } from "antd";
+import { Row, Col, Card, Statistic, List, Typography, Spin, Alert, Tabs, DatePicker, Button, Table } from "antd";
 import { 
   UserOutlined, 
   MedicineBoxOutlined, 
@@ -636,46 +636,34 @@ function Report() {
                 <>
                   {/* Medical Events Stats */}
                   <Row gutter={[16, 16]}>
-                    <Col xs={24} sm={12} md={6}>
-                      <Card hoverable style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}>
+                    <Col xs={24} sm={12} md={8}>
+                      <Card>
                         <Statistic
-                          title={<span style={{ fontSize: 16, color: '#595959' }}>Tổng số sự cố y tế</span>}
+                          title="Tổng số sự cố y tế"
                           value={medicalEvents.length}
-                          prefix={<AlertOutlined style={{ color: '#1890ff' }} />}
-                          valueStyle={{ color: '#1890ff', fontWeight: 600 }}
+                          prefix={<AlertOutlined />}
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Card hoverable style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}>
+                    <Col xs={24} sm={12} md={8}>
+                      <Card>
                         <Statistic
-                          title={<span style={{ fontSize: 16, color: '#595959' }}>Số sự cố hôm nay</span>}
+                          title="Số sự cố hôm nay"
                           value={medicalEvents.filter(event => {
                             const today = new Date().toISOString().split('T')[0];
                             return event.eventDate && event.eventDate.startsWith(today);
                           }).length}
-                          prefix={<CalendarOutlined style={{ color: '#52c41a' }} />}
-                          valueStyle={{ color: '#52c41a', fontWeight: 600 }}
+                          prefix={<CalendarOutlined />}
                         />
                       </Card>
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Card hoverable style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}>
+                    <Col xs={24} sm={12} md={8}>
+                      <Card>
                         <Statistic
-                          title={<span style={{ fontSize: 16, color: '#595959' }}>Cần theo dõi tiếp</span>}
+                          title="Cần theo dõi tiếp"
                           value={medicalEvents.filter(event => event.followUpRequired).length}
-                          prefix={<MedicineBoxOutlined style={{ color: '#fa8c16' }} />}
-                          valueStyle={{ color: '#fa8c16', fontWeight: 600 }}
-                        />
-                      </Card>
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <Card hoverable style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}>
-                        <Statistic
-                          title={<span style={{ fontSize: 16, color: '#595959' }}>Đã xử lý</span>}
-                          value={medicalEvents.filter(event => event.status === "Completed" || event.status === "Đã xử lý").length}
-                          prefix={<CheckCircleOutlined style={{ color: '#13c2c2' }} />}
-                          valueStyle={{ color: '#13c2c2', fontWeight: 600 }}
+                          prefix={<CheckCircleOutlined />}
+                          valueStyle={{ color: '#fa8c16' }}
                         />
                       </Card>
                     </Col>
@@ -684,10 +672,7 @@ function Report() {
                   {/* Medical Events Charts */}
                   <Row gutter={[16, 16]} style={{ marginTop: "20px" }}>
                     <Col xs={24} md={12}>
-                      <Card 
-                        title="Sự cố y tế 14 ngày qua"
-                        style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}
-                      >
+                      <Card title="Sự cố y tế 14 ngày qua">
                         <Bar
                           data={prepareMedicalEventChartData()}
                           options={{
@@ -697,51 +682,19 @@ function Report() {
                               legend: {
                                 position: "top",
                               },
-                              tooltip: {
-                                callbacks: {
-                                  title: function(context) {
-                                    return 'Ngày ' + context[0].label;
-                                  },
-                                  label: function(context) {
-                                    return context.parsed.y + ' sự cố y tế';
-                                  }
-                                }
-                              }
                             },
-                            scales: {
-                              y: {
-                                beginAtZero: true,
-                                ticks: {
-                                  precision: 0
-                                }
-                              }
-                            }
                           }}
                           height={300}
                         />
                       </Card>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Card 
-                        title="Phân loại sự cố y tế"
-                        style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.09)' }}
-                        extra={
-                          <DatePicker 
-                            onChange={handleDateChange} 
-                            format="DD/MM/YYYY"
-                            placeholder="Chọn ngày"
-                            allowClear
-                            value={selectedDate}
-                            style={{ width: 150 }}
-                          />
-                        }
-                      >
+                      <Card title={`Phân loại sự cố y tế ${selectedDate ? `ngày ${selectedDate.format('DD/MM/YYYY')}` : ''}`}>
                         {(selectedDate && dateEvents.length === 0) ? (
-                          <div style={{ height: 300, display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                            <AlertOutlined style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }} />
+                          <div style={{ height: 300, display: "flex", justifyContent: "center", alignItems: "center" }}>
                             <Typography.Text>Không có sự cố y tế nào vào ngày {selectedDate.format('DD/MM/YYYY')}</Typography.Text>
                           </div>
-                        ) : selectedDate ? (
+                        ) : (
                           <div style={{ height: 300, display: "flex", justifyContent: "center" }}>
                             <Doughnut
                               data={prepareMedicalEventTypeData()}
@@ -752,21 +705,9 @@ function Report() {
                                   legend: {
                                     position: "bottom",
                                   },
-                                  title: {
-                                    display: true,
-                                    text: `Phân loại sự cố y tế ngày ${selectedDate.format('DD/MM/YYYY')}`,
-                                    font: {
-                                      size: 16
-                                    }
-                                  }
                                 },
                               }}
                             />
-                          </div>
-                        ) : (
-                          <div style={{ height: 300, display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
-                            <CalendarOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16 }} />
-                            <Typography.Text>Vui lòng chọn ngày để xem phân loại sự cố y tế</Typography.Text>
                           </div>
                         )}
                       </Card>
@@ -777,30 +718,17 @@ function Report() {
                   <Row style={{ marginTop: "20px" }}>
                     <Col span={24}>
                       <Card 
-                        title={
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <span style={{ marginRight: 12 }}>Báo cáo sự cố y tế theo ngày</span>
-                            {selectedDate && dateEvents.length > 0 && (
-                              <Tag color="blue">
-                                {dateEvents.length} sự cố vào ngày {selectedDate.format('DD/MM/YYYY')}
-                              </Tag>
-                            )}
-                          </div>
-                        }
+                        title="Báo cáo sự cố y tế theo ngày" 
                         extra={
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '10px' }}>
                             <DatePicker 
                               onChange={handleDateChange} 
                               format="DD/MM/YYYY"
                               placeholder="Chọn ngày"
-                              allowClear
-                              value={selectedDate}
-                              style={{ width: 150 }}
                             />
                             {selectedDate && dateEvents.length > 0 && (
                               <Button 
                                 type="primary" 
-                                icon={<CalendarOutlined />}
                                 onClick={() => {
                                   // Hàm xuất báo cáo sẽ được thực hiện ở đây
                                   alert(`Xuất báo cáo cho ngày ${selectedDate.format('DD/MM/YYYY')} với ${dateEvents.length} sự cố`);
@@ -820,35 +748,13 @@ function Report() {
                                 columns={medicalEventColumns}
                                 rowKey="medicalEventID"
                                 pagination={{ pageSize: 5 }}
-                                bordered
-                                size="middle"
                               />
                             ) : (
-                              <div style={{ 
-                                padding: "40px 0", 
-                                textAlign: "center", 
-                                background: "#fafafa", 
-                                borderRadius: 4 
-                              }}>
-                                <AlertOutlined style={{ fontSize: 48, color: '#d9d9d9', marginBottom: 16 }} />
-                                <div>
-                                  <Typography.Text>Không có sự cố y tế nào vào ngày {selectedDate.format('DD/MM/YYYY')}</Typography.Text>
-                                </div>
-                              </div>
+                              <Typography.Text>Không có sự cố y tế nào vào ngày {selectedDate.format('DD/MM/YYYY')}</Typography.Text>
                             )}
                           </>
                         ) : (
-                          <div style={{ 
-                            padding: "40px 0", 
-                            textAlign: "center", 
-                            background: "#f0f7ff", 
-                            borderRadius: 4 
-                          }}>
-                            <CalendarOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16 }} />
-                            <div>
-                              <Typography.Text>Vui lòng chọn ngày để xem báo cáo chi tiết</Typography.Text>
-                            </div>
-                          </div>
+                          <Typography.Text>Vui lòng chọn ngày để xem báo cáo chi tiết.</Typography.Text>
                         )}
                       </Card>
                     </Col>

@@ -161,8 +161,8 @@ const StudentSearch = () => {
     },
     {
       title: "Phụ huynh",
-      dataIndex: "parentName",
-      key: "parentName",
+      dataIndex: "parentFullName",
+      key: "parentFullName",
     },
   ];
 
