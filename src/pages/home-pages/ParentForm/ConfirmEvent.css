@@ -1,0 +1,131 @@
+.confirm-event-container {
+  margin: 100px auto 60px;
+  max-width: 1000px;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.confirm-event-card {
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.confirm-event-card-accepted {
+  background: linear-gradient(145deg, #f6ffed, #e6f7ff);
+  border: 1px solid #b7eb8f;
+  box-shadow: 0 6px 16px rgba(183, 235, 143, 0.25);
+}
+
+.confirm-event-card-rejected {
+  background: linear-gradient(145deg, #fff2f0, #ffedeb);
+  border: 1px solid #ffccc7;
+  box-shadow: 0 6px 16px rgba(255, 204, 199, 0.25);
+}
+
+.confirm-event-card-pending {
+  background: linear-gradient(145deg, #f6faff, #e6f7ff);
+  border: 1px solid #91caff;
+  box-shadow: 0 6px 16px rgba(145, 202, 255, 0.25);
+}
+
+.confirm-event-header {
+  padding: 28px 32px;
+  background: rgba(22, 119, 255, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.09);
+}
+
+.confirm-event-avatar {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.confirm-event-avatar-accepted {
+  background: #52c41a;
+}
+
+.confirm-event-avatar-rejected {
+  background: #ff4d4f;
+}
+
+.confirm-event-avatar-pending {
+  background: #1677ff;
+}
+
+.confirm-event-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.confirm-event-subtitle {
+  font-size: 16px;
+}
+
+.confirm-event-body {
+  padding: 32px;
+}
+
+.confirm-event-icon {
+  font-size: 22px;
+  color: #1677ff;
+}
+
+.confirm-event-label {
+  font-size: 17px;
+}
+
+.confirm-event-description {
+  margin: 12px 0 0 0;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.confirm-event-tag {
+  padding: 6px 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.confirm-event-note-container {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px dashed #d9d9d9;
+  margin-top: 12px;
+}
+
+.confirm-event-divider {
+  margin: 32px 0 24px;
+  border-width: 1px;
+}
+
+.confirm-event-textarea {
+  border-radius: 12px;
+  resize: none;
+  font-size: 16px;
+  padding: 12px 16px;
+}
+
+.confirm-event-button-container {
+  margin-top: 24px;
+}
+
+.confirm-event-button {
+  border-radius: 12px;
+  padding: 0 28px;
+  height: 52px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.confirm-event-button-accept {
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+}
+
+.confirm-event-button-reject {
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+} 

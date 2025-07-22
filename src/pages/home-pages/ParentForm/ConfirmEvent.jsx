@@ -1,274 +1,271 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Button,
   Tag,
   Typography,
-  Row,
-  Col,
-  Divider,
-  Modal,
-  Input,
   Space,
   Spin,
-  Empty,
-  Flex, // Import Flex for better layout
+  Input,
+  message,
+  Flex,
+  Avatar,
+  Divider,
 } from "antd";
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ClockCircleOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  FileTextOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import api from "../../../config/axios";
-import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons"; // Import icons for actions
+import "./ConfirmEvent.css";
 
 const { Title, Text, Paragraph } = Typography;
 
-// --- Constants for status strings to prevent typos ---
 const STATUS = {
   PENDING: "Pending",
   ACCEPTED: "Accepted",
   REJECTED: "Rejected",
 };
 
-// --- A small helper component for status tags for cleaner JSX ---
-const StatusTag = ({ status }) => {
-  switch (status) {
-    case STATUS.ACCEPTED:
-      return <Tag color="success">Đã đồng ý</Tag>;
-    case STATUS.REJECTED:
-      return <Tag color="error">Đã từ chối</Tag>;
-    case STATUS.PENDING:
-    default:
-      return <Tag color="warning">Chờ phản hồi</Tag>;
-  }
-};
-
 const ConfirmEvent = () => {
   const parent = useSelector((state) => state.parent.parent);
-
-  // --- State Management ---
-  const [allJoinRequests, setAllJoinRequests] = useState([]);
-  const [loading, setLoading] = useState(true); // Start with loading true
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [modalData, setModalData] = useState({ item: null, isAttending: true });
-  const [note, setNote] = useState("");
+  const [selectedEventStudent, setSelectedEventStudent] = useState(null);
+  const [eventDetail, setEventDetail] = useState(null);
+  const [joinStatus, setJoinStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // --- Derived State with useMemo for performance ---
-  const pendingList = useMemo(
-    () => allJoinRequests.filter((req) => req.status === STATUS.PENDING),
-    [allJoinRequests]
-  );
-  const historyList = useMemo(
-    () => allJoinRequests.filter((req) => req.status !== STATUS.PENDING),
-    [allJoinRequests]
-  );
-
-  // --- Data Fetching ---
-  const fetchJoinEvents = async (parentId) => {
-    setLoading(true);
-    try {
-      // Assuming 'api' instance already has the base URL configured
-      // The original GET URL: `StudentJoinEvent/by-parent/${parentId}`
-      const response = await api.get(`StudentJoinEvent/by-parent/${parentId}`);
-      // Handle potential API response format differences
-      const data = response.data.$values || response.data;
-      setAllJoinRequests(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to fetch join events:", error);
-      toast.error("Không thể tải danh sách sự kiện. Vui lòng thử lại sau.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [note, setNote] = useState("");
 
   useEffect(() => {
-    if (parent?.parentID) {
-      fetchJoinEvents(parent.parentID);
+    const saved = localStorage.getItem('selectedEventStudent');
+    if (saved && parent?.parentID) {
+      const info = JSON.parse(saved);
+      setSelectedEventStudent(info);
+      fetchEventDetailAndStatus(info);
     } else {
-      setLoading(false); // If there's no parent ID, stop loading
+      setLoading(false);
     }
+    // eslint-disable-next-line
   }, [parent?.parentID]);
 
-  // --- Event Handlers ---
-  const handleOpenModal = (item, isAttending) => {
-    setModalData({ item, isAttending });
-    setIsModalVisible(true);
-    setNote(""); // Reset note on modal open
+  const fetchEventDetailAndStatus = async (info) => {
+    setLoading(true);
+    try {
+      const eventRes = await api.get(`Event/${info.eventID}`);
+      const joinRes = await api.get(`StudentJoinEvent/by-parent/${parent.parentID}`);
+      const joinList = joinRes.data.$values || joinRes.data;
+      const join = joinList.find(
+        j => j.studentID === info.studentID && j.eventID === info.eventID
+      );
+      setEventDetail(eventRes.data);
+      setJoinStatus(join);
+    } catch {
+      message.error("Không thể tải chi tiết sự kiện hoặc trạng thái xác nhận!");
+    }
+    setLoading(false);
   };
 
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
-    setModalData({ item: null, isAttending: true });
-  };
-
-  const handleSubmitResponse = async () => {
-    const { item, isAttending } = modalData;
-    if (!item) return;
-
+  const handleConfirm = async (isAccept) => {
+    if (!joinStatus) return;
     setIsSubmitting(true);
     try {
-      // The original PUT URL: `/api/StudentJoinEvent/respond-by-student`
-      // Note: If your axios instance has a baseURL, the leading `/api` might be redundant.
-      // Adjust if necessary.
       await api.put("/StudentJoinEvent/respond-by-student", {
-        studentId: item.studentID,
-        eventId: item.eventID,
-        status: isAttending ? STATUS.ACCEPTED : STATUS.REJECTED,
+        studentId: joinStatus.studentID,
+        eventId: joinStatus.eventID,
+        status: isAccept ? STATUS.ACCEPTED : STATUS.REJECTED,
         note,
       });
-      toast.success("Gửi phản hồi thành công!");
-      handleCloseModal();
-      // Re-fetch data to update lists
-      fetchJoinEvents(parent.parentID);
-    } catch (error) {
-      console.error("Failed to submit response:", error);
-      toast.error("Gửi phản hồi thất bại. Vui lòng thử lại!");
-    } finally {
-      setIsSubmitting(false);
+      toast.success(isAccept ? "Đã xác nhận tham gia sự kiện!" : "Đã từ chối tham gia sự kiện!");
+      setJoinStatus({ ...joinStatus, status: isAccept ? STATUS.ACCEPTED : STATUS.REJECTED, note });
+    } catch {
+      message.error("Gửi phản hồi thất bại. Vui lòng thử lại!");
+    }
+    setIsSubmitting(false);
+  };
+
+  // Xác định class dựa trên trạng thái
+  const getStatusClass = () => {
+    if (!joinStatus) return "confirm-event-card-pending";
+    
+    switch (joinStatus.status) {
+      case STATUS.ACCEPTED:
+        return "confirm-event-card-accepted";
+      case STATUS.REJECTED:
+        return "confirm-event-card-rejected";
+      default:
+        return "confirm-event-card-pending";
     }
   };
 
-  // --- Render Logic ---
+  const getAvatarClass = () => {
+    if (!joinStatus) return "confirm-event-avatar-pending";
+    
+    switch (joinStatus.status) {
+      case STATUS.ACCEPTED:
+        return "confirm-event-avatar-accepted";
+      case STATUS.REJECTED:
+        return "confirm-event-avatar-rejected";
+      default:
+        return "confirm-event-avatar-pending";
+    }
+  };
+
   return (
-    <div
-      style={{
-        marginTop: 60,
-        padding: "24px",
-        background: "#f0f2f5",
-        minHeight: "calc(100vh - 64px)",
-      }}
-    >
-      <Title level={2} style={{ marginBottom: 24, textAlign: "center" }}>
-        Xác nhận tham gia sự kiện
-      </Title>
-
+    <div className="confirm-event-container">
       <Spin spinning={loading} tip="Đang tải dữ liệu..." size="large">
-        {/* Section for Pending Confirmations */}
-        <Divider orientation="left" orientationMargin="0">
-          <Title level={4}>Cần xác nhận</Title>
-        </Divider>
-        {pendingList.length === 0 && !loading ? (
-          <Empty description="Không có yêu cầu nào cần xác nhận." />
-        ) : (
-          <Row gutter={[16, 24]}>
-            {pendingList.map((item) => (
-              <Col xs={24} sm={12} lg={8} key={item.studentJoinEventID}>
-                <Card
-                  bordered
-                  hoverable
-                  actions={[
-                    <Button
-                      type="text"
-                      icon={<CheckCircleOutlined />}
-                      key="attend"
-                      onClick={() => handleOpenModal(item, true)}
-                      style={{ color: "#52c41a" }}
-                    >
-                      Tham gia
-                    </Button>,
-                    <Button
-                      type="text"
-                      danger
-                      icon={<CloseCircleOutlined />}
-                      key="reject"
-                      onClick={() => handleOpenModal(item, false)}
-                    >
-                      Từ chối
-                    </Button>,
-                  ]}
-                >
-                  <Card.Meta
-                    title={<Text strong>{item.eventName}</Text>}
-                    description={
-                      <Flex vertical>
-                        <Text>
-                          Học sinh: <Text strong>{item.studentName}</Text>
-                        </Text>
-                        <Text>
-                          Trạng thái: <StatusTag status={item.status} />
-                        </Text>
-                      </Flex>
-                    }
-                  />
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        )}
+        {selectedEventStudent && eventDetail && joinStatus && (
+          <Card
+            className={`confirm-event-card ${getStatusClass()}`}
+            bodyStyle={{
+              padding: 0,
+            }}
+          >
+            {/* Header với tiêu đề sự kiện */}
+            <div className="confirm-event-header">
+              <Flex align="center" gap={20}>
+                <Avatar 
+                  size={80} 
+                  icon={<CalendarOutlined style={{ fontSize: 40 }} />} 
+                  className={`confirm-event-avatar ${getAvatarClass()}`}
+                />
+                <div>
+                  <Title level={2} className="confirm-event-title">
+                    {eventDetail.eventName || selectedEventStudent.eventTitle}
+                  </Title>
+                  <Text type="secondary" className="confirm-event-subtitle">
+                    Mã sự kiện: #{eventDetail.eventID || selectedEventStudent.eventID}
+                  </Text>
+                </div>
+              </Flex>
+            </div>
 
-        {/* Section for Confirmation History */}
-        <Divider
-          orientation="left"
-          orientationMargin="0"
-          style={{ marginTop: 40 }}
-        >
-          <Title level={4}>Lịch sử xác nhận</Title>
-        </Divider>
-        <Row gutter={[16, 24]}>
-          {historyList.map((item) => (
-            <Col xs={24} sm={12} lg={8} key={item.studentJoinEventID}>
-              <Card bordered>
-                <Flex vertical gap="small">
-                  <Text strong>{item.eventName}</Text>
-                  <Text>
-                    Học sinh: <Text strong>{item.studentName}</Text>
+            {/* Nội dung chính */}
+            <div className="confirm-event-body">
+              {/* Thông tin sự kiện */}
+              <Flex vertical gap={24}>
+                <Flex align="center" gap={16}>
+                  <CalendarOutlined className="confirm-event-icon" />
+                  <Text strong className="confirm-event-label">Thời gian:</Text>
+                  <Text className="confirm-event-label">
+                    {eventDetail.eventDate 
+                      ? new Date(eventDetail.eventDate).toLocaleString('vi-VN', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) 
+                      : 'Chưa xác định'}
                   </Text>
-                  <Text>
-                    Trạng thái: <StatusTag status={item.status} />
-                  </Text>
-                  {item.note && (
-                    <Paragraph
-                      ellipsis={{
-                        rows: 2,
-                        expandable: true,
-                        symbol: "xem thêm",
-                      }}
-                    >
-                      <Text type="secondary">Ghi chú: {item.note}</Text>
+                </Flex>
+
+                <Flex align="center" gap={16}>
+                  <UserOutlined className="confirm-event-icon" />
+                  <Text strong className="confirm-event-label">Học sinh:</Text>
+                  <Text className="confirm-event-label">{selectedEventStudent.studentName}</Text>
+                </Flex>
+
+                <Flex align="flex-start" gap={16}>
+                  <FileTextOutlined className="confirm-event-icon" style={{ marginTop: 4 }} />
+                  <div style={{ flex: 1 }}>
+                    <Text strong className="confirm-event-label">Mô tả:</Text>
+                    <Paragraph className="confirm-event-description">
+                      {eventDetail.description || 'Không có mô tả chi tiết.'}
                     </Paragraph>
-                  )}
-                  {item.responseDate && (
-                    <Text type="secondary" style={{ fontSize: "12px" }}>
-                      Phản hồi lúc:{" "}
-                      {new Date(item.responseDate).toLocaleString("vi-VN")}
-                    </Text>
+                  </div>
+                </Flex>
+
+                {/* Trạng thái */}
+                <Flex align="center" gap={16}>
+                  <InfoCircleOutlined className="confirm-event-icon" />
+                  <Text strong className="confirm-event-label">Trạng thái:</Text>
+                  {joinStatus.status === STATUS.ACCEPTED ? (
+                    <Tag 
+                      icon={<CheckCircleOutlined />} 
+                      color="success"
+                      className="confirm-event-tag"
+                    >
+                      Đã đồng ý tham gia
+                    </Tag>
+                  ) : joinStatus.status === STATUS.REJECTED ? (
+                    <Tag 
+                      icon={<CloseCircleOutlined />} 
+                      color="error"
+                      className="confirm-event-tag"
+                    >
+                      Đã từ chối tham gia
+                    </Tag>
+                  ) : (
+                    <Tag 
+                      icon={<ClockCircleOutlined />} 
+                      color="warning"
+                      className="confirm-event-tag"
+                    >
+                      Chờ phản hồi
+                    </Tag>
                   )}
                 </Flex>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      </Spin>
 
-      {/* Confirmation Modal */}
-      <Modal
-        open={isModalVisible}
-        title={modalData.isAttending ? "Xác nhận tham gia" : "Từ chối tham gia"}
-        onCancel={handleCloseModal}
-        onOk={handleSubmitResponse}
-        okText={modalData.isAttending ? "Đồng ý tham gia" : "Gửi từ chối"}
-        cancelText="Huỷ"
-        confirmLoading={isSubmitting}
-        destroyOnClose // Reset state inside modal when closed
-      >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Text>
-            Học sinh: <Text strong>{modalData.item?.studentName}</Text>
-          </Text>
-          <Text>
-            Sự kiện: <Text strong>{modalData.item?.eventName}</Text>
-          </Text>
-          <Input.TextArea
-            rows={3}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={
-              modalData.isAttending
-                ? "Ghi chú cho nhà trường (tuỳ chọn)"
-                : "Lý do từ chối (tuỳ chọn)"
-            }
-          />
-        </Space>
-      </Modal>
+                {/* Ghi chú nếu đã có */}
+                {joinStatus.status !== STATUS.PENDING && joinStatus.note && (
+                  <div className="confirm-event-note-container">
+                    <Text strong className="confirm-event-label">Ghi chú:</Text>
+                    <Paragraph style={{ margin: '12px 0 0 0', fontSize: 16, lineHeight: '1.6' }}>
+                      {joinStatus.note}
+                    </Paragraph>
+                  </div>
+                )}
+              </Flex>
+
+              {/* Phần xác nhận */}
+              {joinStatus.status === STATUS.PENDING && (
+                <>
+                  <Divider className="confirm-event-divider" />
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Input.TextArea
+                      rows={4}
+                      value={note}
+                      onChange={e => setNote(e.target.value)}
+                      placeholder="Ghi chú cho nhà trường (tuỳ chọn)"
+                      className="confirm-event-textarea"
+                    />
+                    <Flex justify="center" gap={24} className="confirm-event-button-container">
+                      <Button
+                        type="primary"
+                        icon={<CheckCircleOutlined />}
+                        size="large"
+                        loading={isSubmitting}
+                        onClick={() => handleConfirm(true)}
+                        className="confirm-event-button confirm-event-button-accept"
+                      >
+                        Đồng ý tham gia
+                      </Button>
+                      <Button
+                        danger
+                        icon={<CloseCircleOutlined />}
+                        size="large"
+                        loading={isSubmitting}
+                        onClick={() => handleConfirm(false)}
+                        className="confirm-event-button confirm-event-button-reject"
+                      >
+                        Từ chối tham gia
+                      </Button>
+                    </Flex>
+                  </Space>
+                </>
+              )}
+            </div>
+          </Card>
+        )}
+      </Spin>
     </div>
   );
 };

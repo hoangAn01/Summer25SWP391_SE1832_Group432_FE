@@ -28,6 +28,13 @@ import { toast } from "react-toastify";
 
 const { Title, Text, Paragraph } = Typography;
 
+// --- Constants for status strings to prevent typos ---
+const STATUS = {
+  PENDING: "Pending",
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
+};
+
 function Event() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,6 +52,7 @@ function Event() {
     isAttend: true,
     type: "VACCINATION",
   });
+  // eslint-disable-next-line no-unused-vars
   const [studentsOfParent, setStudentsOfParent] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [noteDecline, setNoteDecline] = useState("");
@@ -54,12 +62,21 @@ function Event() {
   });
   const [medicineDetail, setMedicineDetail] = useState(null);
   const [nurseName, setNurseName] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const [studentClass, setStudentClass] = useState("");
+  // Thêm state để lưu thông tin học sinh cho mỗi thông báo
+  // eslint-disable-next-line no-unused-vars
+  const [studentInfoMap, setStudentInfoMap] = useState({});
+  // Thêm state để lưu thông tin StudentJoinEvent
+  // eslint-disable-next-line no-unused-vars
+  const [studentJoinEvents, setStudentJoinEvents] = useState({});
+  // Thêm state để lưu tất cả các yêu cầu tham gia sự kiện
+  const [allJoinRequests, setAllJoinRequests] = useState([]);
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
     const s = status.toLowerCase();
-    if (s === "approved" || s === "đã đồng ý") return "Đã đồng ý";
+    if (s === "approved" || s === "đã đồng ý" || s === "accepted") return "Đã đồng ý";
     if (s === "rejected" || s === "đã từ chối") return "Đã từ chối";
     if (
       s === "unread" ||
@@ -73,17 +90,129 @@ function Event() {
     return status;
   };
 
+  // Hàm để lấy thông tin StudentJoinEvent cho parent - tương tự như ConfirmEvent.jsx
+  const fetchStudentJoinEvents = async (parentId) => {
+    try {
+      const response = await api.get(`StudentJoinEvent/by-parent/${parentId}`);
+      const data = response.data.$values || response.data;
+      
+      // Lưu tất cả các yêu cầu tham gia
+      setAllJoinRequests(Array.isArray(data) ? data : []);
+      
+      // Tạo map để lưu trữ thông tin StudentJoinEvent theo eventID
+      const eventMap = {};
+      if (Array.isArray(data)) {
+        data.forEach(item => {
+          if (item.eventID) {
+            // Nếu đã có sự kiện này, thêm vào mảng
+            if (eventMap[item.eventID]) {
+              eventMap[item.eventID].push(item);
+            } else {
+              // Nếu chưa có, tạo mảng mới
+              eventMap[item.eventID] = [item];
+            }
+          }
+        });
+      }
+      
+      return eventMap;
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin StudentJoinEvent:", error);
+      return {};
+    }
+  };
+
   const fetchDataNotificationOfParent = async (idParent) => {
     try {
       setLoading(true);
+      
+      // Lấy thông tin StudentJoinEvent trước
+      const eventMap = await fetchStudentJoinEvents(parent?.parentID);
+      setStudentJoinEvents(eventMap);
+      
       const response = await api.get(`Notifications/account/${idParent}`);
       const notificationsData = response.data.$values || response.data;
-      setData(
-        notificationsData.map((notification) => ({
-          ...notification,
-          status: mapStatusToVietnamese(notification.status),
-        }))
+      
+      // Map các thông báo với trạng thái đã chuyển đổi
+      const mappedData = notificationsData.map((notification) => ({
+        ...notification,
+        status: mapStatusToVietnamese(notification.status),
+      }));
+      
+      // Lọc các thông báo tiêm chủng và sự kiện
+      const eventNotifications = mappedData.filter(
+        item => item.notificationType === "Thông báo tiêm vaccine" || 
+               item.notificationType === "ConsentRequest" ||
+               (item.title && (
+                 item.title.toLowerCase().includes("vaccine") || 
+                 item.title.toLowerCase().includes("tiêm") || 
+                 item.title.toLowerCase().includes("tham gia sự kiện")
+               ))
       );
+      
+      // Tạo mảng thông báo đã được cập nhật với thông tin học sinh
+      const updatedNotifications = [];
+      // Tạo Map để theo dõi các cặp (eventID, studentID) đã được xử lý
+      const processedEvents = new Map();
+      
+      // Duyệt qua từng thông báo sự kiện
+      for (const notification of eventNotifications) {
+        const eventID = notification.relatedEntityID;
+        
+        // Nếu có thông tin StudentJoinEvent cho sự kiện này
+        if (eventID && eventMap[eventID] && eventMap[eventID].length > 0) {
+          // Tạo thông báo riêng cho từng học sinh trong sự kiện
+          eventMap[eventID].forEach((studentEvent, index) => {
+            // Tạo key duy nhất cho cặp (eventID, studentID)
+            const eventStudentKey = `${eventID}_${studentEvent.studentID}`;
+            
+            // Kiểm tra xem cặp này đã được xử lý chưa
+            if (!processedEvents.has(eventStudentKey)) {
+              // Đánh dấu cặp này đã được xử lý
+              processedEvents.set(eventStudentKey, true);
+              
+              // Tạo bản sao thông báo với thông tin học sinh
+              const newNotification = {
+                ...notification,
+                notificationID: index === 0 ? notification.notificationID : `${notification.notificationID}_${index}`,
+                title: `[${studentEvent.studentName || ''}] ${notification.title.replace(/^\[[^\]]*\]\s*/, '')}`,
+                _originalNotificationID: notification.notificationID,
+                studentInfo: {
+                  studentID: studentEvent.studentID,
+                  studentName: studentEvent.studentName || "",
+                  eventID: eventID,
+                  studentJoinEventID: studentEvent.studentJoinEventID,
+                  status: mapStatusToVietnamese(studentEvent.status)
+                }
+              };
+              
+              // Thêm vào danh sách thông báo đã cập nhật
+              updatedNotifications.push(newNotification);
+            }
+          });
+        } else {
+          // Nếu không có thông tin StudentJoinEvent, kiểm tra trùng lặp bằng eventID
+          const eventKey = `${eventID}_unknown`;
+          if (!processedEvents.has(eventKey)) {
+            processedEvents.set(eventKey, true);
+            updatedNotifications.push(notification);
+          }
+        }
+      }
+      
+      // Thêm các thông báo không phải sự kiện vào danh sách
+      const nonEventNotifications = mappedData.filter(
+        item => !(item.notificationType === "Thông báo tiêm vaccine" || 
+                item.notificationType === "ConsentRequest" ||
+                (item.title && (
+                  item.title.toLowerCase().includes("vaccine") || 
+                  item.title.toLowerCase().includes("tiêm") || 
+                  item.title.toLowerCase().includes("tham gia sự kiện")
+                )))
+      );
+      
+      // Cập nhật state
+      setData([...updatedNotifications, ...nonEventNotifications]);
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
       message.error("Không thể tải danh sách thông báo");
@@ -98,6 +227,7 @@ function Event() {
       fetchDataNotificationOfParent(parent.accountID);
       (async () => {
         try {
+          // eslint-disable-next-line no-unused-vars
           const parentResponse = await api.get(
             `Parent/ByAccount/${parent.accountID}`
           );
@@ -153,12 +283,14 @@ function Event() {
       setReadIds(newReadIds);
       localStorage.setItem("readNotificationIds", JSON.stringify(newReadIds));
     }
+    
     // Nếu là duyệt thuốc đã approved thì fetch chi tiết đơn thuốc
     const status = item.status || "Chờ phản hồi";
     const isMedicineApproved =
       (item.notificationType === "Duyệt thuốc" ||
         (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
       (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
+    
     if (isMedicineApproved && item.relatedEntityID) {
       try {
         const res = await api.get(`/MedicineRequest/${item.relatedEntityID}`);
@@ -197,24 +329,85 @@ function Event() {
     }
   };
 
+  // Hàm để chuyển đến trang ConfirmEvent.jsx với thông tin học sinh
+  const navigateToConfirmEvent = (item) => {
+    // Lưu thông tin học sinh vào localStorage để truyền sang trang ConfirmEvent
+    if (item.studentInfo && item.studentInfo.studentID) {
+      localStorage.setItem('selectedEventStudent', JSON.stringify({
+        studentID: item.studentInfo.studentID,
+        studentName: item.studentInfo.studentName,
+        eventID: item.relatedEntityID,
+        eventTitle: item.title.replace(/^\[[^\]]*\]\s*/, '')
+      }));
+    }
+    // Chuyển đến trang ConfirmEvent
+    window.location.href = "/confirm-event";
+  };
+
+  // eslint-disable-next-line no-unused-vars
   const handleAttendance = async (item, isAttend, type) => {
-    if (item.notificationType === "ConsentRequest") {
-      try {
-        const res = await api.get(
-          `Notifications/${item.notificationID}/student`
-        );
+    // Lấy thông tin học sinh từ item nếu có
+    if (item.studentInfo && item.studentInfo.studentID) {
+      setModalStudent({
+        studentID: item.studentInfo.studentID,
+        studentName: item.studentInfo.studentName,
+        className: item.studentInfo.className || "",
+        eventTitle: item.title.replace(/^\[[^\]]*\]\s*/, ''), // Xóa phần [Tên học sinh] khỏi tiêu đề
+        eventID: item.relatedEntityID,
+        studentJoinEventID: item.studentInfo.studentJoinEventID
+      });
+      setSelectedStudentId(item.studentInfo.studentID);
+    } else {
+      // Kiểm tra nếu là notificationID tạo động (có dạng string với _)
+      const notificationId = item.notificationID;
+      const isCustomNotification = notificationId.toString().includes('_');
+      // eslint-disable-next-line no-unused-vars
+      // const originalNotificationId = isCustomNotification ? notificationId.split('_')[0] : notificationId;
+      
+      // Tìm StudentJoinEvent phù hợp
+      const eventID = item.relatedEntityID;
+      const studentEvents = allJoinRequests.filter(req => req.eventID === eventID);
+      
+      if (studentEvents.length > 0) {
+        // Nếu có nhiều học sinh, hiển thị thông tin học sinh đầu tiên
+        const studentEvent = studentEvents[0];
         setModalStudent({
-          studentID: res.data.studentID,
-          studentName: res.data.studentName,
+          studentID: studentEvent.studentID,
+          studentName: studentEvent.studentName,
+          className: "",
+          eventTitle: item.title.replace(/^\[[^\]]*\]\s*/, ''), // Xóa phần [Tên học sinh] khỏi tiêu đề
+          eventID: eventID,
+          studentJoinEventID: studentEvent.studentJoinEventID
         });
-        setSelectedStudentId(res.data.studentID);
-      } catch (err) {
-        setModalStudent({ studentID: null, studentName: "" });
-        setSelectedStudentId(null);
-        message.error("Không lấy được thông tin học sinh cho xác nhận!");
-        return;
+        setSelectedStudentId(studentEvent.studentID);
+      } else {
+        // Nếu không tìm thấy, thử lấy từ API
+        try {
+          const res = await api.get(
+            `Notifications/${isCustomNotification ? item._originalNotificationID : notificationId}/student`
+          );
+          setModalStudent({
+            studentID: res.data.studentID,
+            studentName: res.data.studentName,
+            className: res.data.className || "",
+            eventTitle: item.title,
+            eventID: item.relatedEntityID
+          });
+          setSelectedStudentId(res.data.studentID);
+        } catch {
+          setModalStudent({ 
+            studentID: null, 
+            studentName: "",
+            className: "",
+            eventTitle: item.title
+          });
+          setSelectedStudentId(null);
+          message.error("Không lấy được thông tin học sinh cho xác nhận!");
+          return;
+        }
       }
     }
+    
     setAttendanceModal({
       open: true,
       notificationId: item.notificationID,
@@ -229,19 +422,36 @@ function Event() {
       message.error("Vui lòng chọn học sinh");
       return;
     }
+    
     setSubmitting(true);
     try {
+      // Lấy thông tin thông báo
+      const notificationId = attendanceModal.notificationId;
+      // Kiểm tra nếu là notificationID tạo động (có dạng string với _)
+      const originalNotificationId = notificationId.toString().includes('_') 
+        ? notificationId.split('_')[0] 
+        : notificationId;
+      
+      // Tìm thông báo gốc nếu cần
+      const originalNotification = data.find(item => 
+        item.notificationID === originalNotificationId || 
+        item.notificationID === notificationId
+      );
+      
+      // Sử dụng API StudentJoinEvent để gửi phản hồi
       await api.put("StudentJoinEvent/respond-by-student", {
         studentId: selectedStudentId,
-        eventId: data.find(
-          (item) => item.notificationID === attendanceModal.notificationId
-        )?.relatedEntityID,
-        status: attendanceModal.isAttend ? "Accepted" : "Rejected",
+        eventId: modalStudent.eventID || originalNotification?.relatedEntityID,
+        status: attendanceModal.isAttend ? STATUS.ACCEPTED : STATUS.REJECTED,
         note: noteDecline,
       });
+      
+      // Cập nhật trạng thái trong state
       setData((prevData) =>
         prevData.map((item) => {
-          if (item.notificationID === attendanceModal.notificationId) {
+          // Cập nhật cả thông báo gốc và thông báo tạo động có cùng sự kiện
+          if (item.notificationID === notificationId || 
+              (item._originalNotificationID && item._originalNotificationID === originalNotificationId)) {
             return {
               ...item,
               status: attendanceModal.isAttend ? "Đã đồng ý" : "Đã từ chối",
@@ -251,6 +461,7 @@ function Event() {
           return item;
         })
       );
+      
       toast.success("Đã gửi phản hồi thành công");
       setAttendanceModal({
         open: false,
@@ -259,7 +470,12 @@ function Event() {
         type: "ConsentRequest",
       });
       setNoteDecline("");
-      setModalStudent({ studentID: null, studentName: "" });
+      setModalStudent({ studentID: null, studentName: "", className: "", eventTitle: "" });
+      
+      // Tải lại dữ liệu sau khi cập nhật
+      if (parent?.accountID) {
+        fetchDataNotificationOfParent(parent.accountID);
+      }
     } catch (err) {
       console.error(err);
       message.error(
@@ -337,14 +553,20 @@ function Event() {
                 (item.notificationType === "Duyệt thuốc" ||
                   (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
                 (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
-              // Lấy tên học sinh từ title
-              let studentName = "";
-              if (isMedicineApproved) {
-                const match = item.title.match(/con bạn ([^\d]+) đã được/i);
-                if (match && match[1]) {
-                  studentName = match[1].trim();
-                }
-              }
+              
+              // Xác định nếu là thông báo tiêm chủng hoặc sự kiện
+              const isEvent = 
+                item.notificationType === "Thông báo tiêm vaccine" ||
+                item.notificationType === "ConsentRequest" ||
+                (item.title && (
+                  item.title.toLowerCase().includes("vaccine") || 
+                  item.title.toLowerCase().includes("tiêm") || 
+                  item.title.toLowerCase().includes("tham gia sự kiện")
+                ));
+              
+              // Lấy thông tin học sinh từ item.studentInfo nếu có
+              const studentInfo = item.studentInfo || {};
+              
             return (
               <Card
                 key={item.notificationID}
@@ -365,8 +587,8 @@ function Event() {
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
                   <div style={{ flex: 1 }}>
                         <span style={{ fontWeight: 600, fontSize: 18, color: '#222' }}>
-                          {isMedicineApproved && studentName
-                            ? `Thông báo học sinh ${studentName} đã được nhân viên y tế cho sử dụng thuốc, vật dụng y tế thành công`
+                          {isMedicineApproved && studentInfo.studentName
+                            ? `Thông báo học sinh ${studentInfo.studentName} đã được nhân viên y tế cho sử dụng thuốc, vật dụng y tế thành công`
                             : item.title}
                         </span>
                         <div style={{ color: '#888', fontSize: 14, marginTop: 4 }}>
@@ -448,22 +670,29 @@ function Event() {
                           ) : (
                             <>
                               <div style={{ fontWeight: 500, marginBottom: 8 }}>
-                                <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title}
+                                <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title.replace(/^\[[^\]]*\]\s*/, '')}
                               </div>
                               <div style={{ fontWeight: 500, marginBottom: 8 }}>
                                 <span style={{ color: '#1677ff' }}>Ngày tổ chức:</span> {item.sentDate ? new Date(item.sentDate).toLocaleDateString('vi-VN') : ''}
                               </div>
+                              {/* Hiển thị thông tin học sinh cho sự kiện */}
+                              {isEvent && studentInfo.studentName && (
+                                <div style={{ fontWeight: 500, marginBottom: 8 }}>
+                                  <span style={{ color: '#1677ff' }}>Học sinh:</span> {studentInfo.studentName}
+                                  {studentInfo.className && ` - ${studentInfo.className}`}
+                                </div>
+                              )}
                               <div style={{ fontWeight: 500, marginBottom: 8 }}>
-                                <span style={{ color: '#1677ff' }}>Trạng thái:</span> {status}
+                                <span style={{ color: '#1677ff' }}>Trạng thái:</span> {studentInfo.status || status}
                               </div>
                               {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc đã approved */}
-                              {!isMedicineApproved && (
+                              {!isMedicineApproved && isEvent && (
                     <Button
                       type="primary"
                       style={{ marginTop: 12 }}
-                                  onClick={() => window.location.href = "/confirm-event"}
+                      onClick={() => navigateToConfirmEvent(item)}
                     >
-                      Xác nhận sự kiện
+                      Xem chi tiết
                     </Button>
                               )}
                             </>
@@ -492,7 +721,9 @@ function Event() {
       <Modal
         open={attendanceModal.open}
         title={
-          attendanceModal.isAttend ? "Xác nhận tham gia" : "Từ chối tham gia"
+          attendanceModal.isAttend 
+            ? `Xác nhận tham gia sự kiện${modalStudent.studentName ? ` cho học sinh ${modalStudent.studentName}` : ''}`
+            : `Từ chối tham gia sự kiện${modalStudent.studentName ? ` cho học sinh ${modalStudent.studentName}` : ''}`
         }
         onCancel={() => {
           setAttendanceModal({
@@ -501,7 +732,7 @@ function Event() {
             isAttend: true,
             type: "ConsentRequest",
           });
-          setModalStudent({ studentID: null, studentName: "" });
+          setModalStudent({ studentID: null, studentName: "", className: "", eventTitle: "" });
         }}
         onOk={submitAttendance}
         okText={attendanceModal.isAttend ? "Đồng ý" : "Gửi từ chối"}
@@ -511,9 +742,15 @@ function Event() {
       >
         <Space direction="vertical" style={{ width: "100%" }}>
           {modalStudent.studentID && (
-            <div style={{ color: "#52c41a", fontWeight: 500 }}>
-              Học sinh: {modalStudent.studentName}
-            </div>
+            <>
+              <div style={{ color: "#1677ff", fontWeight: 600, fontSize: 16 }}>
+                Học sinh: {modalStudent.studentName}
+                {modalStudent.className && ` - ${modalStudent.className}`}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Sự kiện:</b> {modalStudent.eventTitle || ""}
+              </div>
+            </>
           )}
           <Input.TextArea
             rows={3}
