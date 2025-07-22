@@ -54,6 +54,8 @@ const MedicalEvent = () => {
   const user = useSelector((state) => state.user);
   const [originalEventData, setOriginalEventData] = useState(null);
   const [originalItemsData, setOriginalItemsData] = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState(null);
+  const [searchStatus, setSearchStatus] = useState(null);
 
   const eventTypes = [
     "Chấn thương",
@@ -325,6 +327,9 @@ const MedicalEvent = () => {
 
   const handleSearch = async (values) => {
     const { keyword, status } = values;
+    setSearchKeyword(keyword || null);
+    setSearchStatus(status !== "All" ? status : null);
+
     let filteredData = [...originalData];
 
     // Lọc theo từ khóa (tên học sinh)
@@ -354,11 +359,14 @@ const MedicalEvent = () => {
       title: "Họ và tên học sinh",
       dataIndex: "studentFullName",
       key: "studentFullName",
+      filteredValue: searchKeyword ? [searchKeyword] : null,
+      onFilter: (value, record) =>
+        record.studentFullName.toLowerCase().includes(value.toLowerCase()),
     },
     { title: "Loại sự cố", dataIndex: "eventType", key: "eventType" },
     {
       title: "Thời gian xảy ra",
-      dataIndex: "eventTime", 
+      dataIndex: "eventTime",
       key: "eventTime",
       render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm"),
       sorter: (a, b) => new Date(b.eventTime) - new Date(a.eventTime),
@@ -391,6 +399,14 @@ const MedicalEvent = () => {
         };
         return <Tag color={color}>{text}</Tag>;
       },
+      // Thêm chức năng lọc theo trạng thái
+      filters: [
+        { text: "Đã xử lý", value: "Đã xử lý" },
+        { text: "Đang xử lý", value: "Đang xử lý" },
+        { text: "Đang theo dõi", value: "Đang theo dõi" },
+      ],
+      onFilter: (value, record) => record.status === value,
+      filteredValue: searchStatus ? [searchStatus] : null,
     },
     {
       title: "Thao tác",
@@ -504,6 +520,17 @@ const MedicalEvent = () => {
         <Form.Item>
           <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>
             Tìm kiếm
+          </Button>
+          <Button
+            style={{ marginLeft: 8 }}
+            onClick={() => {
+              searchForm.resetFields();
+              setSearchKeyword(null);
+              setSearchStatus(null);
+              setTableData(originalData);
+            }}
+          >
+            Xóa lọc
           </Button>
         </Form.Item>
         <Form.Item style={{ marginLeft: "auto" }}>

@@ -1,17 +1,152 @@
-.row-today {
+/* Wrapper */
+.approve-medicine-wrapper {
+  padding: 32px 12px;
+  background: linear-gradient(135deg, #e3f0ff 0%, #f8fbff 100%);
+  min-height: 100vh;
+}
+
+.approve-medicine-title {
+  margin-bottom: 16px;
+  color: #1976d2;
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+/* Legend for date status */
+.date-legend {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 24px;
+}
+
+.legend-item.today {
+  background: #e3f7ff;
+  color: #1677ff;
+}
+
+.legend-item.future {
+  background: #f0fff4;
+  color: #389e0d;
+}
+
+.legend-icon {
+  font-size: 18px;
+}
+
+.approve-medicine-table .ant-table {
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(33,150,243,0.10);
+  overflow: hidden;
+}
+
+.approve-medicine-table .ant-table-thead > tr > th {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 1px;
+}
+
+.approve-medicine-table .ant-table-tbody > tr:hover {
+  background: #f0f7ff !important;
+}
+
+.approve-medicine-table .row-today {
   background: #e3f7ff !important;
   border-left: 6px solid #1677ff !important;
   font-weight: 600;
   color: #1677ff;
 }
 
-.row-today td {
-  position: relative;
-}
-
-.row-today td:first-child::before {
-  content: '\1F48A'; /* icon viên thuốc */
+.approve-medicine-table .row-today td:first-child::before {
+  content: '\1F48A';
   margin-right: 8px;
   font-size: 18px;
   vertical-align: middle;
+}
+
+/* Styling for future medicine requests */
+.approve-medicine-table .row-future {
+  background: #f0fff4 !important;
+  border-left: 6px solid #52c41a !important;
+  font-weight: 500;
+  color: #389e0d;
+}
+
+.approve-medicine-table .row-future td:first-child::before {
+  content: '\1F4C5';
+  margin-right: 8px;
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+.approve-medicine-table .ant-tag {
+  font-size: 1rem;
+  border-radius: 16px;
+  padding: 2px 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.approve-medicine-table .ant-btn {
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0 18px;
+  transition: all 0.2s;
+}
+
+.approve-medicine-table .ant-btn:hover {
+  background: #1976d2 !important;
+  color: #fff !important;
+}
+
+/* Modal chi tiết */
+.approve-medicine-modal .ant-modal-content {
+  border-radius: 18px;
+  padding: 32px 24px 24px 24px;
+}
+
+.approve-medicine-modal .ant-modal-title {
+  color: #1976d2;
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+}
+
+.approve-medicine-modal .ant-descriptions {
+  border-radius: 12px;
+  background: #f5fafd;
+  margin-bottom: 24px;
+}
+
+.approve-medicine-modal .ant-descriptions-item-label {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.approve-medicine-modal .ant-table {
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .approve-medicine-wrapper {
+    padding: 16px 2px;
+  }
+  .approve-medicine-title {
+    font-size: 1.2rem;
+  }
 } 

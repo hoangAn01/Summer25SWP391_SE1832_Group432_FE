@@ -20,13 +20,7 @@ const ApproveMedicine = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [detailModal, setDetailModal] = useState({ open: false, record: null });
-  const [rejectModal, setRejectModal] = useState({
-    open: false,
-    reason: "",
-    requestID: null,
-  });
   const [approving, setApproving] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
   const [noteNurse, setNoteNurse] = useState("");
 
   console.log("user", user);
@@ -116,28 +110,6 @@ const ApproveMedicine = () => {
       message.error("Duyệt thất bại!");
     } finally {
       setApproving(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!rejectModal.reason.trim()) {
-      message.warning("Vui lòng nhập lý do không duyệt!");
-      return;
-    }
-    try {
-      setRejecting(true);
-      await api.put(`/MedicineRequest/${rejectModal.requestID}/reject`, {
-        reason: rejectModal.reason,
-      });
-      message.success("Đã gửi lý do không duyệt đơn thuốc cho phụ huynh!");
-      setRejectModal({ open: false, reason: "", requestID: null });
-      setDetailModal({ open: false, record: null });
-      fetchData();
-    } catch (error) {
-      console.error("Lỗi khi từ chối đơn thuốc:", error);
-      message.error("Không thể gửi lý do không duyệt!");
-    } finally {
-      setRejecting(false);
     }
   };
 
@@ -348,8 +320,18 @@ const ApproveMedicine = () => {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ marginBottom: 20 }}>Danh sách đơn xin cấp thuốc</h2>
+    <div className="approve-medicine-wrapper">
+      <h2 className="approve-medicine-title">Danh sách đơn gửi thuốc của phụ huynh</h2>
+      <div className="date-legend">
+        <div className="legend-item today">
+          <span className="legend-icon">📌</span>
+          <span>Hôm nay</span>
+        </div>
+        <div className="legend-item future">
+          <span className="legend-icon">📅</span>
+          <span>Ngày tới</span>
+        </div>
+      </div>
       <Table
         columns={columns}
         dataSource={data}
@@ -362,7 +344,10 @@ const ApproveMedicine = () => {
         rowClassName={(record) => {
           if (!record.scheduledDate) return '';
           const today = new Date();
+          today.setHours(0,0,0,0);
           const scheduled = new Date(record.scheduledDate);
+          scheduled.setHours(0,0,0,0);
+          
           if (
             today.getFullYear() === scheduled.getFullYear() &&
             today.getMonth() === scheduled.getMonth() &&
@@ -370,10 +355,16 @@ const ApproveMedicine = () => {
           ) {
             return 'row-today';
           }
+          
+          if (scheduled > today) {
+            return 'row-future';
+          }
+          
           return '';
         }}
         // Mặc định chỉ hiển thị các đơn có trạng thái đã nhận đơn thuốc hoặc hoàn thành
         defaultFilteredValue={{ requestStatus: ["Đã nhận đơn thuốc", "Hoàn thành"] }}
+        className="approve-medicine-table"
       />
 
       <Modal
@@ -382,6 +373,7 @@ const ApproveMedicine = () => {
         footer={null}
         title="Duyệt đơn thuốc gửi phụ huynh"
         width={700}
+        className="approve-medicine-modal"
       >
         {detailModal.record && (
           <>
