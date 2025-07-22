@@ -358,7 +358,7 @@ const MedicalEvent = () => {
     { title: "Loại sự cố", dataIndex: "eventType", key: "eventType" },
     {
       title: "Thời gian xảy ra",
-      dataIndex: "eventTime",
+      dataIndex: "eventTime", 
       key: "eventTime",
       render: (date) => dayjs(date).format("DD/MM/YYYY HH:mm"),
       sorter: (a, b) => new Date(b.eventTime) - new Date(a.eventTime),

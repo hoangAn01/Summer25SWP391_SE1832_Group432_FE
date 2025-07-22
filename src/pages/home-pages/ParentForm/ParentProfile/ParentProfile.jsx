@@ -24,15 +24,14 @@ import {
   CalendarOutlined,
   ManOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
+import "./ParentProfile.css";
 
 const { Title } = Typography;
 
 const ParentProfile = () => {
-  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [parentProfile, setParentProfile] = useState(null);
   const [studentList, setStudentList] = useState([]);
@@ -82,7 +81,6 @@ const ParentProfile = () => {
 
         // Điền thông tin vào form chỉnh sửa
         form.setFieldsValue({
-          parentID: parentResponse.data.parentID,
           fullName: parentResponse.data.fullName,
           address: parentResponse.data.address,
           phone: parentResponse.data.phone,
@@ -112,10 +110,6 @@ const ParentProfile = () => {
     fetchParentAndStudentInfo();
   }, [userId, form]);
 
-  const handleGoBack = () => {
-    navigate("/home");
-  };
-
   const handleEditProfile = () => {
     setIsEditing(true);
   };
@@ -125,8 +119,7 @@ const ParentProfile = () => {
       setLoading(true);
 
       // Gọi API cập nhật - sử dụng PUT thay vì GET
-      const response = await api.put(`Parent/${values.parentID}`, {
-        parentID: values.parentID,
+      const response = await api.put(`Parent/${parentProfile?.parentID}`, {
         fullName: values.fullName,
         address: values.address,
         phone: values.phone,
@@ -189,26 +182,6 @@ const ParentProfile = () => {
     },
   ];
 
-  // Render phần thông tin học sinh
-  const renderStudentSection = () => (
-    <Card
-      title="Thông Tin Học Sinh"
-      style={{
-        marginTop: 24,
-        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-        borderRadius: "12px",
-      }}
-    >
-      <Table
-        columns={studentColumns}
-        dataSource={studentList}
-        rowKey="studentID"
-        pagination={false}
-        locale={{ emptyText: "Không có học sinh" }}
-      />
-    </Card>
-  );
-
   if (loading) {
     return (
       <div
@@ -237,209 +210,110 @@ const ParentProfile = () => {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "calc(100vh - 64px)",
-        paddingTop: "64px",
-        padding: "20px",
-        backgroundColor: "#f0f2f5",
-        boxSizing: "border-box",
-      }}
-    >
-      <Card
-        style={{
-          width: "100%",
-          maxWidth: 900,
-          textAlign: "center",
-          boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-          borderRadius: "12px",
-          position: "relative",
-        }}
-      >
-        {/* Nút quay lại */}
-        <Button
-          type="text"
-          icon={<ArrowLeftOutlined style={{ fontSize: "20px" }} />}
-          onClick={handleGoBack}
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          Quay lại
-        </Button>
-
-        {/* Nút chỉnh sửa */}
-        <Button
-          type="text"
-          icon={<EditOutlined style={{ fontSize: "20px" }} />}
-          onClick={handleEditProfile}
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          Chỉnh sửa
-        </Button>
-
-        <Title level={3} style={{ marginBottom: 24, paddingTop: 40 }}>
-          Thông Tin Cá Nhân Phụ Huynh
-        </Title>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: 24,
-          }}
-        >
+    <div className="parent-profile-wrapper">
+      <div className="parent-profile-container">
+        {/* Cột trái: Thông tin phụ huynh */}
+        <div className="parent-profile-left">
+          <div style={{ position: 'relative', width: '100%' }}>
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<EditOutlined style={{ fontSize: "20px" }} />}
+              onClick={handleEditProfile}
+              className="parent-profile-edit-btn"
+            />
+          </div>
           <Avatar
-            size={180}
+            size={140}
             icon={<UserOutlined />}
-            style={{
-              border: "4px solid #1890ff",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-            }}
+            className="parent-profile-avatar"
           />
+          <Title level={4} className="parent-profile-title">
+            {parentProfile?.fullName}
+          </Title>
+          <Descriptions bordered column={1} className="parent-profile-desc">
+            <Descriptions.Item
+              label={<span style={{ color: '#1976d2', fontWeight: 500 }}><HomeOutlined style={{ marginRight: 8, color: '#1976d2' }} />Địa Chỉ</span>}
+              style={{ wordBreak: "break-word", whiteSpace: "normal" }}
+            >
+              {parentProfile?.address}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={<span style={{ color: '#1976d2', fontWeight: 500 }}><PhoneOutlined style={{ marginRight: 8, color: '#1976d2' }} />Số Điện Thoại</span>}
+            >
+              {parentProfile?.phone}
+            </Descriptions.Item>
+          </Descriptions>
         </div>
-
-        <Title level={4} style={{ marginBottom: 16 }}>
-          {parentProfile?.fullName}
-        </Title>
-
-        <Descriptions title="Thông Tin Chi Tiết" bordered column={1}>
-          <Descriptions.Item
-            label={
-              <>
-                <UserOutlined style={{ marginRight: 8 }} />
-                Mã Phụ Huynh
-              </>
-            }
+        {/* Cột phải: Bảng học sinh */}
+        <div className="parent-profile-right">
+          <Card
+            title={<span style={{ color: '#1976d2', fontWeight: 700 }}>Thông Tin Học Sinh</span>}
+            className="parent-profile-student-card"
+            headStyle={{ background: '#e3f2fd', borderRadius: '18px 18px 0 0', fontWeight: 700, fontSize: 18 }}
+            bodyStyle={{ borderRadius: '0 0 18px 18px', padding: 0 }}
           >
-            {parentProfile?.parentID || "Chưa cập nhật"}
-          </Descriptions.Item>
+            <Table
+              columns={studentColumns}
+              dataSource={studentList}
+              rowKey="studentID"
+              pagination={false}
+              locale={{ emptyText: "Không có học sinh" }}
+              className="parent-profile-student-table"
+              bordered
+              size="middle"
+            />
+          </Card>
+        </div>
+      </div>
+      {/* Modal chỉnh sửa thông tin */}
+      <Modal
+        title={<span style={{ color: '#1976d2', fontWeight: 700 }}>Chỉnh Sửa Thông Tin Cá Nhân</span>}
+        open={isEditing}
+        onCancel={handleCancelEdit}
+        footer={null}
+        centered
+        bodyStyle={{ padding: 32, borderRadius: 16, background: '#f5fafd' }}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSaveProfile} style={{ maxWidth: 400, margin: '0 auto' }}>
+          {/* Ẩn các trường ID */}
 
-          <Descriptions.Item
-            label={
-              <>
-                <HomeOutlined style={{ marginRight: 8 }} />
-                Địa Chỉ
-              </>
-            }
-            style={{ wordBreak: "break-word", whiteSpace: "normal" }}
-          >
-            {parentProfile?.address}
-          </Descriptions.Item>
+          <Form.Item name="fullName" label="Họ và Tên" rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}> 
+            <Input prefix={<UserOutlined />} placeholder="Nhập họ và tên" style={{ borderRadius: 8 }} />
+          </Form.Item>
 
-          <Descriptions.Item
-            label={
-              <>
-                <PhoneOutlined style={{ marginRight: 8 }} />
-                Số Điện Thoại
-              </>
-            }
-          >
-            {parentProfile?.phone}
-          </Descriptions.Item>
-        </Descriptions>
+          <Form.Item name="address" label="Địa Chỉ">
+            <Input prefix={<HomeOutlined />} placeholder="Nhập địa chỉ" style={{ borderRadius: 8 }} />
+          </Form.Item>
 
-        {/* Modal chỉnh sửa thông tin */}
-        <Modal
-          title="Chỉnh Sửa Thông Tin Cá Nhân"
-          open={isEditing}
-          onCancel={handleCancelEdit}
-          footer={null}
-        >
-          <Form form={form} layout="vertical" onFinish={handleSaveProfile}>
-            {/* Ẩn các trường ID */}
-            <Form.Item name="parentID" hidden>
-              <Input />
-            </Form.Item>
+          <Form.Item name="phone" label="Số Điện Thoại" rules={[{ pattern: /^[0-9]{10}$/, message: "Số điện thoại phải có 10 chữ số" }]}> 
+            <Input prefix={<PhoneOutlined />} placeholder="Nhập số điện thoại" style={{ borderRadius: 8 }} />
+          </Form.Item>
 
-            <Form.Item name="parentID" label="Mã Phụ Huynh">
-              <Input
-                prefix={<UserOutlined />}
-                disabled
-                placeholder="Mã phụ huynh"
-              />
-            </Form.Item>
+          <Form.Item name="studentID" label="Chọn học sinh" rules={[{ required: true, message: "Vui lòng chọn học sinh" }]}> 
+            <Select placeholder="Tìm và chọn học sinh" onChange={handleStudentSelect} showSearch optionFilterProp="children" style={{ borderRadius: 8 }}>
+              {students.map((student) => (
+                <Select.Option key={student.value} value={student.value}>
+                  {student.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item
-              name="fullName"
-              label="Họ và Tên"
-              rules={[{ required: true, message: "Vui lòng nhập họ và tên" }]}
-            >
-              <Input prefix={<UserOutlined />} placeholder="Nhập họ và tên" />
-            </Form.Item>
+          <Form.Item name="studentName" label="Tên học sinh">
+            <Input disabled style={{ borderRadius: 8 }} />
+          </Form.Item>
+          <Form.Item name="className" label="Lớp">
+            <Input disabled style={{ borderRadius: 8 }} />
+          </Form.Item>
 
-            <Form.Item name="address" label="Địa Chỉ">
-              <Input prefix={<HomeOutlined />} placeholder="Nhập địa chỉ" />
-            </Form.Item>
-
-            <Form.Item
-              name="phone"
-              label="Số Điện Thoại"
-              rules={[
-                {
-                  pattern: /^[0-9]{10}$/,
-                  message: "Số điện thoại phải có 10 chữ số",
-                },
-              ]}
-            >
-              <Input
-                prefix={<PhoneOutlined />}
-                placeholder="Nhập số điện thoại"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="studentID"
-              label="Chọn học sinh"
-              rules={[{ required: true, message: "Vui lòng chọn học sinh" }]}
-            >
-              <Select
-                placeholder="Tìm và chọn học sinh"
-                onChange={handleStudentSelect}
-                showSearch
-                optionFilterProp="children"
-              >
-                {students.map((student) => (
-                  <Select.Option key={student.value} value={student.value}>
-                    {student.label}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item name="studentName" label="Tên học sinh">
-              <Input disabled />
-            </Form.Item>
-            <Form.Item name="className" label="Lớp">
-              <Input disabled />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" block loading={loading}>
-                Lưu Thay Đổi
-              </Button>
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Thêm phần hiển thị thông tin học sinh */}
-        {studentList.length > 0 && renderStudentSection()}
-      </Card>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block loading={loading} style={{ borderRadius: 8, fontWeight: 700, fontSize: 16, background: '#1976d2', boxShadow: '0 2px 8px rgba(33,150,243,0.10)' }}>
+              Lưu Thay Đổi
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

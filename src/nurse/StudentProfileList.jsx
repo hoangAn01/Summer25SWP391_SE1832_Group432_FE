@@ -115,7 +115,7 @@ const StudentProfileList = () => {
           
           setGrades(gradeOptions);
           
-          message.success(`Đã tải ${classData.length} lớp học`);
+      
         } else {
           console.log("No classes found in API response, using default data");
           createDefaultClasses();

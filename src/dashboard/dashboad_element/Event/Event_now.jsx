@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../../config/axios";
 import { Table, Tag, Typography, message, Select } from "antd";
+import dayjs from "dayjs";
 
 const { Paragraph } = Typography;
 
@@ -8,6 +9,24 @@ const EVENT_TYPES = [
   { label: "Tiêm vaccine", value: 2 },
   { label: "Khám sức khỏe", value: 1 },
 ];
+
+// Mapping status values to Vietnamese
+const STATUS_MAPPING = {
+  "Pending": "Chờ phản hồi",
+  "Accepted": "Đã đồng ý",
+  "Rejected": "Từ chối",
+  "Completed": "Hoàn thành",
+  "Cancelled": "Đã hủy"
+};
+
+// Status color mapping
+const STATUS_COLORS = {
+  "Pending": "orange",
+  "Accepted": "green",
+  "Rejected": "red",
+  "Completed": "blue",
+  "Cancelled": "gray"
+};
 
 const EventNow = () => {
   const [events, setEvents] = useState([]);
@@ -22,7 +41,16 @@ const EventNow = () => {
       setLoading(true);
       try {
         const res = await api.get("/Event");
-        setEvents(res.data.$values || []);
+        const allEvents = res.data.$values || [];
+        
+        // Lọc các sự kiện đang diễn ra (ngày sự kiện là hôm nay hoặc trong tương lai)
+        const now = dayjs();
+        const activeEvents = allEvents.filter(event => {
+          const eventDate = dayjs(event.eventDate);
+          return eventDate.isAfter(now.subtract(1, 'day'));
+        });
+        
+        setEvents(activeEvents);
       } catch {
         message.error("Không lấy được danh sách sự kiện");
       } finally {
@@ -63,7 +91,16 @@ const EventNow = () => {
 
   const columns = [
     { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
-    { title: "Trạng thái", dataIndex: "status", key: "status" },
+    { 
+      title: "Trạng thái", 
+      dataIndex: "status", 
+      key: "status",
+      render: (status) => (
+        <Tag color={STATUS_COLORS[status] || "default"}>
+          {STATUS_MAPPING[status] || status}
+        </Tag>
+      )
+    },
     {
       title: "Ngày phản hồi",
       dataIndex: "responseDate",
@@ -81,7 +118,7 @@ const EventNow = () => {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ marginBottom: 24 }}>Danh sách sự kiện </h2>
+      <h2 style={{ marginBottom: 24 }}>Danh sách sự kiện đang diễn ra</h2>
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <Select
           style={{ width: 200 }}
@@ -106,7 +143,7 @@ const EventNow = () => {
         >
           {filteredEvents.map((event) => (
             <Select.Option key={event.eventID} value={event.eventID}>
-              {event.eventName}
+              {event.eventName} ({dayjs(event.eventDate).format("DD/MM/YYYY")})
             </Select.Option>
           ))}
         </Select>

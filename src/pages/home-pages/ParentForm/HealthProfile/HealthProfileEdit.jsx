@@ -18,13 +18,14 @@ import {
   HistoryOutlined,
   HeartOutlined,
 } from "@ant-design/icons";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
 
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
+import "./HealthProfileForm.css";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -211,46 +212,18 @@ const HealthProfileEdit = () => {
   console.log("profile: ", profile);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f5f7fa",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Card
-        style={{
-          width: "100%",
-          maxWidth: 1100,
-          margin: "40px auto",
-          boxShadow: "0 4px 24px 0 rgba(33,150,243,0.10)",
-          minHeight: "400px",
-        }}
-      >
+    <div className="health-profile-wrapper">
+      <Card className="health-profile-card">
         <Button
           type="primary"
           shape="round"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/home")}
-          style={{
-            position: "absolute",
-            left: 24,
-            top: 24,
-            background: "#f0f5ff",
-            color: "#1677ff",
-            border: "none",
-            boxShadow: "0 2px 8px #1677ff22",
-            fontWeight: 600,
-            fontSize: 16,
-            zIndex: 10,
-            transition: "all 0.2s",
-          }}
+          className="health-profile-back-btn"
         >
           Quay lại trang chủ
         </Button>
-        <Title level={3} style={{ textAlign: "center" }}>
+        <Title level={3} className="health-profile-title">
           Hồ sơ sức khỏe học sinh của {selectedStudent?.fullName}
         </Title>
         <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
@@ -264,7 +237,8 @@ const HealthProfileEdit = () => {
                 setSelectedStudent(student);
               }
             }}
-            style={{ width: "30%" }}
+            style={{ width: 320, maxWidth: "100%", minWidth: 200 }}
+            className="health-profile-select"
           >
             {Array.isArray(students) && students.map((student) => (
               <Option key={student.studentID} value={student.studentID}>
@@ -294,21 +268,10 @@ const HealthProfileEdit = () => {
             form={form}
             layout="vertical"
             onFinish={onFinish}
-            style={{
-              marginTop: 24,
-              fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif",
-            }}
+            className="health-profile-form"
           >
-            <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: 340,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 24,
-                }}
-              >
+            <div className="health-profile-form-row">
+              <div className="health-profile-form-col">
                 <Card
                   title={
                     <span>
@@ -338,12 +301,7 @@ const HealthProfileEdit = () => {
                     <Input
                       disabled
                       placeholder="Tên học sinh"
-                      style={{
-                        width: "100%",
-                        fontSize: 16,
-                        color: "#222",
-                        borderRadius: 8,
-                      }}
+                      className="health-profile-input"
                     />
                   </Form.Item>
 
@@ -365,7 +323,7 @@ const HealthProfileEdit = () => {
                       value={selectedStudent?.className || ""}
                       disabled
                       placeholder="Chưa có thông tin"
-                      style={{ borderRadius: 8, fontSize: 16, color: "#222" }}
+                      className="health-profile-input"
                     />
                   </Form.Item>
 
@@ -386,18 +344,14 @@ const HealthProfileEdit = () => {
                     <DatePicker
                       format="DD/MM/YYYY"
                       disabled
-                      style={{
-                        width: "100%",
-                        borderRadius: 8,
-                        fontSize: 16,
-                        color: "#222",
-                      }}
+                      style={{ width: "100%" }}
                       placeholder="Chưa có thông tin"
+                      className="health-profile-date"
                     />
                   </Form.Item>
                 </Card>
               </div>
-              <div style={{ flex: 1, minWidth: 340 }}>
+              <div className="health-profile-form-col">
                 <Card
                   title={
                     <span>
@@ -427,7 +381,7 @@ const HealthProfileEdit = () => {
                     {isEdit ? (
                       <Input
                         placeholder="Nhập thị lực"
-                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        className="health-profile-input"
                       />
                     ) : (
                       <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
@@ -456,12 +410,8 @@ const HealthProfileEdit = () => {
                     {isEdit ? (
                       <DatePicker
                         format="YYYY-MM-DD"
-                        style={{
-                          width: "100%",
-                          fontSize: 16,
-                          color: "#222",
-                          borderRadius: 8,
-                        }}
+                        style={{ width: "100%" }}
+                        className="health-profile-date"
                       />
                     ) : (
                       <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
@@ -493,7 +443,7 @@ const HealthProfileEdit = () => {
                     {isEdit ? (
                       <Input
                         placeholder="Nhập thông tin chiều cao"
-                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        className="health-profile-input"
                         addonAfter="cm"
                       />
                     ) : (
@@ -526,7 +476,7 @@ const HealthProfileEdit = () => {
                     {isEdit ? (
                       <Input
                         placeholder="Nhập thông tin cân nặng"
-                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        className="health-profile-input"
                         addonAfter="kg"
                       />
                     ) : (
@@ -560,7 +510,7 @@ const HealthProfileEdit = () => {
                       <Input.TextArea
                         rows={3}
                         placeholder="Nhập thông tin bệnh mãn tính (nếu không có, để trống)"
-                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        className="health-profile-textarea"
                       />
                     ) : (
                       <div style={{ minHeight: 48, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
@@ -593,7 +543,7 @@ const HealthProfileEdit = () => {
                     {isEdit ? (
                       <Input
                         placeholder="Nhập dị ứng (nếu có)"
-                        style={{ fontSize: 16, color: "#222", borderRadius: 8 }}
+                        className="health-profile-input"
                       />
                     ) : (
                       <div style={{ minHeight: 32, fontSize: 16, color: "#222", borderRadius: 8, background: "#f5f5f5", padding: 8 }}>
@@ -615,12 +565,7 @@ const HealthProfileEdit = () => {
                   loading={submitting}
                   variant="solid"
                   color="yellow"
-                  style={{
-                    minWidth: 180,
-                    fontWeight: 600,
-                    fontSize: 16,
-                    marginRight: "10px",
-                  }}
+                  className="health-profile-action-btn"
                   onClick={() => setIsEdit(false)}
                 >
                   Hủy
@@ -629,7 +574,7 @@ const HealthProfileEdit = () => {
                   type="primary"
                   htmlType="submit"
                   loading={submitting}
-                  style={{ minWidth: 180, fontWeight: 600, fontSize: 16 }}
+                  className="health-profile-action-btn"
                 >
                   {submitting ? "Đang lưu..." : "Lưu hồ sơ"}
                 </Button>

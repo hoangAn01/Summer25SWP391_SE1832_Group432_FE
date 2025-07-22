@@ -17,16 +17,11 @@ import Report from "./dashboard/dashboad_element/report";
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
-import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfileCreate";
 import EventPage from "./pages/home-pages/ParentForm/Event";
-
 import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
-
 import Header from "./components/Header/Header";
-
-import MedicationForm from "./pages/home-pages/ParentForm/MedicationForm";
-
+import MedicationForm from "./pages/home-pages/ParentForm/MedicineRequest/MedicationForm";
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";
 
@@ -35,9 +30,7 @@ import StudentSearch from "./dashboard/dashboad_element/StudentSearch";
 import NurseProfile from "./nurse/NurseProfile";
 import MedicineReceiveForm from "./nurse/receive notification/MedicineReceiveForm";
 import ApproveMedicine from "./nurse/approveMedicine";
-import StudentHealthProfile from "./pages/home-pages/ParentForm/StudentHealthProfle";
 import EventNow from "./dashboard/dashboad_element/Event/Event_now";
-import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfileEdit";
 import MedicalInventory from "./nurse/medical-inventory";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
@@ -51,6 +44,9 @@ import BlogList from "./pages/home-pages/blog/BlogList";
 import ParentProfile from "./pages/home-pages/ParentForm/ParentProfile/ParentProfile";
 import EventCreate from "./dashboard/dashboad_element/Event/EventCreate";
 import NurseWelcome from "./nurse/NurseWelcome";
+import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileEdit";
+import StudentHealthProfile from "./pages/home-pages/ParentForm/HealthProfile/StudentHealthProfle";
+import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileCreate";
 
 function App() {
   const router = createBrowserRouter([

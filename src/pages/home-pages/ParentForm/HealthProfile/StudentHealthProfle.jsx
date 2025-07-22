@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { Card, Spin, Alert, Button } from "antd";
 
 const StudentHealthProfile = () => {

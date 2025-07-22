@@ -16,10 +16,11 @@ import {
   MinusCircleOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
+import "./HealthProfileForm.css";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -125,55 +126,28 @@ function HealthProfileCreatePage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f5f7fa",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Card
-        style={{
-          width: "100%",
-          maxWidth: 1100,
-          margin: "40px auto",
-          boxShadow: "0 4px 24px 0 rgba(33,150,243,0.10)",
-        }}
-      >
+    <div className="health-profile-wrapper">
+      <Card className="health-profile-card">
         <Button
           type="primary"
           shape="round"
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/home")}
-          style={{
-            position: "absolute",
-            left: 24,
-            top: 24,
-            background: "#f0f5ff",
-            color: "#1677ff",
-            border: "none",
-            boxShadow: "0 2px 8px #1677ff22",
-            fontWeight: 600,
-            fontSize: 16,
-            zIndex: 10,
-            transition: "all 0.2s",
-          }}
+          className="health-profile-back-btn"
         >
           Quay lại trang chủ
         </Button>
-        <Title level={3} style={{ textAlign: "center" }}>
+        <Title level={3} className="health-profile-title">
           Tạo hồ sơ sức khỏe học sinh
         </Title>
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          style={{ marginTop: 24 }}
+          className="health-profile-form"
         >
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 320 }}>
+          <div className="health-profile-form-row">
+            <div className="health-profile-form-col">
               <Form.Item
                 name="fullName"
                 label="Họ và tên"
@@ -219,6 +193,7 @@ function HealthProfileCreatePage() {
                   }}
                   style={{ width: "100%" }}
                   allowClear
+                  className="health-profile-select"
                 >
                   {students.map((student) => (
                     <Option key={student.studentID} value={student.studentID}>
@@ -232,6 +207,7 @@ function HealthProfileCreatePage() {
                 <Input
                   disabled
                   placeholder="Chưa có thông tin"
+                  className="health-profile-input"
                 />
               </Form.Item>
 
@@ -241,6 +217,7 @@ function HealthProfileCreatePage() {
                   disabled
                   style={{ width: "100%" }}
                   placeholder="Chưa có thông tin"
+                  className="health-profile-date"
                 />
               </Form.Item>
 
@@ -251,11 +228,11 @@ function HealthProfileCreatePage() {
                   { required: true, message: "Vui lòng nhập dị ứng (nếu có)" },
                 ]}
               >
-                <Input placeholder="Nhập dị ứng (nếu có)" />
+                <Input placeholder="Nhập dị ứng (nếu có)" className="health-profile-input" />
               </Form.Item>
             </div>
 
-            <div style={{ flex: 1, minWidth: 320 }}>
+            <div className="health-profile-form-col">
               <Form.Item
                 label="Thị lực"
                 name="visionTest"
@@ -275,6 +252,7 @@ function HealthProfileCreatePage() {
                   style={{ width: "100%" }}
                   addonAfter="/10"
                   placeholder="Nhập thị lực"
+                  className="health-profile-input"
                 />
               </Form.Item>
 
@@ -297,6 +275,7 @@ function HealthProfileCreatePage() {
                   style={{ width: "100%" }}
                   addonAfter="/10"
                   placeholder="Nhập thính lực"
+                  className="health-profile-input"
                 />
               </Form.Item>
 
@@ -305,7 +284,7 @@ function HealthProfileCreatePage() {
                 name="lastCheckupDate"
                 rules={[{ required: true, message: "Vui lòng chọn ngày khám" }]}
               >
-                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+                <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} className="health-profile-date" />
               </Form.Item>
 
               <Form.Item
@@ -313,7 +292,7 @@ function HealthProfileCreatePage() {
                 name="treatmentHistory"
                 rules={[{ required: true, message: "Vui lòng nhập lịch sử điều trị" }]}
               >
-                <Input.TextArea rows={2} placeholder="Nhập lịch sử điều trị (nếu có)" />
+                <Input.TextArea rows={2} placeholder="Nhập lịch sử điều trị (nếu có)" className="health-profile-textarea" />
               </Form.Item>
 
               <Form.Item
@@ -326,7 +305,7 @@ function HealthProfileCreatePage() {
                   },
                 ]}
               >
-                <Input placeholder="Nhập thông tin chiều cao (cm)" />
+                <Input placeholder="Nhập thông tin chiều cao (cm)" className="health-profile-input" />
               </Form.Item>
 
               <Form.Item
@@ -339,7 +318,7 @@ function HealthProfileCreatePage() {
                   },
                 ]}
               >
-                <Input placeholder="Nhập thông tin cân nặng (kg)" />
+                <Input placeholder="Nhập thông tin cân nặng (kg)" className="health-profile-input" />
               </Form.Item>
 
               <Form.Item
@@ -355,6 +334,7 @@ function HealthProfileCreatePage() {
                 <Input.TextArea
                   rows={3}
                   placeholder="Nhập thông tin bệnh mãn tính (nếu không có, để trống)"
+                  className="health-profile-textarea"
                 />
               </Form.Item>
             </div>
@@ -365,7 +345,7 @@ function HealthProfileCreatePage() {
               type="primary"
               htmlType="submit"
               loading={submitting}
-              style={{ minWidth: 180, fontWeight: 600, fontSize: 16 }}
+              className="health-profile-action-btn"
             >
               {submitting ? "Đang tạo..." : "Tạo hồ sơ"}
             </Button>

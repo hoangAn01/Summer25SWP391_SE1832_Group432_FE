@@ -111,11 +111,12 @@ const VaccineEventReport = () => {
     setIsModalOpen(true);
     form.resetFields();
 
-    // Set vaccine name from event name
+    // Set vaccine name from event name and date from event date
     const selectedEventData = events.find((e) => e.eventID === selectedEvent);
     if (selectedEventData) {
       form.setFieldsValue({
         vaccineName: selectedEventData.eventName,
+        dateAdministered: selectedEventData.eventDate ? dayjs(selectedEventData.eventDate) : null,
       });
     }
   };

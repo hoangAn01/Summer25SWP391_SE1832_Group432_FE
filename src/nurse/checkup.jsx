@@ -182,7 +182,7 @@ const CheckUp = () => {
           {status === "Pending"
             ? "Chờ phản hồi"
             : status === "Accepted"
-            ? "Đã tham gia"
+            ? "Tham gia"
             : status === "Rejected"
             ? "Vắng mặt"
             : status}

@@ -1,0 +1,17 @@
+.row-today {
+  background: #e3f7ff !important;
+  border-left: 6px solid #1677ff !important;
+  font-weight: 600;
+  color: #1677ff;
+}
+
+.row-today td {
+  position: relative;
+}
+
+.row-today td:first-child::before {
+  content: '\1F48A'; /* icon viên thuốc */
+  margin-right: 8px;
+  font-size: 18px;
+  vertical-align: middle;
+} 

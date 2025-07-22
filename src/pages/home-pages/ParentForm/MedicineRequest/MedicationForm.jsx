@@ -18,9 +18,10 @@ import {
 import { PhoneOutlined, ArrowLeftOutlined, UserOutlined, MedicineBoxOutlined, InfoCircleOutlined, FileTextOutlined, PlusCircleOutlined, DeleteOutlined, HistoryOutlined, CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import "./MedicationForm.css";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -38,12 +39,6 @@ const MedicationForm = () => {
   const [historyStudentID, setHistoryStudentID] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [selectedHistoryRequest, setSelectedHistoryRequest] = useState(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [createMedicineModal, setCreateMedicineModal] = useState(false);
-  const [newMedicineName, setNewMedicineName] = useState("");
-  const [newMedicineDesc, setNewMedicineDesc] = useState("");
-  const [creatingMedicine, setCreatingMedicine] = useState(false);
-  const [selectedStudentID, setSelectedStudentID] = useState(null); // Thêm state chọn học sinh cho modal lịch sử
 
   const fetchStudents = async () => {
     try {
@@ -135,6 +130,7 @@ const MedicationForm = () => {
       const payload = {
         StudentID: values.studentID,
         ParentID: parentID,
+        scheduledDate: values.scheduledDate ? values.scheduledDate.format("YYYY-MM-DD") : undefined,
         Note: values.note || "",
         MedicineDetails: medicinePages.map((_, idx) => {
           const selectedItemID = values.itemName?.[idx]?.medicineName;
@@ -293,13 +289,35 @@ const MedicationForm = () => {
                 <Input disabled />
               </Form.Item>
 
-              {/* NOTE */}
-              <Form.Item name="note" label={<span><FileTextOutlined /> Ghi chú</span>}>
-                <TextArea
-                  rows={2}
-                  placeholder="Nhập các lưu ý đặc biệt (nếu có)"
+              {/* Thêm ngày cho uống thuốc */}
+              <Form.Item
+                name="scheduledDate"
+                label={<span><CalendarOutlined /> Ngày cho uống thuốc</span>}
+                rules={[{ required: true, message: "Vui lòng chọn ngày cho uống thuốc" }]}
+              >
+                <DatePicker
+                  style={{ width: '100%' }}
+                  format="DD/MM/YYYY"
+                  disabledDate={current => {
+                    const today = dayjs().startOf('day');
+                    const threeDaysLater = today.add(2, 'day');
+                    return current < today || current > threeDaysLater;
+                  }}
+                  placeholder="Chọn ngày cho uống thuốc (tối đa 3 ngày từ hôm nay trở đi)"
                 />
               </Form.Item>
+
+              <Form.Item
+                name="note"
+                label={<span><FileTextOutlined /> Ghi chú của phụ huynh</span>}
+              >
+                <TextArea
+                  rows={2}
+                  placeholder="Nhập các lưu ý đặc biệt cho y tế (nếu có)"
+                />
+              </Form.Item>
+
+              {/* GHI CHÚ ĐÃ BỊ XÓA */}
             </div>
           </Col>
 
@@ -431,14 +449,7 @@ const MedicationForm = () => {
                             </Select.Option>
                           ))}
                         </Select>
-                        <Button
-                          type="dashed"
-                          onClick={() => setCreateMedicineModal(true)}
-                          style={{ width: 130, marginLeft: 8 }}
-                          icon={<PlusCircleOutlined />}
-                        >
-                          Phụ huynh tạo thuốc
-                        </Button>
+
                       </Input.Group>
                     </Form.Item>
 
@@ -651,79 +662,10 @@ const MedicationForm = () => {
           </div>
         )}
       </Modal>
-
-      {/* Modal tạo thuốc mới */}
-      <Modal
-        open={createMedicineModal}
-        onCancel={() => setCreateMedicineModal(false)}
-        title={<span><PlusCircleOutlined /> Tạo thuốc/vật tư mới</span>}
-        onOk={async () => {
-          setCreatingMedicine(true);
-          try {
-            await api.post("MedicalInventory", {
-              itemName: newMedicineName,
-              quantity: 0,
-              unit: "Cái",
-              location: "Kho y tế",
-            });
-            toast.success("Tạo thuốc mới thành công!");
-            setCreateMedicineModal(false);
-            setNewMedicineName("");
-            setNewMedicineDesc("");
-            await fetchMedicineList();
-            // Tự động chọn thuốc vừa tạo cho trang hiện tại
-            const updatedList = await api.get("MedicalInventory");
-            const created = (updatedList.data.$values || updatedList.data).find(
-              (item) => item.itemName === newMedicineName
-            );
-            if (created) {
-              // Tạo mảng mới để trigger re-render
-              const itemName = [...(form.getFieldValue("itemName") || [])];
-              itemName[currentPage - 1] = {
-                medicineName: created.itemID,
-              };
-              form.setFieldsValue({ itemName });
-              console.log(
-                "itemName sau khi set:",
-                form.getFieldValue("itemName")
-              );
-              // Trigger validate lại trường này sau khi setFieldsValue
-              setTimeout(async () => {
-                try {
-                  await form.validateFields([
-                    ["itemName", currentPage - 1, "medicineName"],
-                  ]);
-                  console.log("Validate OK");
-                } catch (err) {
-                  console.log("Validate lỗi:", err);
-                }
-              }, 0);
-            }
-          } catch (error) {
-            console.error("Lỗi tạo thuốc:", error);
-            toast.error("Tạo thuốc thất bại!");
-          }
-          setCreatingMedicine(false);
-        }}
-        confirmLoading={creatingMedicine}
-      >
-        <Form layout="vertical">
-          <Form.Item label={<span><MedicineBoxOutlined /> Tên thuốc/vật tư</span>} required>
-            <Input
-              value={newMedicineName}
-              onChange={(e) => setNewMedicineName(e.target.value)}
-            />
-          </Form.Item>
-          <Form.Item label={<span><FileTextOutlined /> Mô tả</span>}>
-            <Input
-              value={newMedicineDesc}
-              onChange={(e) => setNewMedicineDesc(e.target.value)}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };
+
+
 
 export default MedicationForm;

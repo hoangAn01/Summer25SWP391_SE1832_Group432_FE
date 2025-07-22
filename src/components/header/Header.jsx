@@ -287,23 +287,9 @@ const Header = () => {
                     >
                       Gửi thuốc
                     </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        handleUserClose();
-                        navigate("");
-                      }}
-                    >
-                      Quản lý
-                    </MenuItem>
+  
                
-                    <MenuItem
-                      onClick={() => {
-                        handleUserClose();
-                        setShowLogoutModal(true);
-                      }}
-                    >
-                      Đăng xuất
-                    </MenuItem>
+                   
                     <MenuItem
                       onClick={() => {
                         handleUserClose();
@@ -327,6 +313,14 @@ const Header = () => {
                       }}
                     >
                       Xác nhận sự kiện
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        handleUserClose();
+                        setShowLogoutModal(true);
+                      }}
+                    >
+                      Đăng xuất
                     </MenuItem>
                   </Menu>
                 </>

@@ -12,6 +12,8 @@ import {
 import api from "../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import { Modal as AntdModal } from "antd";
+import "./approveMedicine.css";
 
 const ApproveMedicine = () => {
   const user = useSelector((state) => state.user);
@@ -70,6 +72,25 @@ const ApproveMedicine = () => {
 
   const handleApprove = async (requestID) => {
     try {
+      // Lấy record hiện tại để kiểm tra ngày
+      const record = data.find((r) => r.requestID === requestID);
+      if (record && record.scheduledDate) {
+        const today = new Date();
+        const scheduled = new Date(record.scheduledDate);
+        // So sánh ngày/tháng/năm
+        if (
+          today.getFullYear() !== scheduled.getFullYear() ||
+          today.getMonth() !== scheduled.getMonth() ||
+          today.getDate() !== scheduled.getDate()
+        ) {
+          AntdModal.info({
+            title: "Chưa tới ngày cho học sinh uống thuốc",
+            content: `Chỉ được duyệt/gửi thuốc vào đúng ngày ${formatDateWithDay(record.scheduledDate)} mà phụ huynh đã chọn!`,
+            centered: true,
+          });
+          return;
+        }
+      }
       setApproving(true);
       // Lấy nurseID từ API Nurse
       const nurseRes = await api.get("Nurse");
@@ -161,10 +182,50 @@ const ApproveMedicine = () => {
       render: (name) => name || "Không có",
     },
     {
-      title: "Ghi chú",
-      dataIndex: "note",
-      key: "note",
-      render: (note) => note || "Không có",
+      title: "Thời gian cho uống thuốc",
+      dataIndex: "scheduledDate",
+      key: "scheduledDate",
+      render: (date) => formatDateWithDay(date),
+      sorter: (a, b) => {
+        // Ưu tiên hôm nay/đã qua lên trên, tương lai xuống dưới
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const getSortValue = (d) => {
+          if (!d) return 2; // không có ngày, cho xuống dưới cùng
+          const scheduled = new Date(d);
+          scheduled.setHours(0,0,0,0);
+          if (scheduled <= today) return 0; // hôm nay hoặc đã qua
+          return 1; // tương lai
+        };
+        const valA = getSortValue(a.scheduledDate);
+        const valB = getSortValue(b.scheduledDate);
+        if (valA !== valB) return valA - valB;
+        // Nếu cùng nhóm, sort theo ngày giảm dần
+        return new Date(b.scheduledDate) - new Date(a.scheduledDate);
+      },
+      defaultSortOrder: 'ascend',
+      filters: [
+        { text: "Hôm nay", value: "today" },
+        { text: "Ngày tới", value: "future" },
+        { text: "Trước đó", value: "past" },
+      ],
+      onFilter: (value, record) => {
+        if (!record.scheduledDate) return false;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const scheduled = new Date(record.scheduledDate);
+        scheduled.setHours(0,0,0,0);
+        if (value === "today") {
+          return scheduled.getTime() === today.getTime();
+        }
+        if (value === "future") {
+          return scheduled.getTime() > today.getTime();
+        }
+        if (value === "past") {
+          return scheduled.getTime() < today.getTime();
+        }
+        return false;
+      },
     },
     {
       title: "Trạng thái",
@@ -215,6 +276,25 @@ const ApproveMedicine = () => {
         }
         return <Tag {...tagProps}>{vnStatus}</Tag>;
       },
+      sorter: (a, b) => {
+        // Ưu tiên: Đã nhận đơn thuốc > Hoàn thành > Không duyệt
+        const order = status => {
+          const s = statusVN(status);
+          if (s === "Đã nhận đơn thuốc") return 1;
+          if (s === "Hoàn thành") return 2;
+          if (s === "Không duyệt") return 3;
+          return 4;
+        };
+        return order(a.requestStatus) - order(b.requestStatus);
+      },
+      filters: [
+        { text: "Đã nhận đơn thuốc", value: "Đã nhận đơn thuốc" },
+        { text: "Hoàn thành", value: "Hoàn thành" },
+      ],
+      onFilter: (value, record) => {
+        const vnStatus = statusVN(record.requestStatus);
+        return vnStatus === value;
+      },
     },
     {
       title: "Thao tác",
@@ -257,6 +337,16 @@ const ApproveMedicine = () => {
     return status || "Không rõ";
   };
 
+  // Thêm hàm formatDateWithDay
+  function formatDateWithDay(dateStr) {
+    if (!dateStr) return "Không có";
+    const date = new Date(dateStr);
+    const days = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
+    const dayName = days[date.getDay()];
+    const dateVN = date.toLocaleDateString("vi-VN");
+    return `${dayName}, ${dateVN}`;
+  }
+
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 20 }}>Danh sách đơn xin cấp thuốc</h2>
@@ -269,6 +359,21 @@ const ApproveMedicine = () => {
         locale={{
           emptyText: "Không có đơn thuốc nào",
         }}
+        rowClassName={(record) => {
+          if (!record.scheduledDate) return '';
+          const today = new Date();
+          const scheduled = new Date(record.scheduledDate);
+          if (
+            today.getFullYear() === scheduled.getFullYear() &&
+            today.getMonth() === scheduled.getMonth() &&
+            today.getDate() === scheduled.getDate()
+          ) {
+            return 'row-today';
+          }
+          return '';
+        }}
+        // Mặc định chỉ hiển thị các đơn có trạng thái đã nhận đơn thuốc hoặc hoàn thành
+        defaultFilteredValue={{ requestStatus: ["Đã nhận đơn thuốc", "Hoàn thành"] }}
       />
 
       <Modal
@@ -291,8 +396,11 @@ const ApproveMedicine = () => {
               <Descriptions.Item label="Phụ huynh">
                 {detailModal.record.parentName || "Không có"}
               </Descriptions.Item>
-              <Descriptions.Item label="Ghi chú">
+              <Descriptions.Item label="Ghi chú của phụ huynh">
                 {detailModal.record.note || "Không có"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Thời gian cho uống thuốc">
+                {formatDateWithDay(detailModal.record.scheduledDate)}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 <Tag
