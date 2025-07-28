@@ -128,7 +128,7 @@ const Dashboard = () => {
       }
     }
     
-    return "Trang quản trị";
+
   };
 
   // Chiều cao của logo container

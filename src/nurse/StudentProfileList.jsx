@@ -707,68 +707,128 @@ const StudentProfileList = () => {
   }
 
   return (
-    <div className="student-profile-container">
+    <div className="student-profile-container" style={{ 
+      padding: '24px', 
+      background: 'linear-gradient(to bottom, #f0f5ff, #f9fbff)',
+      minHeight: '100vh'
+    }}>
       {/* Dashboard Summary Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+      <Title level={2} style={{ 
+        marginBottom: '24px', 
+        color: '#1e3a8a', 
+        fontWeight: 700,
+        fontSize: '28px'
+      }}>
+        <DashboardOutlined /> Quản lý hồ sơ sức khỏe học sinh
+      </Title>
+
+      <Row gutter={[20, 20]} style={{ marginBottom: 24 }}>
         <Col xs={24} md={8} lg={6}>
-          <Card style={{ borderRadius: '12px', height: '100%' }}>
+          <Card 
+            style={{ 
+              borderRadius: '16px',
+              height: '100%',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              border: 'none',
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)'
+            }}
+            hoverable
+            bodyStyle={{ padding: '24px' }}
+          >
             <Statistic 
-              title={<span><TeamOutlined /> Tổng số hồ sơ</span>}
+              title={<span style={{ fontSize: '16px', color: '#0050b3' }}><TeamOutlined /> Tổng số hồ sơ</span>}
               value={data.length}
-              valueStyle={{ color: '#1890ff' }}
+              valueStyle={{ color: '#1890ff', fontSize: '32px', fontWeight: 'bold' }}
             />
           </Card>
         </Col>
         <Col xs={24} md={8} lg={6}>
-          <Card style={{ borderRadius: '12px', height: '100%' }}>
+          <Card 
+            style={{ 
+              borderRadius: '16px', 
+              height: '100%',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              border: 'none',
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #fff2e8 0%, #ffd8bf 100%)'
+            }}
+            hoverable
+            bodyStyle={{ padding: '24px' }}
+          >
             <Statistic 
-              title={<span><AlertOutlined /> Học sinh có bệnh mãn tính</span>}
+              title={<span style={{ fontSize: '16px', color: '#ad2102' }}><AlertOutlined /> Học sinh có bệnh mãn tính</span>}
               value={healthStats.withChronic?.count || 0}
               suffix={`/${data.length}`}
-              valueStyle={{ color: '#ff4d4f' }}
+              valueStyle={{ color: '#fa541c', fontSize: '32px', fontWeight: 'bold' }}
             />
             {data.length > 0 && (
               <Progress 
                 percent={healthStats.withChronic?.percent || 0} 
                 showInfo={false} 
-                strokeColor="#ff4d4f"
-                size="small"
+                strokeColor={{ '0%': '#fa541c', '100%': '#ff7a45' }}
+                strokeWidth={8}
+                style={{ marginTop: '12px' }}
               />
             )}
           </Card>
         </Col>
         <Col xs={24} md={8} lg={6}>
-          <Card style={{ borderRadius: '12px', height: '100%' }}>
+          <Card 
+            style={{ 
+              borderRadius: '16px', 
+              height: '100%',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              border: 'none',
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)'
+            }}
+            hoverable
+            bodyStyle={{ padding: '24px' }}
+          >
             <Statistic 
-              title={<span><BarChartOutlined /> BMI bình thường</span>}
+              title={<span style={{ fontSize: '16px', color: '#135200' }}><BarChartOutlined /> BMI bình thường</span>}
               value={healthStats.normal?.count || 0}
               suffix={`/${data.length}`}
-              valueStyle={{ color: '#52c41a' }}
+              valueStyle={{ color: '#52c41a', fontSize: '32px', fontWeight: 'bold' }}
             />
             {data.length > 0 && (
               <Progress 
                 percent={healthStats.normal?.percent || 0} 
                 showInfo={false} 
-                strokeColor="#52c41a"
-                size="small"
+                strokeColor={{ '0%': '#52c41a', '100%': '#73d13d' }}
+                strokeWidth={8}
+                style={{ marginTop: '12px' }}
               />
             )}
           </Card>
         </Col>
         <Col xs={24} md={0} lg={6}>
-          <Card style={{ borderRadius: '12px', height: '100%' }}>
+          <Card 
+            style={{ 
+              borderRadius: '16px', 
+              height: '100%',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              border: 'none',
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%)'
+            }}
+            hoverable
+            bodyStyle={{ padding: '24px' }}
+          >
             <Statistic 
-              title={<span><HeartOutlined /> Học sinh thừa cân/béo phì</span>}
+              title={<span style={{ fontSize: '16px', color: '#874d00' }}><HeartOutlined /> Học sinh thừa cân/béo phì</span>}
               value={healthStats.overweight?.count || 0}
               suffix={`/${data.length}`}
-              valueStyle={{ color: '#fa8c16' }}
+              valueStyle={{ color: '#fa8c16', fontSize: '32px', fontWeight: 'bold' }}
             />
             {data.length > 0 && (
               <Progress 
                 percent={healthStats.overweight?.percent || 0} 
                 showInfo={false} 
-                strokeColor="#fa8c16"
-                size="small"
+                strokeColor={{ '0%': '#fa8c16', '100%': '#ffa940' }}
+                strokeWidth={8}
+                style={{ marginTop: '12px' }}
               />
             )}
           </Card>
@@ -780,25 +840,56 @@ const StudentProfileList = () => {
         title={
           <Row gutter={[16, 16]} align="middle">
             <Col flex="auto">
-              <Space>
-                <DashboardOutlined />
-                <span>Danh sách hồ sơ sức khỏe học sinh</span>
+              <Space size={16}>
+                <DashboardOutlined style={{ color: '#1890ff', fontSize: '18px' }} />
+                <span style={{ fontSize: '18px', fontWeight: 700, color: '#1890ff' }}>Danh sách hồ sơ sức khỏe học sinh</span>
               </Space>
             </Col>
           </Row>
         }
         style={{
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          borderRadius: '16px',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+          border: 'none'
         }}
+        bodyStyle={{ padding: '24px' }}
       >
         {/* Hiển thị thông tin lớp học nếu có lớp được chọn */}
         {selectedClassInfo && (
-          <ClassInfoDisplay classInfo={selectedClassInfo} />
+          <Card 
+            size="small" 
+            style={{ 
+              marginBottom: 24, 
+              borderRadius: '12px', 
+              background: 'linear-gradient(to right, #e6f7ff, #f0f9ff)',
+              border: '1px solid #91d5ff'
+            }}
+          >
+            <Row gutter={[16, 8]}>
+              <Col span={12}>
+                <Text strong style={{ color: '#0050b3' }}>Lớp:</Text> 
+                <Tag color="blue" style={{ marginLeft: 8, borderRadius: '12px', fontSize: '14px', padding: '0 8px' }}>
+                  {classInfo.className}
+                </Tag>
+              </Col>
+              <Col span={12}>
+                <Text strong style={{ color: '#0050b3' }}>Khối:</Text> 
+                <Tag color="geekblue" style={{ marginLeft: 8, borderRadius: '12px', fontSize: '14px', padding: '0 8px' }}>
+                  Khối {classInfo.grade}
+                </Tag>
+              </Col>
+              <Col span={12}>
+                <Text strong style={{ color: '#0050b3' }}>Giáo viên chủ nhiệm:</Text> {classInfo.teacherName || "Chưa phân công"}
+              </Col>
+              <Col span={12}>
+                <Text strong style={{ color: '#0050b3' }}>Năm học:</Text> {classInfo.schoolYear || "Hiện tại"}
+              </Col>
+            </Row>
+          </Card>
         )}
 
         {/* Filter controls */}
-        <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Row gutter={20} style={{ marginBottom: 24 }}>
           <Col xs={24} md={8} lg={6}>
             <Input
               placeholder="Tìm kiếm theo tên học sinh..."
@@ -806,18 +897,26 @@ const StudentProfileList = () => {
               onChange={(e) => setSearchText(e.target.value)}
               allowClear
               size="large"
-              style={{ width: '100%', borderRadius: '8px' }}
+              style={{ 
+                width: '100%', 
+                borderRadius: '12px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+              }}
             />
           </Col>
           <Col xs={24} md={8} lg={6}>
             <Select
               placeholder="Lọc theo khối"
               allowClear
-              style={{ width: '100%' }}
+              style={{ 
+                width: '100%',
+                borderRadius: '12px'
+              }}
               onChange={(value) => setSelectedGrade(value)}
               size="large"
               loading={classesLoading}
               suffixIcon={<FilterOutlined style={{ color: selectedGrade ? '#1890ff' : undefined }} />}
+              dropdownStyle={{ borderRadius: '8px' }}
             >
               {grades.map(grade => (
                 <Option key={grade.value} value={grade.value}>{grade.label}</Option>
@@ -834,6 +933,7 @@ const StudentProfileList = () => {
               size="large"
               loading={classesLoading}
               suffixIcon={<FilterOutlined style={{ color: selectedClass ? '#1890ff' : undefined }} />}
+              dropdownStyle={{ borderRadius: '8px' }}
             >
               {availableClasses.map(cls => (
                 <Option key={cls.value} value={cls.value}>{cls.label}</Option>
@@ -841,34 +941,74 @@ const StudentProfileList = () => {
             </Select>
           </Col>
           <Col xs={24} md={24} lg={6} style={{ textAlign: 'right' }}>
-            <Badge count={filteredData.length} overflowCount={999} style={{ backgroundColor: '#52c41a' }}>
-              <Text strong>Học sinh hiển thị</Text>
+            <Badge 
+              count={filteredData.length} 
+              overflowCount={999} 
+              style={{ 
+                backgroundColor: '#52c41a',
+                fontSize: '14px',
+                padding: '0 12px',
+                height: '28px',
+                borderRadius: '14px',
+                lineHeight: '28px',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 6px rgba(82, 196, 26, 0.3)'
+              }}
+            >
+              <Text strong style={{ fontSize: '16px' }}>Học sinh hiển thị</Text>
             </Badge>
           </Col>
         </Row>
 
         {/* Student list table */}
-        <div className="student-table-container" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+        <div className="student-table-container" style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
           {filteredData.length > 0 ? (
-      <Table
-        columns={columns}
-        dataSource={filteredData}
-        rowKey="healthProfileID"
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              rowKey="healthProfileID"
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
-                showTotal: (total) => `Tổng cộng ${total} hồ sơ`
+                showTotal: (total) => `Tổng cộng ${total} hồ sơ`,
+                style: { marginTop: '16px' },
+                itemRender: (page, type, originalElement) => {
+                  if (type === 'page') {
+                    return (
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        fontWeight: 'bold' 
+                      }}>
+                        {originalElement}
+                      </div>
+                    );
+                  }
+                  return originalElement;
+                }
               }}
               scroll={{ x: 'max-content' }}
-              rowClassName={() => 'student-table-row'}
+              rowClassName={(record, index) => `student-table-row ${index % 2 === 0 ? 'even-row' : 'odd-row'}`}
               size="middle"
-              style={{ borderRadius: '8px', overflow: 'hidden' }}
+              style={{ borderRadius: '12px', overflow: 'hidden' }}
+              onRow={(record) => ({
+                onClick: () => handleViewDetails(record),
+                style: { cursor: 'pointer' }
+              })}
             />
           ) : (
             <Empty
-              description="Không tìm thấy học sinh phù hợp"
+              description={
+                <Text style={{ fontSize: '16px', color: '#8c8c8c' }}>
+                  Không tìm thấy học sinh phù hợp
+                </Text>
+              }
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              style={{ padding: '40px 0' }}
+              style={{ padding: '60px 0' }}
             />
           )}
         </div>
@@ -877,44 +1017,86 @@ const StudentProfileList = () => {
       {/* Student Detail Drawer */}
       <Drawer
         title={
-          <Space>
-            <UserOutlined style={{ color: '#1890ff' }} />
-            <span>Hồ sơ sức khỏe chi tiết</span>
+          <Space size={12}>
+            <UserOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+            <span style={{ fontSize: '18px', fontWeight: 700 }}>Hồ sơ sức khỏe chi tiết</span>
           </Space>
         }
-        width={700}
+        width={720}
         placement="right"
         onClose={() => setDetailVisible(false)}
         open={detailVisible}
-        bodyStyle={{ padding: '24px' }}
+        bodyStyle={{ padding: '24px', background: '#f8fafc' }}
+        headerStyle={{ 
+          background: 'linear-gradient(to right, #1890ff, #096dd9)',
+          color: 'white',
+          padding: '16px 24px',
+          fontSize: '18px'
+        }}
         extra={
-          <Button type="primary" icon={<PrinterOutlined />} onClick={handlePrintProfile}>In hồ sơ</Button>
+          <Button 
+            type="primary" 
+            icon={<PrinterOutlined />} 
+            onClick={handlePrintProfile}
+            style={{
+              background: 'white',
+              color: '#1890ff',
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(24, 144, 255, 0.15)',
+              fontWeight: 'bold'
+            }}
+          >
+            In hồ sơ
+          </Button>
         }
       >
         {selectedStudent && (
           <div className="student-detail">
             {/* Student basic info */}
-            <Card style={{ marginBottom: 24, borderRadius: '12px' }}>
+            <Card 
+              style={{ 
+                marginBottom: 24, 
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                border: 'none',
+                overflow: 'hidden'
+              }}
+            >
               <Row gutter={[24, 24]} align="middle">
                 <Col xs={24} md={6}>
-                  <Avatar
-                    size={100}
-                    icon={<UserOutlined />}
-                    style={{
-                      backgroundColor: '#1890ff',
-                      display: 'block',
-                      margin: '0 auto'
-                    }}
-                  />
+                  <div style={{ 
+                    width: 120, 
+                    height: 120, 
+                    background: 'linear-gradient(135deg, #1890ff, #096dd9)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto',
+                    boxShadow: '0 4px 12px rgba(24, 144, 255, 0.35)'
+                  }}>
+                    <UserOutlined style={{ fontSize: '54px', color: 'white' }} />
+                  </div>
                 </Col>
                 <Col xs={24} md={18}>
-                  <Title level={4}>{selectedStudent.studentFullName}</Title>
+                  <Title level={3} style={{ 
+                    marginBottom: 16, 
+                    color: '#1e3a8a',
+                    fontWeight: 700
+                  }}>
+                    {selectedStudent.studentFullName}
+                  </Title>
                   <Space size="large" wrap>
-                    <Tag color="blue" style={{ fontSize: '14px', padding: '4px 8px' }}>
+                    <Tag color="blue" style={{ 
+                      fontSize: '16px', 
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      boxShadow: '0 2px 6px rgba(24, 144, 255, 0.15)'
+                    }}>
                       <span style={{ marginRight: '5px', fontWeight: 'bold' }}>Lớp:</span>
                       {selectedStudent.className || "Chưa phân lớp"}
                     </Tag>
-                    <Text>
+                    <Text style={{ fontSize: '16px' }}>
                       <strong>Mã học sinh:</strong> {String(selectedStudent.healthProfileID || '').substring(0, 8) || 'N/A'}
                     </Text>
                   </Space>
@@ -925,45 +1107,88 @@ const StudentProfileList = () => {
             {/* Health metrics */}
             <Card
               title={
-                <Space>
-                  <BarChartOutlined style={{ color: '#1890ff' }} />
-                  <span>Chỉ số sức khỏe</span>
+                <Space size={12}>
+                  <BarChartOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+                  <span style={{ fontSize: '18px', fontWeight: 600 }}>Chỉ số sức khỏe</span>
                 </Space>
               }
-              style={{ marginBottom: 24, borderRadius: '12px' }}
+              style={{ 
+                marginBottom: 24, 
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                border: 'none'
+              }}
+              headStyle={{ 
+                borderBottom: '2px solid #f0f0f0',
+                padding: '16px 24px' 
+              }}
+              bodyStyle={{ padding: '24px' }}
             >
               <Row gutter={[24, 24]}>
                 <Col xs={24} md={8}>
-                  <Statistic
-                    title="Cân nặng"
-                    value={selectedStudent.weight}
-                    suffix="kg"
-                    prefix={<HeartOutlined style={{ color: '#1890ff' }} />}
-                  />
+                  <Card 
+                    style={{ 
+                      background: 'linear-gradient(135deg, #e6f7ff, #bae7ff)',
+                      borderRadius: '12px',
+                      border: 'none'
+                    }}
+                  >
+                    <Statistic
+                      title={<Text style={{ color: '#0050b3', fontWeight: 500 }}>Cân nặng</Text>}
+                      value={selectedStudent.weight}
+                      suffix="kg"
+                      prefix={<HeartOutlined style={{ color: '#1890ff' }} />}
+                      valueStyle={{ color: '#0050b3', fontWeight: 'bold' }}
+                    />
+                  </Card>
                 </Col>
                 <Col xs={24} md={8}>
-                  <Statistic
-                    title="Chiều cao"
-                    value={selectedStudent.height}
-                    suffix="cm"
-                    prefix={<HeartOutlined style={{ color: '#1890ff' }} />}
-                  />
+                  <Card
+                    style={{ 
+                      background: 'linear-gradient(135deg, #e6f7ff, #bae7ff)',
+                      borderRadius: '12px',
+                      border: 'none'
+                    }}
+                  >
+                    <Statistic
+                      title={<Text style={{ color: '#0050b3', fontWeight: 500 }}>Chiều cao</Text>}
+                      value={selectedStudent.height}
+                      suffix="cm"
+                      prefix={<HeartOutlined style={{ color: '#1890ff' }} />}
+                      valueStyle={{ color: '#0050b3', fontWeight: 'bold' }}
+                    />
+                  </Card>
                 </Col>
                 <Col xs={24} md={8}>
                   {(() => {
                     const bmi = selectedStudent.bmi || calculateBMI(selectedStudent.weight, selectedStudent.height);
                     const status = getBMIStatus(bmi);
                     return (
-                      <Statistic
-                        title="BMI"
-                        value={bmi}
-                        prefix={<HeartOutlined style={{ color: status.color }} />}
-                        suffix={
-                          <Tag color={status.color} style={{ marginLeft: 8 }}>
-                            {status.text}
-                          </Tag>
-                        }
-                      />
+                      <Card
+                        style={{ 
+                          background: `linear-gradient(135deg, ${status.color}1A, ${status.color}33)`,
+                          borderRadius: '12px',
+                          border: 'none'
+                        }}
+                      >
+                        <Statistic
+                          title={<Text style={{ color: status.color, fontWeight: 500 }}>BMI</Text>}
+                          value={bmi}
+                          prefix={<HeartOutlined style={{ color: status.color }} />}
+                          suffix={
+                            <Tag color={status.color} style={{ 
+                              marginLeft: 8, 
+                              fontWeight: 'bold',
+                              fontSize: '14px',
+                              padding: '0 8px',
+                              borderRadius: '10px'
+                            }}>
+                              {status.text}
+                            </Tag>
+                          }
+                          valueStyle={{ color: status.color, fontWeight: 'bold' }}
+                        />
+                      </Card>
                     );
                   })()}
                 </Col>
@@ -973,22 +1198,29 @@ const StudentProfileList = () => {
               <Divider />
               <div style={{ marginTop: 16 }}>
                 <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-                  <Text strong>Tình trạng dinh dưỡng</Text>
-                  <Text>{selectedStudent.nutritionStatus?.status}</Text>
+                  <Text strong style={{ fontSize: '16px' }}>Tình trạng dinh dưỡng</Text>
+                  <Text style={{ 
+                    fontSize: '16px', 
+                    fontWeight: 'bold', 
+                    color: selectedStudent.nutritionStatus?.color || '#1890ff' 
+                  }}>
+                    {selectedStudent.nutritionStatus?.status}
+                  </Text>
                 </div>
                 <Progress 
                   percent={selectedStudent.nutritionStatus?.level} 
                   strokeColor={{
-                    '0%': '#ffa39e',
+                    '0%': '#ff4d4f',
                     '25%': '#ffc53d',
                     '50%': '#73d13d',
                     '75%': '#ffc53d',
                     '100%': '#ff4d4f'
                   }}
                   showInfo={false}
-                  size="small"
+                  strokeWidth={10}
+                  style={{ height: 12 }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginTop: 8, fontWeight: 500 }}>
                   <span style={{ color: '#ff4d4f' }}>Suy dinh dưỡng</span>
                   <span style={{ color: '#52c41a' }}>Bình thường</span>
                   <span style={{ color: '#ff4d4f' }}>Béo phì</span>
@@ -999,55 +1231,138 @@ const StudentProfileList = () => {
             {/* Health details */}
             <Card
               title={
-                <Space>
-                  <MedicineBoxOutlined style={{ color: '#1890ff' }} />
-                  <span>Thông tin sức khỏe</span>
+                <Space size={12}>
+                  <MedicineBoxOutlined style={{ color: '#1890ff', fontSize: '20px' }} />
+                  <span style={{ fontSize: '18px', fontWeight: 600 }}>Thông tin sức khỏe</span>
                 </Space>
               }
-              style={{ borderRadius: '12px' }}
+              style={{ 
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                border: 'none'
+              }}
+              headStyle={{ 
+                borderBottom: '2px solid #f0f0f0',
+                padding: '16px 24px' 
+              }}
+              bodyStyle={{ padding: '24px' }}
             >
-              <Descriptions bordered column={{ xs: 1, sm: 2 }} layout="vertical">
+              <Descriptions 
+                bordered 
+                column={{ xs: 1, sm: 2 }} 
+                layout="vertical"
+                size="middle"
+                style={{ 
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  overflow: 'hidden'
+                }}
+                labelStyle={{ 
+                  fontWeight: 'bold', 
+                  backgroundColor: '#fafafa'
+                }}
+              >
                 <Descriptions.Item
-                  label={<Space><EyeOutlined /> Thị lực</Space>}
+                  label={<Space><EyeOutlined style={{ color: '#1890ff' }} /> Thị lực</Space>}
                 >
                   {selectedStudent.visionDetails || "Bình thường"}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><SoundOutlined /> Thính lực</Space>}
+                  label={<Space><SoundOutlined style={{ color: '#1890ff' }} /> Thính lực</Space>}
                 >
                   {selectedStudent.hearingDetails || "Bình thường"}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><AlertOutlined /> Dị ứng</Space>}
+                  label={<Space><AlertOutlined style={{ color: '#ff4d4f' }} /> Dị ứng</Space>}
                 >
-                  {selectedStudent.allergies || "Không có"}
+                  {selectedStudent.allergies ? (
+                    <Tag color="red" style={{ 
+                      padding: '4px 8px', 
+                      fontSize: '14px',
+                      borderRadius: '4px'
+                    }}>
+                      {selectedStudent.allergies}
+                    </Tag>
+                  ) : (
+                    <Text type="secondary">Không có</Text>
+                  )}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><MedicineBoxOutlined /> Bệnh mãn tính</Space>}
+                  label={<Space><MedicineBoxOutlined style={{ color: '#ff4d4f' }} /> Bệnh mãn tính</Space>}
                 >
-                  {selectedStudent.chronicDiseases || "Không có"}
+                  {selectedStudent.chronicDiseases ? (
+                    <Tag color="volcano" style={{ 
+                      padding: '4px 8px', 
+                      fontSize: '14px',
+                      borderRadius: '4px' 
+                    }}>
+                      {selectedStudent.chronicDiseases}
+                    </Tag>
+                  ) : (
+                    <Text type="secondary">Không có</Text>
+                  )}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><HistoryOutlined /> Tiền sử điều trị</Space>}
+                  label={<Space><HistoryOutlined style={{ color: '#1890ff' }} /> Tiền sử điều trị</Space>}
                   span={2}
                 >
                   {selectedStudent.treatmentHistory || "Không có"}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><CalendarOutlined /> Kiểm tra sức khỏe gần nhất</Space>}
+                  label={<Space><CalendarOutlined style={{ color: '#1890ff' }} /> Kiểm tra sức khỏe gần nhất</Space>}
                 >
-                  {selectedStudent.lastCheckupDate ? new Date(selectedStudent.lastCheckupDate).toLocaleDateString("vi-VN") : "Chưa có"}
+                  {selectedStudent.lastCheckupDate ? (
+                    <Tag color="blue" style={{ 
+                      padding: '2px 8px', 
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}>
+                      {new Date(selectedStudent.lastCheckupDate).toLocaleDateString("vi-VN")}
+                    </Tag>
+                  ) : "Chưa có"}
                 </Descriptions.Item>
                 <Descriptions.Item
-                  label={<Space><CalendarOutlined /> Cập nhật hồ sơ</Space>}
+                  label={<Space><CalendarOutlined style={{ color: '#1890ff' }} /> Cập nhật hồ sơ</Space>}
                 >
-                  {new Date(selectedStudent.lastUpdated).toLocaleString("vi-VN")}
+                  <Tag color="green" style={{ 
+                    padding: '2px 8px', 
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}>
+                    {new Date(selectedStudent.lastUpdated).toLocaleString("vi-VN")}
+                  </Tag>
                 </Descriptions.Item>
               </Descriptions>
-    </Card>
+            </Card>
           </div>
         )}
       </Drawer>
+
+      <style jsx="true">{`
+        .student-table-row:hover {
+          background-color: #e6f7ff !important;
+        }
+        
+        .even-row {
+          background-color: white;
+        }
+        
+        .odd-row {
+          background-color: #fafafa;
+        }
+        
+        .ant-table-thead > tr > th {
+          background: linear-gradient(to bottom, #f0f5ff, #e6f7ff);
+          color: #1890ff;
+          font-weight: bold;
+          border-bottom: 2px solid #91caff;
+          padding: 16px;
+        }
+        
+        .ant-drawer-content-wrapper {
+          box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
     </div>
   );
 };
