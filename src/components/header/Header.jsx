@@ -14,11 +14,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import SchoolIcon from '@mui/icons-material/School';
+import BadgeIcon from '@mui/icons-material/Badge';
+import InfoIcon from '@mui/icons-material/Info';
 import "./Header.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -36,7 +41,6 @@ const Header = () => {
   const user = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const [showNoProfileDialog, setShowNoProfileDialog] = useState(false);
-  const [hasHealthProfile, setHasHealthProfile] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [linkForm, setLinkForm] = useState({ studentID: "", studentName: "" });
   const [linkLoading, setLinkLoading] = useState(false);
@@ -388,6 +392,120 @@ const Header = () => {
         </Modal>
       </AppBar>
 
+      <Dialog 
+        open={showLinkDialog} 
+        onClose={() => setShowLinkDialog(false)}
+        PaperProps={{ 
+          style: { 
+            borderRadius: 12,
+            padding: 8,
+            width: '400px',
+            maxWidth: '95vw'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          display: 'flex',
+          alignItems: 'center', 
+          gap: 1.5, 
+          fontWeight: 600, 
+          color: '#1976d2',
+          borderBottom: '1px solid #e0e0e0',
+          paddingBottom: 2
+        }}>
+          <PersonAddIcon sx={{ color: '#1976d2' }} />
+          Liên kết học sinh với phụ huynh
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 3, pb: 1 }}>
+          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f5f9ff', borderRadius: 2, border: '1px solid #e3f2fd' }}>
+            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#0277bd' }}>
+              <InfoIcon fontSize="small" />
+              Liên kết học sinh với tài khoản phụ huynh giúp quản lý hồ sơ sức khỏe, tham gia sự kiện y tế và nhận thông báo liên quan đến học sinh.
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <TextField
+              label="Mã học sinh"
+              variant="outlined"
+              fullWidth
+              value={linkForm.studentID}
+              onChange={(e) => setLinkForm({ ...linkForm, studentID: e.target.value })}
+              placeholder="Nhập mã số học sinh"
+              required
+              InputProps={{
+                startAdornment: <SchoolIcon sx={{ mr: 1, color: '#757575' }} />
+              }}
+              helperText="Nhập mã số được cấp bởi nhà trường"
+            />
+            
+            <TextField
+              label="Họ tên học sinh"
+              variant="outlined"
+              fullWidth
+              value={linkForm.studentName}
+              onChange={(e) => setLinkForm({ ...linkForm, studentName: e.target.value })}
+              placeholder="Nhập họ và tên đầy đủ của học sinh"
+              required
+              InputProps={{
+                startAdornment: <BadgeIcon sx={{ mr: 1, color: '#757575' }} />
+              }}
+              helperText="Viết đúng họ tên như trong hồ sơ học sinh"
+            />
+          </Box>
+        </DialogContent>
+        
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid #e0e0e0', justifyContent: 'space-between' }}>
+          <Button 
+            onClick={() => setShowLinkDialog(false)} 
+            variant="outlined"
+            color="inherit"
+            sx={{ 
+              borderRadius: 2,
+              px: 3
+            }}
+          >
+            Hủy bỏ
+          </Button>
+          
+          <Button
+            variant="contained"
+            disabled={linkLoading || !linkForm.studentID || !linkForm.studentName.trim()}
+            onClick={async () => {
+              if (!parentId) return;
+              setLinkLoading(true);
+              try {
+                await api.post("/Student/link-parent", {
+                  parentID: parentId,
+                  studentID: parseInt(linkForm.studentID),
+                  studentName: linkForm.studentName.trim(),
+                });
+                toast.success("Liên kết học sinh thành công!");
+                setShowLinkDialog(false);
+                setLinkForm({ studentID: "", studentName: "" }); // Reset form after success
+              } catch (err) {
+                console.error(err);
+                const msg =
+                  err.response?.data ||
+                  "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
+                toast.error(msg);
+              } finally {
+                setLinkLoading(false);
+              }
+            }}
+            startIcon={<PersonAddIcon />}
+            sx={{ 
+              borderRadius: 2,
+              px: 3,
+              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.25)'
+            }}
+          >
+            {linkLoading ? "Đang liên kết..." : "Liên kết học sinh"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog
         open={showNoProfileDialog}
         onClose={() => setShowNoProfileDialog(false)}
@@ -409,63 +527,6 @@ const Header = () => {
             variant="contained"
           >
             Tạo hồ sơ
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={showLinkDialog} onClose={() => setShowLinkDialog(false)}>
-        <DialogTitle>Liên kết học sinh với phụ huynh</DialogTitle>
-        <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
-        >
-          <InputBase
-            placeholder="Mã học sinh"
-            value={linkForm.studentID}
-            onChange={(e) =>
-              setLinkForm({ ...linkForm, studentID: e.target.value })
-            }
-            sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
-          />
-          <InputBase
-            placeholder="Họ tên học sinh"
-            value={linkForm.studentName}
-            onChange={(e) =>
-              setLinkForm({ ...linkForm, studentName: e.target.value })
-            }
-            sx={{ border: "1px solid #ccc", borderRadius: 1, px: 1, py: 0.5 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowLinkDialog(false)} color="secondary">
-            Hủy
-          </Button>
-          <Button
-            variant="contained"
-            disabled={linkLoading}
-            onClick={async () => {
-              if (!parentId) return;
-              setLinkLoading(true);
-              try {
-                await api.post("/Student/link-parent", {
-                  parentID: parentId,
-                  studentID: parseInt(linkForm.studentID),
-                  studentName: linkForm.studentName.trim(),
-                });
-                toast.success("Liên kết học sinh thành công!");
-                setShowLinkDialog(false);
-              } catch (err) {
-                console.error(err);
-                const msg =
-                  err.response?.data ||
-                  "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
-                toast.error(msg);
-              } finally {
-                setLinkLoading(false);
-              }
-            }}
-            color="primary"
-          >
-            {linkLoading ? "Đang liên kết..." : "Liên kết"}
           </Button>
         </DialogActions>
       </Dialog>

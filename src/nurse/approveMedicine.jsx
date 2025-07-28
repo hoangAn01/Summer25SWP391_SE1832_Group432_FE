@@ -79,7 +79,7 @@ const ApproveMedicine = () => {
         ) {
           AntdModal.info({
             title: "Chưa tới ngày cho học sinh uống thuốc",
-            content: `Chỉ được duyệt/gửi thuốc vào đúng ngày ${formatDateWithDay(record.scheduledDate)} mà phụ huynh đã chọn!`,
+            content: `Chỉ được cho sử dụng thuốc/vật tư vào đúng ngày ${formatDateWithDay(record.scheduledDate)} mà phụ huynh đã chọn!`,
             centered: true,
           });
           return;
@@ -371,7 +371,7 @@ const ApproveMedicine = () => {
         open={detailModal.open}
         onCancel={() => setDetailModal({ open: false, record: null })}
         footer={null}
-        title="Duyệt đơn thuốc gửi phụ huynh"
+        title="Đơn thuốc gửi phụ huynh"
         width={700}
         className="approve-medicine-modal"
       >
@@ -394,19 +394,7 @@ const ApproveMedicine = () => {
               <Descriptions.Item label="Thời gian cho uống thuốc">
                 {formatDateWithDay(detailModal.record.scheduledDate)}
               </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag
-                  color={
-                    detailModal.record.requestStatus === "Đã duyệt"
-                      ? "green"
-                      : detailModal.record.requestStatus === "Không duyệt"
-                      ? "red"
-                      : "orange"
-                  }
-                >
-                  {statusVN(detailModal.record.requestStatus)}
-                </Tag>
-              </Descriptions.Item>
+              
             </Descriptions>
 
             <div style={{ marginTop: 24 }}>
@@ -440,6 +428,43 @@ const ApproveMedicine = () => {
                     dataIndex: "time",
                     key: "time",
                     render: timeToVN,
+                  },
+                  {
+                    title: "Ảnh thuốc",
+                    dataIndex: "medicineRequestImg",
+                    key: "medicineRequestImg",
+                    render: (img) => {
+                      return img ? (
+                        <div style={{ position: "relative" }}>
+                          <img 
+                            src={img} 
+                            alt="Ảnh thuốc" 
+                            style={{ 
+                              maxWidth: 80, 
+                              maxHeight: 80,
+                              cursor: "pointer", 
+                              borderRadius: "4px",
+                              border: "1px solid #eee"
+                            }}
+                            onClick={() => {
+                              Modal.info({
+                                title: "Ảnh thuốc",
+                                content: (
+                                  <img 
+                                    src={img} 
+                                    alt="Ảnh thuốc" 
+                                    style={{ maxWidth: "100%", maxHeight: "400px", objectFit: "contain" }}
+                                  />
+                                ),
+                                width: 520,
+                              });
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <span style={{ color: "#999" }}>Không có ảnh</span>
+                      );
+                    }
                   },
                 ]}
                 dataSource={

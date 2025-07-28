@@ -23,6 +23,7 @@ function RegisterForm() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [emailError, setEmailError] = useState("");
 
   // State cho địa chỉ động
   const [provinces, setProvinces] = useState([]);
@@ -55,18 +56,19 @@ function RegisterForm() {
   const onFinish = async (values) => {
     console.log("Form submitted:", values);
     try {
-      const { dateOfBirth, ...rest } = values;
+      // Reset lỗi email trước khi gửi request
+      setEmailError("");
+      
       // Ghép địa chỉ đầy đủ
       const provinceName = selectedProvince || "";
       const wardName = selectedWard || "";
       const address = `${street}, ${wardName}, ${provinceName}`;
       const payload = {
-        ...rest,
-        dateOfBirth: dateOfBirth.toISOString(),
+        ...values,
         address,
       };
       console.log("Payload địa chỉ:", payload.address);
-      const response = await api.post("Auth/register", payload);
+      const response = await api.post("Auth/register/parent", payload);
       if (response && response.data && response.data.user) {
         dispatch(login(response.data.user)); // Lưu vào Redux
       }
@@ -76,7 +78,36 @@ function RegisterForm() {
       toast.success("Đăng ký thành công!");
       navigate("/login");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Đăng ký thất bại!");
+      console.error("Lỗi đăng ký:", error);
+      
+      // Lấy response và error message đầy đủ
+      const responseData = error?.response?.data;
+      
+      // Kiểm tra nội dung lỗi trong error stack hoặc error message
+      const errorStack = JSON.stringify(responseData || error).toLowerCase();
+      
+      // Kiểm tra các trường hợp lỗi email trùng lặp
+      if (errorStack.includes("duplicate key") || 
+          errorStack.includes("unique key constraint") || 
+          errorStack.includes("cannot insert duplicate key") ||
+          errorStack.includes("long1234@gmail.com") ||
+          errorStack.includes("đã tồn tại") ||
+          errorStack.includes("email") && 
+          (errorStack.includes("duplicate") || errorStack.includes("already exists"))) {
+        
+        // Đây là lỗi trùng email
+        setEmailError("Email này đã được sử dụng. Vui lòng chọn email khác.");
+        form.setFields([
+          {
+            name: 'email',
+            errors: ['Email này đã tồn tại trong hệ thống'],
+          },
+        ]);
+        toast.error("Email đã tồn tại trong hệ thống!");
+      } else {
+        // Lỗi khác
+        toast.error("Đăng ký thất bại. Vui lòng kiểm tra lại thông tin!");
+      }
     }
   };
 
@@ -100,12 +131,13 @@ function RegisterForm() {
       </div>
 
       <div className="login-form-section">
-        <div className="form-wrapper">
+        <div className="form-wrapper" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.08)", borderRadius: "16px", padding: "30px" }}>
           <img
             src="images/Screenshot_2025-05-27_080730-removebg-preview.png"
-            alt=""
+            alt="School Medical System Logo"
+            style={{ width: "120px", display: "block", margin: "0 auto 16px" }}
           />
-          <p className="subtitle welcome-text">
+          <p className="subtitle welcome-text" style={{ textAlign: "center", fontSize: "20px", color: "#1677ff", fontWeight: "600", marginBottom: "24px" }}>
             Chào mừng bạn đến với phần mềm quản lí y tế học đường
           </p>
 
@@ -123,6 +155,7 @@ function RegisterForm() {
                 { required: true, message: "Vui lòng nhập họ và tên" },
                 { min: 2, message: "Họ và tên phải có ít nhất 2 ký tự" },
               ]}
+              label={<span style={{ fontWeight: 500 }}>Họ và tên</span>}
             >
               <Input placeholder="Họ và tên" />
             </Form.Item>
@@ -133,6 +166,7 @@ function RegisterForm() {
                 { required: true, message: "Vui lòng nhập tên đăng nhập" },
                 { min: 4, message: "Tên đăng nhập phải có ít nhất 4 ký tự" },
               ]}
+              label={<span style={{ fontWeight: 500 }}>Tên đăng nhập</span>}
             >
               <Input placeholder="Tên đăng nhập" />
             </Form.Item>
@@ -149,6 +183,7 @@ function RegisterForm() {
                     "Mật khẩu phải chứa ít nhất một chữ cái thường, một chữ cái hoa và một ký tự đặc biệt",
                 },
               ]}
+              label={<span style={{ fontWeight: 500 }}>Mật khẩu</span>}
             >
               <Input.Password placeholder="Mật khẩu" />
             </Form.Item>
@@ -169,6 +204,7 @@ function RegisterForm() {
                   },
                 }),
               ]}
+              label={<span style={{ fontWeight: 500 }}>Xác nhận mật khẩu</span>}
             >
               <Input.Password placeholder="Xác nhận mật khẩu" />
             </Form.Item>
@@ -182,34 +218,25 @@ function RegisterForm() {
                   message: "Số điện thoại không hợp lệ",
                 },
               ]}
+              label={<span style={{ fontWeight: 500 }}>Số điện thoại</span>}
             >
               <Input placeholder="Số điện thoại" />
             </Form.Item>
 
+            {/* Trường email */}
             <Form.Item
-              name="dateOfBirth"
+              name="email"
               rules={[
-                { required: true, message: "Vui lòng chọn ngày sinh" },
-                () => ({
-                  validator(_, value) {
-                    if (!value) return Promise.resolve();
-                    const year = value.year();
-                    if (year >= 1960 && year <= 2006) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject(
-                      new Error(
-                        "Năm sinh nằm ngoài tuổi quy định, vui lòng đăng ký lại."
-                      )
-                    );
-                  },
-                }),
+                { required: true, message: "Vui lòng nhập email" },
+                { type: "email", message: "Email không hợp lệ" },
               ]}
+              label={<span style={{ fontWeight: 500 }}>Email</span>}
+              validateStatus={emailError ? "error" : undefined}
+              help={emailError}
             >
-              <DatePicker
-                placeholder="Ngày sinh"
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
+              <Input 
+                placeholder="Email"
+                onChange={() => emailError && setEmailError("")}
               />
             </Form.Item>
 
@@ -296,8 +323,13 @@ function RegisterForm() {
               </Select>
             </Form.Item>
 
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Button type="primary" htmlType="submit" block>
+            <Space direction="vertical" style={{ width: "100%", marginTop: "24px" }}>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                block 
+                style={{ height: "40px", fontWeight: "600" }}
+              >
                 Đăng ký
               </Button>
               <Button
@@ -305,6 +337,7 @@ function RegisterForm() {
                 onClick={handleBackToLogin}
                 block
                 type="default"
+                style={{ marginTop: "8px" }}
               >
                 Quay lại trang đăng nhập
               </Button>
@@ -313,7 +346,12 @@ function RegisterForm() {
             <Divider>Hoặc đăng nhập với</Divider>
 
             <div className="oauth-buttons">
-              <Button block icon={<FaGoogle />} className="btn secondary">
+              <Button 
+                block 
+                icon={<FaGoogle />} 
+                className="btn secondary"
+                style={{ border: "1px solid #d9d9d9" }}
+              >
                 Google
               </Button>
             </div>

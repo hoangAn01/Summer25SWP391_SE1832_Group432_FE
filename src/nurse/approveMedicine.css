@@ -1,44 +1,44 @@
 /* Wrapper */
 .approve-medicine-wrapper {
-  padding: 32px 12px;
-  background: linear-gradient(135deg, #e3f0ff 0%, #f8fbff 100%);
-  min-height: 100vh;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  margin: 24px;
 }
 
 .approve-medicine-title {
-  margin-bottom: 16px;
-  color: #1976d2;
-  font-weight: 800;
-  font-size: 2rem;
-  letter-spacing: 1px;
   text-align: center;
+  color: #1677ff;
+  margin-bottom: 24px;
+  font-size: 24px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 16px;
 }
 
 /* Legend for date status */
 .date-legend {
   display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  gap: 16px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 24px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
 .legend-item.today {
-  background: #e3f7ff;
-  color: #1677ff;
+  background-color: #fff7e6;
+  border: 1px solid #ffd591;
 }
 
 .legend-item.future {
-  background: #f0fff4;
-  color: #389e0d;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
 }
 
 .legend-icon {
@@ -63,11 +63,13 @@
   background: #f0f7ff !important;
 }
 
-.approve-medicine-table .row-today {
-  background: #e3f7ff !important;
-  border-left: 6px solid #1677ff !important;
-  font-weight: 600;
-  color: #1677ff;
+/* Row styling */
+.row-today {
+  background-color: #fff7e6 !important;
+}
+
+.row-future {
+  background-color: #f6ffed !important;
 }
 
 .approve-medicine-table .row-today td:first-child::before {
@@ -78,13 +80,6 @@
 }
 
 /* Styling for future medicine requests */
-.approve-medicine-table .row-future {
-  background: #f0fff4 !important;
-  border-left: 6px solid #52c41a !important;
-  font-weight: 500;
-  color: #389e0d;
-}
-
 .approve-medicine-table .row-future td:first-child::before {
   content: '\1F4C5';
   margin-right: 8px;
@@ -140,6 +135,40 @@
 .approve-medicine-modal .ant-table {
   border-radius: 10px;
   margin-bottom: 16px;
+}
+
+/* Enhance descriptions styling */
+.ant-descriptions-bordered .ant-descriptions-item-label {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+/* Custom mask for image preview */
+.custom-mask {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Image preview enhancements */
+.ant-image {
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+
+.ant-image:hover {
+  transform: scale(1.05);
+}
+
+/* Modal styling */
+.approve-medicine-modal .ant-table-small .ant-table-cell {
+  padding: 8px 12px;
 }
 
 @media (max-width: 900px) {

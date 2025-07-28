@@ -14,11 +14,13 @@ import {
   Tag,
   Modal,
   Table,
+  Upload,
 } from "antd";
-import { PhoneOutlined, ArrowLeftOutlined, UserOutlined, MedicineBoxOutlined, InfoCircleOutlined, FileTextOutlined, PlusCircleOutlined, DeleteOutlined, HistoryOutlined, CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { PhoneOutlined, ArrowLeftOutlined, UserOutlined, MedicineBoxOutlined, InfoCircleOutlined, FileTextOutlined, PlusCircleOutlined, DeleteOutlined, HistoryOutlined, CalendarOutlined, CheckCircleOutlined, UploadOutlined, PlusOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import "./MedicationForm.css";
 import api from "../../../../config/axios";
+import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
@@ -39,6 +41,9 @@ const MedicationForm = () => {
   const [historyStudentID, setHistoryStudentID] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [selectedHistoryRequest, setSelectedHistoryRequest] = useState(null);
+  const [medicineImages, setMedicineImages] = useState({}); // Store medicine images for each page
+  const [uploadLoading, setUploadLoading] = useState({});
+  const [isAnyUploading, setIsAnyUploading] = useState(false);
 
   const fetchStudents = async () => {
     try {
@@ -86,8 +91,21 @@ const MedicationForm = () => {
       let allHistory = res.data.$values || res.data || [];
       // Lọc theo studentID
       const filtered = allHistory.filter(item => item.studentID === studentID);
-      setHistoryData(filtered);
-    } catch {
+      
+      // Process history data to ensure medicineDetails are properly structured
+      const processedHistory = filtered.map(item => {
+        // Extract medicineDetails to correct format
+        const medicineDetails = item.medicineDetails?.$values || item.medicineDetails || [];
+        return {
+          ...item,
+          medicineDetails: Array.isArray(medicineDetails) ? medicineDetails : []
+        };
+      });
+      
+      console.log("Processed history data:", processedHistory);
+      setHistoryData(processedHistory);
+    } catch (error) {
+      console.error("Error fetching history:", error);
       setHistoryData([]);
     }
   };
@@ -141,6 +159,7 @@ const MedicationForm = () => {
             Time: (form.getFieldValue(["medicines", idx, "time"]) || []).join(
               ", "
             ),
+            medicineRequestImg: medicineImages[idx] || "", // Changed field name to match backend expectation
           };
         }),
       };
@@ -154,6 +173,7 @@ const MedicationForm = () => {
       form.resetFields();
       setMedicinePages(["1"]);
       setCurrentPage(1);
+      setMedicineImages({});
     } catch (error) {
       console.error("Lỗi gửi đơn thuốc:", error);
       message.error(
@@ -164,6 +184,72 @@ const MedicationForm = () => {
       setLoading(false);
     }
   };
+
+  // Handle image upload to Cloudinary
+  const handleImageUpload = async (file, pageIdx) => {
+    // Update both specific page loading state and the general uploading state
+    setUploadLoading(prev => ({...prev, [pageIdx]: true}));
+    setIsAnyUploading(true);
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "upload_NguyenLong");
+
+    try {
+      // Thêm log để debug
+      console.log("Bắt đầu tải ảnh lên Cloudinary cho trang", pageIdx);
+      
+      const res = await axios.post(
+        "https://api.cloudinary.com/v1_1/dueel4qtb/image/upload",
+        formData
+      );
+      
+      console.log("Kết quả tải ảnh lên:", res.data);
+      
+      // Store the image URL for this page
+      const updatedImages = {
+        ...medicineImages, 
+        [pageIdx]: res.data.secure_url
+      };
+      
+      setMedicineImages(updatedImages);
+      console.log("Đã lưu URL ảnh:", updatedImages);
+      
+      message.success("Tải ảnh lên thành công");
+      return res.data.secure_url;
+    } catch (error) {
+      console.error("Lỗi khi tải ảnh lên:", error);
+      message.error("Tải ảnh lên thất bại. Vui lòng thử lại!");
+      return null;
+    } finally {
+      // Update upload loading status for this specific page
+      const newUploadLoading = {...uploadLoading, [pageIdx]: false};
+      setUploadLoading(newUploadLoading);
+      
+      // Check if any uploads are still in progress
+      const stillUploading = Object.values(newUploadLoading).some(val => val === true);
+      setIsAnyUploading(stillUploading);
+    }
+  };
+
+  // Props for Upload component
+  const uploadProps = (pageIdx) => ({
+    name: 'file',
+    listType: 'picture',
+    maxCount: 1,
+    showUploadList: false, // Ẩn danh sách file đã upload
+    beforeUpload: (file) => {
+      const isImage = file.type.startsWith('image/');
+      if (!isImage) {
+        message.error(`${file.name} không phải là file ảnh`);
+        return Upload.LIST_IGNORE;
+      }
+      
+      // Handle manual upload to Cloudinary
+      handleImageUpload(file, pageIdx);
+      return false; // Prevent auto upload
+    },
+  });
 
   const handleGoBack = () => {
     navigate("/home");
@@ -193,7 +279,9 @@ const MedicationForm = () => {
         maxWidth: "1400px",
         margin: "0 auto",
         padding: "20px",
-        backgroundColor: "white",
+        backgroundColor: "#f8f9ff",
+        borderRadius: "12px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.08)"
       }}
     >
       <Button
@@ -204,7 +292,7 @@ const MedicationForm = () => {
           position: "absolute",
           top: "20px",
           left: "20px",
-          color: "#1677ff",
+          color: "#4a6bff",
         }}
       >
         Quay lại
@@ -220,16 +308,19 @@ const MedicationForm = () => {
           style={{
             textAlign: "center",
             marginBottom: "30px",
-            color: "#1677ff",
-            borderBottom: "2px solid #1677ff",
+            color: "#4a6bff",
+            borderBottom: "2px solid #4a6bff",
             paddingBottom: "10px",
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 8
+            gap: 8,
+            background: "linear-gradient(to right, #f8f9ff, #e6eaff, #f8f9ff)",
+            padding: "15px 0",
+            borderRadius: "8px 8px 0 0"
           }}
         >
-          <FileTextOutlined style={{fontSize: 28, color: '#1677ff'}} />
+          <FileTextOutlined style={{fontSize: 28, color: '#4a6bff'}} />
           {user
             ? `Phụ huynh ${user.fullName} tạo đơn gửi thuốc uống`
             : "ĐƠN GỬI THUỐC UỐNG"}
@@ -240,13 +331,15 @@ const MedicationForm = () => {
             <div
               className="student-info"
               style={{
-                backgroundColor: "#f9f9f9",
+                backgroundColor: "#e6f7ff",
                 padding: "20px",
-                borderRadius: "8px",
+                borderRadius: "12px",
                 height: "100%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                border: "1px solid #bae7ff"
               }}
             >
-              <h3 className="section-title"><UserOutlined style={{color:'#1677ff', marginRight:8}}/> Thông tin học sinh</h3>
+              <h3 className="section-title" style={{ color: "#096dd9", borderBottom: "1px solid #bae7ff", paddingBottom: "10px" }}><UserOutlined style={{color:'#096dd9', marginRight:8}}/> Thông tin học sinh</h3>
 
               <Form.Item
                 name="studentID"
@@ -325,10 +418,12 @@ const MedicationForm = () => {
             <div
               className="medicine-info"
               style={{
-                backgroundColor: "#f9f9f9",
+                backgroundColor: "#f6ffed",
                 padding: "20px",
-                borderRadius: "8px",
+                borderRadius: "12px",
                 height: "100%",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                border: "1px solid #b7eb8f"
               }}
             >
               <div
@@ -339,9 +434,11 @@ const MedicationForm = () => {
                   alignItems: "center",
                   marginBottom: "20px",
                   gap: 16,
+                  borderBottom: "1px solid #b7eb8f",
+                  paddingBottom: "10px"
                 }}
               >
-                <h3 className="section-title"><MedicineBoxOutlined style={{color:'#1677ff', marginRight:8}}/> Thông tin thuốc hoặc vật dụng</h3>
+                <h3 className="section-title" style={{ color: "#52c41a" }}><MedicineBoxOutlined style={{color:'#52c41a', marginRight:8}}/> Thông tin thuốc hoặc vật dụng</h3>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Button
                     size="small"
@@ -434,6 +531,7 @@ const MedicationForm = () => {
                             itemName[idx] = { medicineName: value };
                             form.setFieldsValue({ itemName });
                           }}
+                          dropdownStyle={{ background: "#f0f5ff", border: "1px solid #adc6ff" }}
                         >
                           {medicineList.map((item) => (
                             <Select.Option
@@ -442,10 +540,12 @@ const MedicationForm = () => {
                               data={item}
                               label={item.requestItemName}
                             >
-                              {item.requestItemName}{" "}
-                              <span style={{ color: "#888", fontSize: 12 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ fontWeight: "bold", color: "#1d39c4" }}>{item.requestItemName}</span>
+                                <span style={{ color: "#5c6bbf", fontSize: 12, fontStyle: "italic" }}>
                                 {item.description}
                               </span>
+                              </div>
                             </Select.Option>
                           ))}
                         </Select>
@@ -513,7 +613,7 @@ const MedicationForm = () => {
                             form.getFieldValue(["medicines", idx, "time"]) || []
                           ).includes("morning")}
                         >
-                          Sáng
+                          <Tag color="orange">Sáng</Tag>
                         </Option>
                         <Option
                           value="noon"
@@ -521,9 +621,46 @@ const MedicationForm = () => {
                             form.getFieldValue(["medicines", idx, "time"]) || []
                           ).includes("noon")}
                         >
-                          Trưa
+                          <Tag color="blue">Trưa</Tag>
                         </Option>
                       </Select>
+                    </Form.Item>
+
+                    {/* Thêm trường tải ảnh */}
+                    <Form.Item
+                      label={<span><UploadOutlined /> Ảnh thuốc/vật dụng (nếu có)</span>}
+                    >
+                      <Upload
+                        {...uploadProps(idx)}
+                        loading={uploadLoading[idx]}
+                      >
+                        <Button icon={<UploadOutlined />} loading={uploadLoading[idx]} style={{ background: "#f9f0ff", borderColor: "#d3adf7", color: "#722ed1" }}>
+                          Chọn ảnh
+                        </Button>
+                      </Upload>
+                      {medicineImages[idx] && (
+                        <div style={{marginTop: 8, position: 'relative'}}>
+                          <img 
+                            src={medicineImages[idx]} 
+                            alt="Ảnh thuốc" 
+                            style={{maxWidth: '100%', maxHeight: '200px', objectFit: 'contain'}} 
+                          />
+                          <Button 
+                            icon={<DeleteOutlined />} 
+                            type="primary" 
+                            danger
+                            style={{position: 'absolute', top: 8, right: 8}}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Xóa ảnh khỏi state
+                              const updatedImages = {...medicineImages};
+                              delete updatedImages[idx];
+                              setMedicineImages(updatedImages);
+                              message.success("Đã xóa ảnh");
+                            }}
+                          />
+                        </div>
+                      )}
                     </Form.Item>
                   </div>
                 );
@@ -538,6 +675,9 @@ const MedicationForm = () => {
             display: "flex",
             justifyContent: "center",
             marginTop: "30px",
+            background: "linear-gradient(to right, #f8f9ff, #e6eaff, #f8f9ff)",
+            padding: "15px",
+            borderRadius: "0 0 8px 8px"
           }}
         >
           <Space size="large">
@@ -550,6 +690,7 @@ const MedicationForm = () => {
                 setCurrentPage(1);
               }}
               icon={<DeleteOutlined />}
+              style={{ background: "#fff1f0", borderColor: "#ffa39e", color: "#f5222d" }}
             >
               Nhập lại
             </Button>
@@ -558,9 +699,11 @@ const MedicationForm = () => {
               htmlType="submit"
               size="large"
               loading={loading}
+              disabled={isAnyUploading}
               icon={<CheckCircleOutlined />}
+              style={{ background: isAnyUploading ? "#d9d9d9" : "#52c41a", borderColor: isAnyUploading ? "#bfbfbf" : "#3f8600" }}
             >
-              Xác nhận
+              {isAnyUploading ? "Đang tải ảnh lên..." : "Xác nhận"}
             </Button>
           </Space>
         </div>
@@ -568,7 +711,13 @@ const MedicationForm = () => {
 
       <Button
         type="default"
-        style={{ marginBottom: 16 }}
+        style={{ 
+          marginBottom: 16, 
+          marginTop: 16, 
+          background: "#fff2e8", 
+          borderColor: "#ffbb96", 
+          color: "#fa541c" 
+        }}
         onClick={() => {
           setHistoryVisible(true);
           setHistoryStudentID(null);
@@ -581,9 +730,10 @@ const MedicationForm = () => {
       <Modal
         open={historyVisible}
         onCancel={() => setHistoryVisible(false)}
-        title={<span><HistoryOutlined /> Lịch sử gửi thuốc</span>}
+        title={<span style={{ color: "#fa541c" }}><HistoryOutlined /> Lịch sử gửi thuốc</span>}
         footer={null}
         width={900}
+        bodyStyle={{ background: "#fff8f0" }}
       >
         <div style={{ marginBottom: 16 }}>
           <Select
@@ -621,7 +771,13 @@ const MedicationForm = () => {
                         type={selectedHistoryRequest?.requestID === item.requestID ? 'primary' : 'default'}
                         block
                         onClick={() => setSelectedHistoryRequest(item)}
-                        style={{ textAlign: 'left', whiteSpace: 'normal' }}
+                        style={{ 
+                          textAlign: 'left', 
+                          whiteSpace: 'normal',
+                          ...(selectedHistoryRequest?.requestID === item.requestID 
+                            ? { background: "#fa8c16", borderColor: "#d46b08" }
+                            : { background: "#fff7e6", borderColor: "#ffd591", color: "#d46b08" })
+                        }}
                       >
                         {dateStr}
                       </Button>
@@ -634,23 +790,118 @@ const MedicationForm = () => {
             <div style={{ flex: 1, paddingLeft: 16 }}>
               <h4><MedicineBoxOutlined /> Chi tiết đơn gửi thuốc</h4>
               {selectedHistoryRequest ? (
-                <Table
-                  dataSource={
-                    Array.isArray(selectedHistoryRequest.medicineDetails)
-                      ? selectedHistoryRequest.medicineDetails
-                      : Array.isArray(selectedHistoryRequest.medicineDetails?.$values)
-                      ? selectedHistoryRequest.medicineDetails.$values
-                      : []
-                  }
-                  pagination={false}
-                  rowKey="requestDetailID"
-                  columns={[
-                    { title: "Tên thuốc/Vật tư ", dataIndex: "requestItemName", key: "requestItemName" },
-                    { title: "Số lượng", dataIndex: "quantity", key: "quantity" },
-                    { title: "Liều dùng/Cách sử dụng ", dataIndex: "dosageInstructions", key: "dosageInstructions" },
-                    { title: "Thời điểm", dataIndex: "time", key: "time", render: timeToVN },
-                  ]}
-                />
+                <>
+                  <Table
+                    dataSource={
+                      Array.isArray(selectedHistoryRequest.medicineDetails)
+                        ? selectedHistoryRequest.medicineDetails
+                        : Array.isArray(selectedHistoryRequest.medicineDetails?.$values)
+                        ? selectedHistoryRequest.medicineDetails.$values
+                        : []
+                    }
+                    pagination={false}
+                    rowKey="requestDetailID"
+                    columns={[
+                      { 
+                        title: "Tên thuốc/Vật tư", 
+                        dataIndex: "requestItemName", 
+                        key: "requestItemName",
+                        render: (text) => <span style={{ fontWeight: "500", color: "#096dd9" }}>{text}</span>
+                      },
+                      { 
+                        title: "Số lượng", 
+                        dataIndex: "quantity", 
+                        key: "quantity",
+                        render: (text) => <Tag color="geekblue">{text}</Tag>
+                      },
+                      { 
+                        title: "Liều dùng/Cách sử dụng", 
+                        dataIndex: "dosageInstructions", 
+                        key: "dosageInstructions",
+                        render: (text) => <span style={{ color: "#08979c" }}>{text}</span>
+                      },
+                      { 
+                        title: "Thời điểm", 
+                        dataIndex: "time", 
+                        key: "time", 
+                        render: (text) => {
+                          const timeVN = timeToVN(text);
+                          return (
+                            <span>
+                              {timeVN.split(", ").map((time, i) => (
+                                <Tag 
+                                  key={i} 
+                                  color={time === "Sáng" ? "orange" : time === "Trưa" ? "blue" : "purple"}
+                                  style={{ margin: "2px" }}
+                                >
+                                  {time}
+                                </Tag>
+                              ))}
+                            </span>
+                          );
+                        }
+                      },
+                      { 
+                        title: "Ảnh thuốc", 
+                        dataIndex: "medicineRequestImg", 
+                        key: "medicineRequestImg", 
+                        render: (medicineRequestImg) => {
+                          // Check multiple possible field names for image URL
+                          const image = medicineRequestImg || null;
+                          return image ? (
+                            <div style={{ position: "relative" }}>
+                              <img 
+                                src={image} 
+                                alt="Ảnh thuốc" 
+                                style={{ 
+                                  maxWidth: 80, 
+                                  maxHeight: 80,
+                                  cursor: "pointer", 
+                                  borderRadius: "4px",
+                                  border: "1px solid #ffccc7"
+                                }}
+                                onClick={() => {
+                                  Modal.info({
+                                    title: "Ảnh thuốc",
+                                    content: (
+                                      <img 
+                                        src={image} 
+                                        alt="Ảnh thuốc" 
+                                        style={{ maxWidth: "100%", maxHeight: "400px", objectFit: "contain" }}
+                                      />
+                                    ),
+                                    width: 520,
+                                  });
+                                }}
+                              />
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: 0,
+                                  right: 0,
+                                  background: "rgba(0,0,0,0.45)",
+                                  color: "#fff",
+                                  padding: "2px 6px",
+                                  fontSize: "12px",
+                                  borderRadius: "0 0 4px 0",
+                                }}
+                              >
+                                <PlusOutlined />
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ color: "#999" }}>Không có ảnh</span>
+                          );
+                        }
+                      },
+                    ]}
+                  />
+
+                  {/* Log the history data to debug */}
+                  <div style={{ display: "none" }}>
+                    {console.log("Selected history details:", JSON.stringify(selectedHistoryRequest, null, 2))}
+                  </div>
+                </>
               ) : (
                 <div>Chọn ngày gửi để xem chi tiết đơn thuốc</div>
               )}
