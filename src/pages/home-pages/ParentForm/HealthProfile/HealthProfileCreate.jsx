@@ -91,8 +91,8 @@ function HealthProfileCreatePage() {
         treatmentHistory: values.treatmentHistory,
         visionDetails: values.visionTest ? `${values.visionTest}/10` : "",
         hearingDetails: values.hearingDetails ? `${values.hearingDetails}/10` : "",
-        weight: values.weight,
-        height: values.height,
+        weight: values.weight?.toString() || "",
+        height: values.height?.toString() || "",
         lastUpdated: new Date().toISOString(),
       };
 
@@ -239,20 +239,25 @@ function HealthProfileCreatePage() {
                 rules={[
                   { required: true, message: "Vui lòng nhập thị lực" },
                   {
-                    type: "number",
-                    min: 1,
-                    max: 10,
-                    message: "Chỉ nhập số từ 1 đến 10",
-                  },
+                    validator: (_, value) => {
+                      // Kiểm tra xem giá trị có chỉ chứa số không
+                      if (!/^\d+(\.\d+)?$/.test(value)) {
+                        return Promise.reject("Thị lực phải chỉ chứa số");
+                      }
+                      
+                      const vision = parseFloat(value);
+                      if (vision < 1 || vision > 10) {
+                        return Promise.reject("Thị lực phải từ 1 đến 10");
+                      }
+                      return Promise.resolve();
+                    }
+                  }
                 ]}
               >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  style={{ width: "100%" }}
-                  addonAfter="/10"
+                <Input
                   placeholder="Nhập thị lực"
                   className="health-profile-input"
+                  suffix="/10"
                 />
               </Form.Item>
 
@@ -262,20 +267,25 @@ function HealthProfileCreatePage() {
                 rules={[
                   { required: true, message: "Vui lòng nhập thính lực" },
                   {
-                    type: "number",
-                    min: 1,
-                    max: 10,
-                    message: "Chỉ nhập số từ 1 đến 10",
-                  },
+                    validator: (_, value) => {
+                      // Kiểm tra xem giá trị có chỉ chứa số không
+                      if (!/^\d+(\.\d+)?$/.test(value)) {
+                        return Promise.reject("Thính lực phải chỉ chứa số");
+                      }
+                      
+                      const hearing = parseFloat(value);
+                      if (hearing < 1 || hearing > 10) {
+                        return Promise.reject("Thính lực phải từ 1 đến 10");
+                      }
+                      return Promise.resolve();
+                    }
+                  }
                 ]}
               >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  style={{ width: "100%" }}
-                  addonAfter="/10"
+                <Input
                   placeholder="Nhập thính lực"
                   className="health-profile-input"
+                  suffix="/10"
                 />
               </Form.Item>
 
@@ -303,9 +313,27 @@ function HealthProfileCreatePage() {
                     required: true,
                     message: "Vui lòng nhập thông tin chiều cao",
                   },
+                  {
+                    validator: (_, value) => {
+                      // Kiểm tra xem giá trị có chỉ chứa số không
+                      if (!/^\d+(\.\d+)?$/.test(value)) {
+                        return Promise.reject("Chiều cao phải chỉ chứa số");
+                      }
+                      
+                      const height = parseFloat(value);
+                      if (height < 80 || height > 160) {
+                        return Promise.reject("Chiều cao phải từ 80cm đến 160cm");
+                      }
+                      return Promise.resolve();
+                    }
+                  }
                 ]}
               >
-                <Input placeholder="Nhập thông tin chiều cao (cm)" className="health-profile-input" />
+                <Input
+                  placeholder="Nhập thông tin chiều cao (cm)" 
+                  className="health-profile-input"
+                  suffix="cm"
+                />
               </Form.Item>
 
               <Form.Item
@@ -316,9 +344,27 @@ function HealthProfileCreatePage() {
                     required: true,
                     message: "Vui lòng nhập thông tin cân nặng",
                   },
+                  {
+                    validator: (_, value) => {
+                      // Kiểm tra xem giá trị có chỉ chứa số không
+                      if (!/^\d+(\.\d+)?$/.test(value)) {
+                        return Promise.reject("Cân nặng phải chỉ chứa số");
+                      }
+                      
+                      const weight = parseFloat(value);
+                      if (weight < 15 || weight > 70) {
+                        return Promise.reject("Cân nặng phải từ 15kg đến 70kg");
+                      }
+                      return Promise.resolve();
+                    }
+                  }
                 ]}
               >
-                <Input placeholder="Nhập thông tin cân nặng (kg)" className="health-profile-input" />
+                <Input
+                  placeholder="Nhập thông tin cân nặng (kg)"
+                  className="health-profile-input"
+                  suffix="kg"
+                />
               </Form.Item>
 
               <Form.Item
