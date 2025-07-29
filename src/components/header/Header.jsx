@@ -486,19 +486,56 @@ const Header = () => {
               setLinkLoading(true);
               try {
                 await api.post("/Student/link-parent", {
-                  parentID: parentId,
                   studentID: parseInt(linkForm.studentID),
                   studentName: linkForm.studentName.trim(),
+                  parentID: parentId
                 });
-                toast.success("Liên kết học sinh thành công!");
+                toast.success("✅ Liên kết học sinh thành công!", {
+                  position: "top-right",
+                  autoClose: 3000
+                });
                 setShowLinkDialog(false);
                 setLinkForm({ studentID: "", studentName: "" }); // Reset form after success
               } catch (err) {
                 console.error(err);
-                const msg =
-                  err.response?.data ||
-                  "Không tìm thấy học sinh hoặc học sinh đã được liên kết";
-                toast.error(msg);
+                let errorTitle = "❌ Không thể liên kết học sinh";
+                let errorMsg = "Mã học sinh hoặc tên học sinh không đúng hoặc đã được liên kết trước đó";
+                let suggestion = "Vui lòng kiểm tra lại thông tin và thử lại.";
+                
+                // Xử lý lỗi 404 Not Found - trong trường hợp này là học sinh không tồn tại
+                if (err.response?.status === 404) {
+                  errorMsg = "Không tìm thấy thông tin học sinh phù hợp với yêu cầu của bạn ";
+                  suggestion = "Vui lòng kiểm tra lại mã học sinh và tên học sinh đã chính xác chưa.";
+                } 
+                // Xử lý các lỗi khác (400 Bad Request)
+                else if (err.response?.status === 400) {
+                  if (err.response?.data?.includes("already linked")) {
+              
+                    errorMsg = err.response.data || errorMsg;
+                  }
+                }
+                // Hiển thị nội dung lỗi trong console để debug
+                console.log("API Error:", {
+                  status: err.response?.status,
+                  data: err.response?.data,
+                });
+                
+                // Hiển thị thông báo lỗi chi tiết hơn
+                toast.error(
+                  <div>
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{errorTitle}</div>
+                    <div>{errorMsg}</div>
+                    <div style={{ fontSize: '0.9em', marginTop: '8px', opacity: 0.9 }}>{suggestion}</div>
+                  </div>, 
+                  {
+                    position: "top-right",
+                    autoClose: 5000,
+                    closeButton: true,
+                    draggable: false,
+                    closeOnClick: false,
+                    pauseOnHover: true
+                  }
+                );
               } finally {
                 setLinkLoading(false);
               }
