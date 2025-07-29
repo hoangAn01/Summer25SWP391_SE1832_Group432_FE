@@ -147,6 +147,8 @@ const Header = () => {
           left: 0,
           right: 0,
           zIndex: (theme) => theme.zIndex.drawer + 1,
+          paddingTop: "10px",
+          paddingBottom: "10px"
         }}
       >
         <Box
@@ -182,74 +184,84 @@ const Header = () => {
                 minHeight: "80px",
                 alignItems: "center",
                 pl: 0,
+                justifyContent: "space-between",
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  backgroundColor: "#f5fafd",
-                  borderRadius: "24px",
-                  padding: "4px 16px",
-                  width: "100%",
-                  maxWidth: "400px",
-                  marginLeft: 0,
-                  marginRight: 1,
-                  boxShadow: "0 1px 6px 0 rgba(33,150,243,0.08)",
-                  "&:hover": {
-                    backgroundColor: "#e3f2fd",
-                  },
-                }}
-              >
-                <SearchIcon sx={{ color: "#2196f3", mr: 1 }} />
-                <InputBase
-                  placeholder="Tìm kiếm thông tin y tế, tin tức..."
+              <Box sx={{ display: "flex", alignItems: "center", flexDirection: "row", flexWrap: "nowrap" }}>
+                <Box
                   sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    backgroundColor: "#f5fafd",
+                    borderRadius: "24px",
+                    padding: "4px 16px",
                     width: "100%",
-                    color: "#2196f3",
-                    fontWeight: 500,
-                    "& input": {
-                      padding: "8px 0",
-                      color: "#2196f3",
-                      "::placeholder": {
-                        color: "#bdbdbd",
-                        opacity: 1,
-                      },
+                    maxWidth: "400px",
+                    marginLeft: 0,
+                    marginRight: 1,
+                    boxShadow: "0 1px 6px 0 rgba(33,150,243,0.08)",
+                    "&:hover": {
+                      backgroundColor: "#e3f2fd",
                     },
                   }}
-                />
-              </Box>
-
-              <Box sx={{ flexGrow: 1, display: "flex" }}>
-                {menuItems.map(
-                  (item) =>
-                    item.id !== "health-profile" && (
-                      <Button
-                        key={item.text}
-                        onClick={() => handleMenuClick(item.id)}
-                        sx={{
-                          color: item.id === "contact" ? "#ffd600" : "white",
-                          fontWeight: 500,
-                          textShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                          "&:hover": {
-                            color: "#ffd600",
-                          },
-                        }}
-                      >
-                        {item.text}
-                      </Button>
-                    )
-                )}
+                >
+                  <SearchIcon sx={{ color: "#2196f3", mr: 1 }} />
+                  <InputBase
+                    placeholder="Tìm kiếm "
+                    sx={{
+                      width: "100%",
+                      color: "#2196f3",
+                      fontWeight: 500,
+                      "& input": {
+                        padding: "8px 0",
+                        color: "#2196f3",
+                        "::placeholder": {
+                          color: "#bdbdbd",
+                          opacity: 1,
+                        },
+                      },
+                    }}
+                  />
+                </Box>
+                
+                <Box sx={{ 
+                  display: "flex", 
+                  marginLeft: 2, 
+                  flexDirection: "row", 
+                  flexWrap: "nowrap"
+                }}>
+                  {menuItems.map(
+                    (item) =>
+                      item.id !== "health-profile" && (
+                        <Button
+                          key={item.text}
+                          onClick={() => handleMenuClick(item.id)}
+                          sx={{
+                            color: item.id === "contact" ? "#ffd600" : "white",
+                            fontWeight: 500,
+                            textShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                            "&:hover": {
+                              color: "#ffd600",
+                            },
+                            whiteSpace: "nowrap",
+                            padding: "0 12px",
+                          }}
+                        >
+                          {item.text}
+                        </Button>
+                      )
+                  )}
+                </Box>
               </Box>
 
               {user ? (
-                <>
-                  <Typography sx={{ ml: 1, color: "white", fontWeight: 500 }}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography sx={{ mr: 2, color: "white", fontWeight: 500 }}>
                     {user.fullName}
                   </Typography>
                   <IconButton
                     onClick={handleUserMenu}
-                    sx={{ ml: 1, p: 0.5, "&:hover": { color: "#ffd600" } }}
+                    sx={{ p: 0.5, "&:hover": { color: "#ffd600" } }}
                   >
                     <AccountCircleIcon sx={{ fontSize: 44 }} />
                   </IconButton>
@@ -291,9 +303,6 @@ const Header = () => {
                     >
                       Gửi thuốc
                     </MenuItem>
-  
-               
-                   
                     <MenuItem
                       onClick={() => {
                         handleUserClose();
@@ -327,7 +336,7 @@ const Header = () => {
                       Đăng xuất
                     </MenuItem>
                   </Menu>
-                </>
+                </Box>
               ) : (
                 <Box sx={{ display: "flex", gap: 2, ml: 2 }}>
                   <Button

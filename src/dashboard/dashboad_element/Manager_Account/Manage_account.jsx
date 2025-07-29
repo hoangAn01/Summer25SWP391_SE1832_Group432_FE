@@ -212,12 +212,15 @@ function Manage_account() {
   };
 
   const getRoleColor = (role) => {
-    switch (role) {
-      case "Admin":
+    if (!role) return "default";
+    
+    const roleLower = role.toLowerCase();
+    switch (roleLower) {
+      case "admin":
         return "gold";
-      case "Nurse":
+      case "nurse":
         return "blue";
-      case "Parent":
+      case "parent":
         return "green";
       default:
         return "default";
@@ -225,12 +228,15 @@ function Manage_account() {
   };
   
   const getVietnameseRole = (role) => {
-    switch (role) {
-      case "Admin":
+    if (!role) return "Không xác định";
+    
+    const roleLower = role.toLowerCase();
+    switch (roleLower) {
+      case "admin":
         return "Quản trị viên";
-      case "Nurse":
+      case "nurse":
         return "Y tá";
-      case "Parent":
+      case "parent":
         return "Phụ huynh";
       default:
         return role;
