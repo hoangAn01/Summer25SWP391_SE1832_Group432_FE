@@ -17,11 +17,18 @@ import {
   Card,
   Row,
   Col,
+  Radio,
 } from "antd";
 import api from "../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+// import jsPDF from "jspdf";
+// import autoTable from "jspdf-autotable";
+import JSZip from "jszip";
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+pdfMake.vfs = pdfFonts.vfs;
 
 const { Title } = Typography;
 
@@ -43,6 +50,7 @@ const CheckUp = () => {
   const [loading, setLoading] = useState(false); // Trạng thái loading
   const [error, setError] = useState(""); // Thông báo lỗi
   const user = useSelector((state) => state.user); // ID của y tá
+  const [reportFilter, setReportFilter] = useState("ALL"); // Bộ lọc báo cáo khám
 
   // State cho modal
   const [isModalOpen, setIsModalOpen] = useState(false); // Trạng thái hiển thị modal
@@ -120,6 +128,14 @@ const CheckUp = () => {
     else setStudents([]);
   }, [selectedEvent]);
 
+  // Lọc học sinh theo báo cáo khám sức khỏe
+  const filteredStudents = students.filter(student => {
+    if (reportFilter === "ALL") return true;
+    if (reportFilter === "REPORTED") return !!hasReport[student.studentID];
+    if (reportFilter === "NOT_REPORTED") return !hasReport[student.studentID];
+    return true;
+  });
+
   // Xử lý đánh dấu học sinh vắng mặt
   const handleStudentResponse = async (studentId, status) => {
     setLoading(true);
@@ -193,6 +209,123 @@ const CheckUp = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Hàm xuất PDF cho từng học sinh đã có báo cáo (dùng pdfmake)
+  const exportPDFs = async () => {
+    if (!selectedEvent) {
+      message.warning("Vui lòng chọn sự kiện trước khi xuất PDF");
+      return;
+    }
+    const reportedStudents = students.filter(s => hasReport[s.studentID]);
+    if (reportedStudents.length === 0) {
+      message.warning("Không có học sinh nào đã có báo cáo để xuất PDF");
+      return;
+    }
+    message.loading({ content: "Đang tạo file PDF...", key: "exportPDF" });
+    for (const student of reportedStudents) {
+      try {
+        // Lấy thông tin học sinh từ API /Student/{id}
+        let studentInfo = {};
+        try {
+          const studentRes = await api.get(`/Student/${student.studentID}`);
+          studentInfo = studentRes.data;
+        } catch {
+          studentInfo = {
+            fullName: student.studentName || "",
+            className: student.className || "",
+            parentFullName: student.parentName || ""
+          };
+        }
+        const res = await api.get(
+          `CheckupRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+        );
+        const report = res.data;
+        const bmi = report.height && report.weight ? ((Number(report.weight) / Math.pow(Number(report.height)/100,2)).toFixed(2)) : "";
+        const infoTable = [
+          [
+            { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
+            { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
+            { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
+            { text: student.studentID || "", margin: [0, 2, 0, 2] }
+          ],
+          [
+            { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
+            { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
+            { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
+            { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] }
+          ],
+          [
+            { text: "Ngày khám:", bold: true, margin: [0, 2, 0, 2] },
+            { text: report.checkupDate ? report.checkupDate.split("T")[0] : "", margin: [0, 2, 0, 2] },
+            { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
+            { text: report.nurseName || "", margin: [0, 2, 0, 2] }
+          ]
+        ];
+        const healthTable = [
+          [ { text: "Chỉ số", style: "tableHeader" }, { text: "Giá trị", style: "tableHeader" } ],
+          [ "Chiều cao (cm)", report.height || "" ],
+          [ "Cân nặng (kg)", report.weight || "" ],
+          [ "BMI", bmi ],
+          [ "Huyết áp", report.bloodPressure || "" ],
+          [ "Thị lực trái", report.visionLeft || "" ],
+          [ "Thị lực phải", report.visionRight || "" ],
+          [ "Thính lực trái", report.hearingLeft || "" ],
+          [ "Thính lực phải", report.hearingRight || "" ],
+          [ "Phát hiện khác", report.otherFindings || "Không có" ],
+          [ "Cần tư vấn thêm", report.consultationRequired ? "Có" : "Không" ]
+        ];
+        const docDefinition = {
+          content: [
+            { text: "BÁO CÁO KHÁM SỨC KHỎE HỌC SINH", style: "mainTitle" },
+            {
+              table: {
+                widths: ["auto", "*", "auto", "*"],
+                body: infoTable
+              },
+              layout: "noBorders",
+              margin: [0, 0, 0, 16]
+            },
+            {
+              table: {
+                widths: ["40%", "60%"],
+                body: healthTable
+              },
+              layout: {
+                fillColor: (rowIndex) => rowIndex === 0 ? '#e3f2fd' : null,
+                hLineWidth: () => 0.7,
+                vLineWidth: () => 0.7,
+                hLineColor: () => '#90caf9',
+                vLineColor: () => '#90caf9',
+              },
+              margin: [0, 0, 0, 24]
+            },
+            {
+              columns: [
+                { width: '*', text: '' },
+                {
+                  width: 'auto',
+                  stack: [
+                    { text: "Chữ ký nhân viên y tế", alignment: "center", italics: true, margin: [0, 0, 0, 40] },
+                    { text: "__________________________", alignment: "center" }
+                  ]
+                }
+              ]
+            },
+            { text: "\nLưu ý: Kết quả khám sức khỏe chỉ có giá trị tham khảo.", italics: true, color: '#757575', fontSize: 11, alignment: 'center', margin: [0, 24, 0, 0] }
+          ],
+          styles: {
+            mainTitle: { fontSize: 26, bold: true, alignment: "center", color: "#1565c0", margin: [0, 0, 0, 18], decoration: "underline", font: "Roboto", characterSpacing: 1 },
+            tableHeader: { bold: true, fillColor: "#e3f2fd", color: "#1976d2", alignment: "center" }
+          },
+          defaultStyle: { font: "Roboto", fontSize: 12 }
+        };
+        pdfMake.createPdf(docDefinition).download(`${studentInfo.fullName || student.studentName || student.studentID}.pdf`);
+      } catch (err) {
+        console.error(`Lỗi khi tạo PDF cho học sinh ${student.studentName}:`, err);
+      }
+    }
+    message.success({ content: "Đã xuất PDF cho tất cả học sinh có báo cáo!", key: "exportPDF" });
   };
 
   // Cấu hình các cột trong bảng
@@ -317,6 +450,23 @@ const CheckUp = () => {
           </Card>
         </Col>
 
+        {/* Bộ lọc báo cáo khám sức khỏe */}
+        {selectedEvent && (
+          <Col span={24}>
+            <Card size="small" title="Lọc theo báo cáo khám sức khỏe">
+              <Radio.Group 
+                value={reportFilter} 
+                onChange={(e) => setReportFilter(e.target.value)}
+                buttonStyle="solid"
+              >
+                <Radio.Button value="ALL">Tất cả học sinh</Radio.Button>
+                <Radio.Button value="REPORTED">Đã có báo cáo</Radio.Button>
+                <Radio.Button value="NOT_REPORTED">Chưa có báo cáo</Radio.Button>
+              </Radio.Group>
+            </Card>
+          </Col>
+        )}
+
         {/* Hiển thị thông tin sự kiện */}
         {selectedEvent && (
           <Col span={24}>
@@ -352,7 +502,7 @@ const CheckUp = () => {
             {selectedEvent && (
               <Table
                 columns={columns}
-                dataSource={students}
+                dataSource={filteredStudents}
                 rowKey="studentID"
                 pagination={{
                   pageSize: 10,
@@ -602,6 +752,13 @@ const CheckUp = () => {
           </Form.Item>
         </Form>
       </Modal>
+      {selectedEvent && (
+        <Col span={24}>
+          <Button type="primary" onClick={exportPDFs} style={{ marginBottom: 16 }}>
+            Xuất PDF cho học sinh đã có báo cáo
+          </Button>
+        </Col>
+      )}
     </Card>
   );
 };

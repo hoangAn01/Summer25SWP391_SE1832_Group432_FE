@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "antd/dist/reset.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import { persistor, store } from "./redux/store";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
+import api from "./config/axios";
 
 import HomePage from "./pages/home-pages/HomePage";
 
@@ -49,6 +50,28 @@ import StudentHealthProfile from "./pages/home-pages/ParentForm/HealthProfile/St
 import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileCreate";
 
 function App() {
+  // Hàm kiểm tra token khi khởi động ứng dụng
+  const verifyTokenOnStartup = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        // Sử dụng endpoint hiện có để kiểm tra token
+        // Có thể thay đổi thành endpoint phù hợp với backend của bạn
+        await api.get("Auth/current-user");
+      }
+    } catch (error) {
+      console.log("Token không hợp lệ hoặc đã hết hạn:", error);
+      // Xóa tất cả thông tin đăng nhập cũ
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("password");
+    }
+  };
+
+  useEffect(() => {
+    verifyTokenOnStartup();
+  }, []);
+
   const router = createBrowserRouter([
     {
       path: "/",

@@ -15,10 +15,14 @@ const reLogin = async () => {
       throw new Error("Không tìm thấy thông tin đăng nhập");
     }
 
-    const response = await axios.post("https://localhost:7178/api/Account/login", {
+    const response = await axios.post("https://localhost:7178/api/Auth/login", {
       username,
       password
     });
+
+    if (!response.data.token) {
+      throw new Error("Không nhận được token mới");
+    }
 
     const { token } = response.data;
     localStorage.setItem("token", token);
@@ -59,7 +63,6 @@ api.interceptors.response.use(
     // Kiểm tra nếu là lỗi token hết hạn và chưa thử refresh
     if (
       error.response?.status === 401 && 
-      error.response?.data?.error === "invalid_token" && 
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
@@ -75,6 +78,8 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         message.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        // Chuyển về trang đăng nhập
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }

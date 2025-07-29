@@ -50,6 +50,7 @@ function Event() {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL"); // Thêm bộ lọc trạng thái
   const [studentFilter, setStudentFilter] = useState("ALL"); // Thêm bộ lọc học sinh
+  const [searchQuery, setSearchQuery] = useState(""); // Thêm state cho thanh tìm kiếm
   const [openedId, setOpenedId] = useState(null);
   const [readIds, setReadIds] = useState(() => {
     const saved = localStorage.getItem("readNotificationIds");
@@ -183,7 +184,7 @@ function Event() {
               const newNotification = {
                 ...notification,
                 notificationID: index === 0 ? notification.notificationID : `${notification.notificationID}_${index}`,
-                title: `[${studentEvent.studentName || ''}] ${notification.title.replace(/^\[[^\]]*\]\s*/, '')}`,
+                title: `Thông báo xác nhận học sinh ${studentEvent.studentName || ''}  ${notification.title.replace(/^\[[^\]]*\]\s*/, '')} `,
                 _originalNotificationID: notification.notificationID,
                 studentInfo: {
                   studentID: studentEvent.studentID,
@@ -311,9 +312,32 @@ function Event() {
         item.studentInfo.studentID.toString() === studentFilter.toString()
       );
     }
+    
+    // Bước 4: Lọc theo từ khóa tìm kiếm
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(item => {
+        const title = (item.title || "").toLowerCase();
+        const content = (item.content || item.description || "").toLowerCase();
+        const type = (item.notificationType || "").toLowerCase();
+        const studentName = (item.studentInfo?.studentName || "").toLowerCase();
+        
+        return title.includes(query) || 
+               content.includes(query) || 
+               type.includes(query) ||
+               studentName.includes(query);
+      });
+    }
+
+    // Bước 5: Sắp xếp theo thời gian gần nhất (mới nhất lên đầu)
+    filtered = filtered.sort((a, b) => {
+      const dateA = a.sentDate ? new Date(a.sentDate) : new Date(0);
+      const dateB = b.sentDate ? new Date(b.sentDate) : new Date(0);
+      return dateB - dateA; // Sắp xếp giảm dần (mới nhất lên đầu)
+    });
 
     return filtered;
-  }, [data, typeFilter, statusFilter, studentFilter]);
+  }, [data, typeFilter, statusFilter, studentFilter, searchQuery]);
 
   const handleOpen = async (item) => {
     setOpenedId(item.notificationID);
@@ -559,6 +583,20 @@ function Event() {
         <Divider style={{ margin: '12px 0 24px 0' }} />
         {/* Bộ lọc loại thông báo */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Thêm thanh tìm kiếm */}
+          <div style={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+            <span style={{ fontWeight: 500, marginBottom: 4, color: '#1677ff', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <FilterOutlined /> Tìm kiếm thông báo
+            </span>
+            <Input.Search
+              placeholder="Nhập từ khóa tìm kiếm..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ borderRadius: 12, background: '#f0f5ff' }}
+              allowClear
+            />
+          </div>
+
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontWeight: 500, marginBottom: 4, color: '#1677ff', display: 'flex', alignItems: 'center', gap: 4 }}>
               <FilterOutlined /> Loại thông báo
@@ -698,7 +736,7 @@ function Event() {
                 {openedId === item.notificationID && (
                   <div style={{ margin: '0 28px 18px 28px', background: '#f8faff', borderRadius: 12, boxShadow: '0 2px 8px #e6f7ff55', padding: 24, border: '1px solid #e6f7ff' }}>
                     <div style={{ fontWeight: 500, marginBottom: 8 }}>
-                      <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title.replace(/^\[[^\]]*\]\s*/, '')}
+                      <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title.includes('tham gia sự kiện') ? item.title.split('tham gia sự kiện ')[1].split(' đã có')[0] : item.title.replace(/^\[[^\]]*\]\s*/, '')}
                     </div>
                     <div style={{ fontWeight: 500, marginBottom: 8 }}>
                       <span style={{ color: '#1677ff' }}>Ngày tổ chức:</span> {item.sentDate ? new Date(item.sentDate).toLocaleDateString('vi-VN') : ''}
@@ -716,6 +754,24 @@ function Event() {
                       <span style={{ color: '#1677ff' }}>Trạng thái:</span> {studentInfo.status || status}
                     </div>
                     */}
+                    {/* Hiển thị chi tiết thuốc nếu có */}
+                    {isMedicineApproved && medicineDetail && (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                          <span style={{ color: '#1677ff' }}>Thuốc:</span> {medicineDetail.medicineName}
+                        </div>
+                        {nurseName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Y tá phê duyệt:</span> {nurseName}
+                          </div>
+                        )}
+                        {studentClass && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Lớp:</span> {studentClass}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc đã approved */}
                     {!isMedicineApproved && isEvent && (
                       <Button

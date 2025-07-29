@@ -74,6 +74,8 @@ const LoginForm = () => {
       // Lưu toàn bộ thông tin user vào Redux
       dispatch(login(user));
       localStorage.setItem("token", response.data.token); //lấy cái token
+      localStorage.setItem("username", values.username); // Lưu username để dùng cho refresh token
+      localStorage.setItem("password", values.password); // Lưu password để dùng cho refresh token
       if (response.data.user.role === "Admin") {
         navigate("/dashboard");
         toast.success("Đăng nhập thành công!");

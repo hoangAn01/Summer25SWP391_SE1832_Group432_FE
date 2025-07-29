@@ -48,9 +48,20 @@ const Header = () => {
 
   useEffect(() => {
     if (user) {
-      // Logic for when user is logged in
-    } else {
-      // Logic for when user is not logged in
+      // Kiểm tra token định kỳ mỗi 15 phút
+      const tokenCheckInterval = setInterval(async () => {
+        try {
+          await api.get("Auth/current-user");
+        } catch (error) {
+          console.log("Token hết hạn trong quá trình sử dụng:", error);
+          // Nếu token không hợp lệ, đăng xuất người dùng
+          handleLogout();
+        }
+      }, 15 * 60 * 1000); // 15 phút
+
+      return () => {
+        clearInterval(tokenCheckInterval);
+      };
     }
   }, [user]);
 
