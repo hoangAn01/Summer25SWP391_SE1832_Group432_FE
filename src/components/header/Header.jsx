@@ -518,6 +518,7 @@ const Header = () => {
                 console.log("API Error:", {
                   status: err.response?.status,
                   data: err.response?.data,
+                  url: err.config?.url
                 });
                 
                 // Hiển thị thông báo lỗi chi tiết hơn

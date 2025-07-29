@@ -17,6 +17,7 @@ import {
   UserOutlined,
   HistoryOutlined,
   HeartOutlined,
+  InfoCircleOutlined as InfoIcon,
 } from "@ant-design/icons";
 import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
@@ -582,24 +583,77 @@ const HealthProfileEdit = () => {
             )}
           </Form>
         ) : (
-          <div
+          <Card
             style={{
               width: "100%",
               marginTop: "40px",
-              display: "flex",
-              justifyContent: "center",
+              borderRadius: "12px",
+              boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+              overflow: "hidden",
+              background: "linear-gradient(to right, #f0f7ff, #e6f7ff)",
+              border: "1px solid #e6f0fa"
             }}
+            bodyStyle={{ padding: 0 }}
           >
-            <p>
-              Học sinh <b>{selectedStudent?.fullName}</b> chưa có hồ sơ sức khỏe.{" "}
-              <span
-                onClick={() => navigate("/create-health-profile")}
-                style={{ color: "blue", fontWeight: "bold", cursor: "pointer" }}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 20px" }}>
+              <div 
+                style={{ 
+                  width: "100px", 
+                  height: "100px", 
+                  backgroundColor: "#e6f7ff", 
+                  borderRadius: "50%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  boxShadow: "0 2px 10px rgba(24, 144, 255, 0.2)",
+                  marginBottom: "20px"
+                }}
               >
-                Tạo hồ sơ sức khỏe
-              </span>
-            </p>
-          </div>
+                <HeartOutlined style={{ fontSize: "48px", color: "#1890ff" }} />
+              </div>
+              
+              <Typography.Title level={4} style={{ marginBottom: "16px", textAlign: "center" }}>
+                Chưa có hồ sơ sức khỏe
+              </Typography.Title>
+              
+              <Typography.Paragraph style={{ fontSize: "16px", textAlign: "center", maxWidth: "600px", marginBottom: "24px", color: "#595959" }}>
+                Học sinh <b>{selectedStudent?.fullName}</b> hiện chưa có hồ sơ sức khỏe. 
+                Việc tạo hồ sơ sức khỏe sẽ giúp nhà trường theo dõi và chăm sóc sức khỏe học sinh tốt hơn.
+              </Typography.Paragraph>
+              
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/create-health-profile")}
+                style={{ 
+                  height: "48px", 
+                  borderRadius: "24px", 
+                  fontSize: "16px", 
+                  fontWeight: "500",
+                  padding: "0 32px",
+                  boxShadow: "0 2px 8px rgba(24, 144, 255, 0.35)"
+                }}
+              >
+                Tạo hồ sơ sức khỏe mới
+              </Button>
+              
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                marginTop: "32px", 
+                padding: "12px 16px",
+                background: "#f0f7ff",
+                borderRadius: "8px",
+                border: "1px dashed #1890ff"
+              }}>
+                <InfoIcon style={{ fontSize: "20px", color: "#1890ff", marginRight: "8px" }} />
+                <Typography.Text style={{ color: "#1890ff" }}>
+                  Hồ sơ sức khỏe chứa thông tin quan trọng về thị lực, thính lực, dị ứng và tiền sử bệnh.
+                </Typography.Text>
+              </div>
+            </div>
+          </Card>
         )}
       </Card>
     </div>

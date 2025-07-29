@@ -27,6 +27,7 @@ import {
   CheckCircleTwoTone,
   CloseCircleTwoTone,
   ExclamationCircleTwoTone,
+  UserOutlined,
 } from "@ant-design/icons";
 import api from "../../../config/axios";
 import { useSelector } from "react-redux";
@@ -47,6 +48,8 @@ function Event() {
   const [submitting, setSubmitting] = useState(false);
   const parent = useSelector((state) => state.parent.parent);
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL"); // Thêm bộ lọc trạng thái
+  const [studentFilter, setStudentFilter] = useState("ALL"); // Thêm bộ lọc học sinh
   const [openedId, setOpenedId] = useState(null);
   const [readIds, setReadIds] = useState(() => {
     const saved = localStorage.getItem("readNotificationIds");
@@ -229,31 +232,88 @@ function Event() {
   useEffect(() => {
     if (parent?.accountID) {
       console.log("User ID:", parent.accountID);
-      fetchDataNotificationOfParent(parent.accountID);
+      
+      // Lấy thông tin phụ huynh trước
       (async () => {
         try {
-          // eslint-disable-next-line no-unused-vars
           const parentResponse = await api.get(
             `Parent/ByAccount/${parent.accountID}`
           );
-          const res = await api.get(`Student/by-parent/${parent.accountID}`);
-          const list = res.data.$values || res.data;
-          setStudentsOfParent(list);
-          if (list.length > 0) setSelectedStudentId(list[0].studentID);
+          if (parentResponse.data && parentResponse.data.parentID) {
+            // Lấy danh sách học sinh theo parentID
+            try {
+              const res = await api.get(`Student/by-parent/${parentResponse.data.parentID}`);
+              const list = res.data.$values || res.data;
+              console.log("Danh sách học sinh:", list);
+              setStudentsOfParent(Array.isArray(list) ? list : []);
+              if (list && list.length > 0) setSelectedStudentId(list[0].studentID);
+            } catch (err) {
+              console.error("Lỗi khi lấy danh sách học sinh:", err);
+              setStudentsOfParent([]);
+            }
+            
+            // Lấy thông báo
+            fetchDataNotificationOfParent(parent.accountID);
+          }
         } catch (err) {
-          console.error(err);
+          console.error("Lỗi khi lấy thông tin phụ huynh:", err);
         }
       })();
     }
   }, []);
 
   const filteredData = useMemo(() => {
-    if (typeFilter === "ALL") return data;
-    if (typeFilter === "OTHER") {
-      return data.filter(item => item.notificationType !== "ConsentRequest" && item.notificationType !== "MedicineRequest");
+    // Bước 1: Lọc theo loại thông báo
+    let filtered = data;
+    if (typeFilter !== "ALL") {
+      if (typeFilter === "OTHER") {
+        filtered = data.filter(item => item.notificationType !== "ConsentRequest" && item.notificationType !== "MedicineRequest");
+      } else {
+        filtered = data.filter(item => item.notificationType === typeFilter);
+      }
     }
-    return data.filter(item => item.notificationType === typeFilter);
-  }, [data, typeFilter]);
+
+    // Bước 2: Lọc theo trạng thái
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter(item => {
+        // Nếu có studentInfo với trạng thái cụ thể
+        if (item.studentInfo && item.studentInfo.status) {
+          const status = item.studentInfo.status.toLowerCase();
+          if (statusFilter === "Accepted" && (status === "đã đồng ý" || status.includes("accept"))) {
+            return true;
+          } else if (statusFilter === "Rejected" && (status === "đã từ chối" || status.includes("reject"))) {
+            return true;
+          } else if (statusFilter === "Pending" && (status === "chờ phản hồi" || status.includes("pend"))) {
+            return true;
+          }
+          return false;
+        } 
+        // Sử dụng trạng thái tổng quát của thông báo nếu không có studentInfo
+        else if (item.status) {
+          const status = item.status.toLowerCase();
+          if (statusFilter === "Accepted" && (status === "đã đồng ý" || status.includes("accept"))) {
+            return true;
+          } else if (statusFilter === "Rejected" && (status === "đã từ chối" || status.includes("reject"))) {
+            return true;
+          } else if (statusFilter === "Pending" && (status === "chờ phản hồi" || status.includes("pend"))) {
+            return true;
+          }
+          return false;
+        }
+        return false;
+      });
+    }
+
+    // Bước 3: Lọc theo học sinh
+    if (studentFilter !== "ALL") {
+      filtered = filtered.filter(item => 
+        item.studentInfo && item.studentInfo.studentID && 
+        item.studentInfo.studentID.toString() === studentFilter.toString()
+      );
+    }
+
+    return filtered;
+  }, [data, typeFilter, statusFilter, studentFilter]);
 
   const handleOpen = async (item) => {
     setOpenedId(item.notificationID);
@@ -498,21 +558,66 @@ function Event() {
         </div>
         <Divider style={{ margin: '12px 0 24px 0' }} />
         {/* Bộ lọc loại thông báo */}
-        <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: 'center' }}>
+        <div style={{ display: "flex", gap: 16, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontWeight: 500, marginBottom: 4, color: '#1677ff', display: 'flex', alignItems: 'center', gap: 4 }}>
               <FilterOutlined /> Loại thông báo
             </span>
             <Select
               value={typeFilter}
-              onChange={setTypeFilter}
-              style={{ width: 260, borderRadius: 12, background: '#f0f5ff' }}
+              onChange={(value) => {
+                setTypeFilter(value);
+                // Reset bộ lọc trạng thái khi đổi loại thông báo
+                setStatusFilter("ALL");
+              }}
+              style={{ width: 200, borderRadius: 12, background: '#f0f5ff' }}
               placeholder="Chọn loại thông báo"
               options={[
                 { value: "ALL", label: <span><InfoCircleOutlined /> Tất cả</span> },
                 { value: "ConsentRequest", label: <span style={{ color: '#52c41a' }}>📅 Xác nhận sự kiện</span> },
                 { value: "MedicineRequest", label: <span style={{ color: '#1677ff' }}>💊 Gửi thuốc</span> },
                 { value: "OTHER", label: <span style={{ color: '#b37feb' }}>🔔 Khác</span> },
+              ]}
+            />
+          </div>
+
+          {/* Bộ lọc trạng thái - chỉ hiển thị khi loại thông báo là xác nhận sự kiện */}
+          {typeFilter === "ConsentRequest" && (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontWeight: 500, marginBottom: 4, color: '#1677ff', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircleOutlined /> Trạng thái
+              </span>
+              <Select
+                value={statusFilter}
+                onChange={setStatusFilter}
+                style={{ width: 200, borderRadius: 12, background: '#f0f5ff' }}
+                placeholder="Trạng thái"
+                options={[
+                  { value: "ALL", label: <span><InfoCircleOutlined /> Tất cả</span> },
+                  { value: "Accepted", label: <span style={{ color: '#52c41a' }}><CheckCircleTwoTone twoToneColor="#52c41a" /> Đã đồng ý</span> },
+                  { value: "Pending", label: <span style={{ color: '#faad14' }}><ExclamationCircleTwoTone twoToneColor="#faad14" /> Chờ phản hồi</span> },
+                  { value: "Rejected", label: <span style={{ color: '#ff4d4f' }}><CloseCircleTwoTone twoToneColor="#ff4d4f" /> Đã từ chối</span> },
+                ]}
+              />
+            </div>
+          )}
+
+          {/* Bộ lọc học sinh */}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontWeight: 500, marginBottom: 4, color: '#1677ff', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <UserOutlined /> Học sinh
+            </span>
+            <Select
+              value={studentFilter}
+              onChange={setStudentFilter}
+              style={{ width: 200, borderRadius: 12, background: '#f0f5ff' }}
+              placeholder="Chọn học sinh"
+              options={[
+                { value: "ALL", label: <span><InfoCircleOutlined /> Tất cả học sinh</span> },
+                ...studentsOfParent.map(student => ({
+                  value: student.studentID,
+                  label: student.fullName
+                }))
               ]}
             />
           </div>
