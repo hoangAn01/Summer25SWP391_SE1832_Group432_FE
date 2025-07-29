@@ -34,6 +34,7 @@ const EventNow = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(null); // Trạng thái lọc
 
   // Fetch danh sách sự kiện khi mở trang
   useEffect(() => {
@@ -65,6 +66,11 @@ const EventNow = () => {
     setSelectedEvent(null);
     setData([]);
   }, [eventType]);
+
+  // Reset statusFilter khi đổi sự kiện
+  useEffect(() => {
+    setStatusFilter(null);
+  }, [selectedEvent]);
 
   // Fetch danh sách học sinh đồng thuận khi chọn event
   useEffect(() => {
@@ -116,10 +122,28 @@ const EventNow = () => {
     ? events.filter((e) => e.eventTypeID === eventType)
     : [];
 
+  // Lọc danh sách học sinh theo trạng thái
+  const filteredData = statusFilter
+    ? data.filter(item => item.status === statusFilter)
+    : data;
+
+  // Tạo danh sách các trạng thái từ STATUS_MAPPING để hiển thị trong Select
+  const statusOptions = Object.entries(STATUS_MAPPING).map(([value, label]) => ({
+    value,
+    label: (
+      <span>
+        <Tag color={STATUS_COLORS[value] || "default"} style={{ marginRight: 8 }}>
+          {label}
+        </Tag>
+        {label}
+      </span>
+    ),
+  }));
+
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 24 }}>Danh sách sự kiện đang diễn ra</h2>
-      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
         <Select
           style={{ width: 200 }}
           placeholder="Chọn loại sự kiện"
@@ -147,9 +171,20 @@ const EventNow = () => {
             </Select.Option>
           ))}
         </Select>
+
+        {/* Bộ lọc trạng thái */}
+        <Select
+          style={{ width: 200 }}
+          placeholder="Lọc theo trạng thái"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          allowClear
+          disabled={!selectedEvent}
+          options={statusOptions}
+        />
       </div>
       <Table
-        dataSource={data.map((item) => ({
+        dataSource={filteredData.map((item) => ({
           ...item,
           key: item.studentJoinEventID,
         }))}

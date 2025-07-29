@@ -511,7 +511,7 @@ function Report() {
                     <Col xs={24} sm={12} md={8}>
                       <Card>
                         <Statistic
-                          title="Đơn đang chờ duyệt"
+                          title="Đơn chờ xỉ lílí"
                           value={medicineStats.pending}
                           prefix={<ClockCircleOutlined />}
                           valueStyle={{ color: '#faad14' }}
@@ -521,7 +521,7 @@ function Report() {
                     <Col xs={24} sm={12} md={8}>
                       <Card>
                         <Statistic
-                          title="Đơn đã duyệt"
+                          title="Đã hoàn thành"
                           value={medicineStats.approved}
                           prefix={<CheckCircleOutlined />}
                           valueStyle={{ color: '#52c41a' }}
