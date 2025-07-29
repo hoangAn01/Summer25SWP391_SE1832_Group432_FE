@@ -18,7 +18,7 @@ import Report from "./dashboard/dashboad_element/report";
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
 import Detail2 from "./pages/home-pages/Detail/Detail2";
-import EventPage from "./pages/home-pages/ParentForm/Event";
+
 import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
 import Header from "./components/Header/Header";
@@ -35,7 +35,6 @@ import EventNow from "./dashboard/dashboad_element/Event/Event_now";
 import MedicalInventory from "./nurse/medical-inventory";
 import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
-import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
 import CheckUp from "./nurse/checkup";
 
@@ -50,6 +49,8 @@ import StudentHealthProfile from "./pages/home-pages/ParentForm/HealthProfile/St
 import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileCreate";
 
 import AIChatBot from "./components/AIChatBot/AIChatBot";
+import ConfirmEvent from "./pages/home-pages/ParentForm/Notifications/ConfirmEvent";
+import Event from "./pages/home-pages/ParentForm/Notifications/Event";
 
 function App() {
   // Hàm kiểm tra token khi khởi động ứng dụng
@@ -243,7 +244,7 @@ function App() {
       element: (
         <>
           <Header />
-          <EventPage />
+          <Event />
         </>
       ),
     },

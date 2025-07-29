@@ -29,7 +29,7 @@ import {
   ExclamationCircleTwoTone,
   UserOutlined,
 } from "@ant-design/icons";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
@@ -83,6 +83,9 @@ function Event() {
   const [studentClass, setStudentClass] = useState("");
   const [studentName, setStudentName] = useState("");
   const [nurseNote, setNurseNote] = useState("");
+  const [checkupDetail, setCheckupDetail] = useState(null);
+  const [checkupStudentName, setCheckupStudentName] = useState("");
+  const [checkupNurseName, setCheckupNurseName] = useState("");
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
@@ -223,7 +226,13 @@ function Event() {
       );
       
       // Cập nhật state
-      setData([...updatedNotifications, ...nonEventNotifications]);
+      const finalData = [...updatedNotifications, ...nonEventNotifications];
+      console.log("Final notification data:", finalData.map(item => ({
+        notificationType: item.notificationType,
+        title: item.title,
+        relatedEntityID: item.relatedEntityID
+      })));
+      setData(finalData);
     } catch (error) {
       console.error("Lỗi khi tải thông báo:", error);
       message.error("Không thể tải danh sách thông báo");
@@ -266,15 +275,36 @@ function Event() {
   }, []);
 
   const filteredData = useMemo(() => {
+    console.log("Filtering data:", {
+      totalData: data.length,
+      typeFilter,
+      statusFilter,
+      studentFilter,
+      searchQuery
+    });
+    
     // Bước 1: Lọc theo loại thông báo
     let filtered = data;
     if (typeFilter !== "ALL") {
       if (typeFilter === "OTHER") {
-        filtered = data.filter(item => item.notificationType !== "ConsentRequest" && item.notificationType !== "MedicineRequest");
+        filtered = data.filter(item => 
+          item.notificationType !== "ConsentRequest" && 
+          item.notificationType !== "MedicineRequest" &&
+          item.notificationType !== "CheckupRecord"
+        );
       } else {
-        filtered = data.filter(item => item.notificationType === typeFilter);
+        filtered = data.filter(item => {
+          console.log("Checking notification type:", {
+            itemType: item.notificationType,
+            filterType: typeFilter,
+            title: item.title
+          });
+          return item.notificationType === typeFilter;
+        });
       }
     }
+    
+    console.log("After type filter:", filtered.length);
 
     // Bước 2: Lọc theo trạng thái
     if (statusFilter !== "ALL") {
@@ -309,10 +339,22 @@ function Event() {
 
     // Bước 3: Lọc theo học sinh
     if (studentFilter !== "ALL") {
-      filtered = filtered.filter(item => 
-        item.studentInfo && item.studentInfo.studentID && 
-        item.studentInfo.studentID.toString() === studentFilter.toString()
-      );
+      filtered = filtered.filter(item => {
+        // Kiểm tra studentInfo trước (cho sự kiện)
+        if (item.studentInfo && item.studentInfo.studentID) {
+          return item.studentInfo.studentID.toString() === studentFilter.toString();
+        }
+        
+        // Nếu không có studentInfo, kiểm tra xem có phải thông báo thuốc hoặc khám sức khỏe không
+        // và lấy thông tin học sinh từ relatedEntityID
+        if ((item.notificationType === "MedicineRequest" || item.notificationType === "CheckupRecord") && item.relatedEntityID) {
+          // Tạm thời bỏ qua lọc theo học sinh cho thông báo thuốc và khám sức khỏe
+          // vì cần fetch thêm dữ liệu từ API
+          return true;
+        }
+        
+        return false;
+      });
     }
     
     // Bước 4: Lọc theo từ khóa tìm kiếm
@@ -357,6 +399,15 @@ function Event() {
         item.title.toLowerCase().includes("yêu cầu thuốc") ||
         item.title.toLowerCase().includes("thuốc") ||
         item.title.toLowerCase().includes("medicine")
+      ));
+    
+    // Nếu là thông báo khám sức khỏe định kỳ thì fetch chi tiết khám
+    const isCheckupNotification =
+      item.notificationType === "CheckupRecord" ||
+      (item.title && (
+        item.title.toLowerCase().includes("khám sức khỏe") ||
+        item.title.toLowerCase().includes("kết quả khám") ||
+        item.title.toLowerCase().includes("checkup")
       ));
     
     if (isMedicineNotification && item.relatedEntityID) {
@@ -410,12 +461,52 @@ function Event() {
         setStudentName("");
         setNurseNote("");
       }
+    } else if (isCheckupNotification && item.relatedEntityID) {
+      try {
+        console.log("Fetching checkup details for:", item.relatedEntityID);
+        const res = await api.get(`/CheckupRecord/${item.relatedEntityID}`);
+        const checkupData = res.data;
+        console.log("Checkup data received:", checkupData);
+        
+        setCheckupDetail(checkupData);
+        
+        // Lấy tên học sinh
+        if (checkupData.studentID) {
+          try {
+            const studentRes = await api.get(`/Student/${checkupData.studentID}`);
+            setCheckupStudentName(studentRes.data.fullName || "");
+          } catch {
+            setCheckupStudentName("");
+          }
+        } else {
+          setCheckupStudentName("");
+        }
+        
+        // Lấy tên y tá
+        if (checkupData.nurseID) {
+          try {
+            const nurseRes = await api.get(`/Nurse/${checkupData.nurseID}`);
+            setCheckupNurseName(nurseRes.data.fullName || "");
+          } catch {
+            setCheckupNurseName("");
+          }
+        } else {
+          setCheckupNurseName("");
+        }
+      } catch {
+        setCheckupDetail(null);
+        setCheckupStudentName("");
+        setCheckupNurseName("");
+      }
     } else {
       setMedicineDetail(null);
       setNurseName("");
       setStudentClass("");
       setStudentName("");
       setNurseNote("");
+      setCheckupDetail(null);
+      setCheckupStudentName("");
+      setCheckupNurseName("");
     }
   };
 
@@ -641,6 +732,7 @@ function Event() {
                 { value: "ALL", label: <span><InfoCircleOutlined /> Tất cả</span> },
                 { value: "ConsentRequest", label: <span style={{ color: '#52c41a' }}>📅 Xác nhận sự kiện</span> },
                 { value: "MedicineRequest", label: <span style={{ color: '#1677ff' }}>💊 Gửi thuốc</span> },
+                { value: "CheckupRecord", label: <span style={{ color: '#fa8c16' }}>🏥 Khám sức khỏe</span> },
                 { value: "OTHER", label: <span style={{ color: '#b37feb' }}>🔔 Khác</span> },
               ]}
             />
@@ -708,6 +800,15 @@ function Event() {
                   item.title.toLowerCase().includes("yêu cầu thuốc") ||
                   item.title.toLowerCase().includes("thuốc") ||
                   item.title.toLowerCase().includes("medicine")
+                ));
+              
+              // Xác định nếu là thông báo khám sức khỏe định kỳ
+              const isCheckupNotification =
+                item.notificationType === "CheckupRecord" ||
+                (item.title && (
+                  item.title.toLowerCase().includes("khám sức khỏe") ||
+                  item.title.toLowerCase().includes("kết quả khám") ||
+                  item.title.toLowerCase().includes("checkup")
                 ));
               
               console.log("Notification item:", {
@@ -826,8 +927,32 @@ function Event() {
                         )}
                       </div>
                     )}
+                    {/* Hiển thị thông báo khám sức khỏe đơn giản */}
+                    {console.log("Rendering checkup details:", { isCheckupNotification, checkupDetail })}
+                    {isCheckupNotification && checkupDetail && (
+                      <div style={{ marginTop: 8 }}>
+                        {checkupStudentName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Học sinh:</span> {checkupStudentName}
+                          </div>
+                        )}
+                        <div style={{ fontWeight: 500, marginBottom: 4, color: '#52c41a' }}>
+                          ✅ <strong>Đã được khám thành công</strong>
+                        </div>
+                        {checkupNurseName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Nhân viên y tế:</span> {checkupNurseName} <strong>đã gửi phiếu kết quả cho học sinh</strong>
+                          </div>
+                        )}
+                        {checkupDetail.checkupDate && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Ngày khám:</span> {new Date(checkupDetail.checkupDate).toLocaleDateString('vi-VN')}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc */}
-                    {!isMedicineNotification && isEvent && (
+                    {!isMedicineNotification && !isCheckupNotification && isEvent && (
                       <Button
                         type="primary"
                         style={{ marginTop: 12 }}

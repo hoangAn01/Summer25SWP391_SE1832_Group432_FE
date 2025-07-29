@@ -20,10 +20,11 @@ import {
   UserOutlined,
   FileTextOutlined,
   InfoCircleOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import api from "../../../config/axios";
+import api from "../../../../config/axios";
 import "./ConfirmEvent.css";
 
 const { Title, Text, Paragraph } = Typography;
@@ -119,6 +120,17 @@ const ConfirmEvent = () => {
 
   return (
     <div className="confirm-event-container">
+      {/* Nút quay lại */}
+      <div style={{ marginBottom: 16 }}>
+        <Button 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => window.location.href = "/event"}
+          style={{ borderRadius: 8 }}
+        >
+          Quay lại danh sách thông báo
+        </Button>
+      </div>
+      
       <Spin spinning={loading} tip="Đang tải dữ liệu..." size="large">
         {selectedEventStudent && eventDetail && joinStatus && (
           <Card
