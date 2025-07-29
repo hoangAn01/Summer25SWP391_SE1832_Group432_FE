@@ -177,9 +177,16 @@ const ConfirmEvent = () => {
                   <FileTextOutlined className="confirm-event-icon" style={{ marginTop: 4 }} />
                   <div style={{ flex: 1 }}>
                     <Text strong className="confirm-event-label">Mô tả:</Text>
-                    <Paragraph className="confirm-event-description">
+                    <div style={{ 
+                      backgroundColor: '#fafafa', 
+                      padding: '12px', 
+                      borderRadius: '6px',
+                      marginTop: '8px',
+                      whiteSpace: 'pre-line',
+                      lineHeight: '1.8'
+                    }}>
                       {eventDetail.description || 'Không có mô tả chi tiết.'}
-                    </Paragraph>
+                    </div>
                   </div>
                 </Flex>
 
