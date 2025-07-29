@@ -37,7 +37,7 @@ import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
 import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
-import CheckUp from "./nurse/checkUp";
+import CheckUp from "./nurse/checkup";
 
 import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
 import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
@@ -48,6 +48,8 @@ import NurseWelcome from "./nurse/NurseWelcome";
 import HealthProfileEdit from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileEdit";
 import StudentHealthProfile from "./pages/home-pages/ParentForm/HealthProfile/StudentHealthProfle";
 import HealthProfileCreatePage from "./pages/home-pages/ParentForm/HealthProfile/HealthProfileCreate";
+
+import AIChatBot from "./components/AIChatBot/AIChatBot";
 
 function App() {
   // Hàm kiểm tra token khi khởi động ứng dụng
@@ -262,6 +264,7 @@ function App() {
       path: "/student-health-profile/edit",
       element: <HealthProfileEdit />,
     },
+    
     {
       path: "/confirm-event",
       element: (
@@ -276,6 +279,7 @@ function App() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <RouterProvider router={router}></RouterProvider>
+        <AIChatBot />
       </PersistGate>
     </Provider>
   );

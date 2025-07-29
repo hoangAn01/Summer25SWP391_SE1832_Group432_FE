@@ -17,6 +17,7 @@ import api from "../../config/axios";
 import { motion } from "framer-motion";
 import "./HomePage.css";
 
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
   visible: (i = 1) => ({
@@ -392,6 +393,9 @@ const HomePage = () => {
           </Box>
         </motion.div>
       </Box>
+
+
+
       <Footer />
     </Box>
   );
