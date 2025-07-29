@@ -81,6 +81,8 @@ function Event() {
   const [medicineDetail, setMedicineDetail] = useState(null);
   const [nurseName, setNurseName] = useState("");
   const [studentClass, setStudentClass] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [nurseNote, setNurseNote] = useState("");
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
@@ -347,17 +349,31 @@ function Event() {
       localStorage.setItem("readNotificationIds", JSON.stringify(newReadIds));
     }
     
-    // Nếu là duyệt thuốc đã approved thì fetch chi tiết đơn thuốc
-    const status = item.status || "Chờ phản hồi";
-    const isMedicineApproved =
-      (item.notificationType === "Duyệt thuốc" ||
-        (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
-      (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
+    // Nếu là thông báo thuốc thì fetch chi tiết đơn thuốc
+    const isMedicineNotification =
+      item.notificationType === "MedicineRequest" ||
+      item.notificationType === "Duyệt thuốc" ||
+      (item.title && (
+        item.title.toLowerCase().includes("yêu cầu thuốc") ||
+        item.title.toLowerCase().includes("thuốc") ||
+        item.title.toLowerCase().includes("medicine")
+      ));
     
-    if (isMedicineApproved && item.relatedEntityID) {
+    if (isMedicineNotification && item.relatedEntityID) {
       try {
+        console.log("Fetching medicine details for:", item.relatedEntityID);
         const res = await api.get(`/MedicineRequest/${item.relatedEntityID}`);
-        setMedicineDetail(res.data);
+        const medicineData = res.data;
+        console.log("Medicine data received:", medicineData);
+        
+        // Xử lý medicineDetails để đảm bảo có cấu trúc đúng
+        if (medicineData.medicineDetails) {
+          const details = medicineData.medicineDetails.$values || medicineData.medicineDetails;
+          medicineData.medicineDetails = Array.isArray(details) ? details : [];
+        }
+        
+        setMedicineDetail(medicineData);
+        
         // Lấy tên y tá nếu có approvedBy
         if (res.data.approvedBy) {
           try {
@@ -370,25 +386,36 @@ function Event() {
           setNurseName("");
         }
         
+        // Lấy thông tin học sinh
         if (res.data.studentID) {
           try {
             const studentRes = await api.get(`/Student/${res.data.studentID}`);
             setStudentClass(studentRes.data.className || studentRes.data.class || "");
+            setStudentName(studentRes.data.fullName || "");
           } catch {
             setStudentClass("");
+            setStudentName("");
           }
         } else {
           setStudentClass("");
+          setStudentName("");
         }
+        
+        // Lấy ghi chú của y tá
+        setNurseNote(res.data.nurseNote || res.data.note || "");
       } catch {
         setMedicineDetail(null);
         setNurseName("");
         setStudentClass("");
+        setStudentName("");
+        setNurseNote("");
       }
     } else {
       setMedicineDetail(null);
       setNurseName("");
       setStudentClass("");
+      setStudentName("");
+      setNurseNote("");
     }
   };
 
@@ -673,11 +700,22 @@ function Event() {
           <div>
           {filteredData.map((item) => {
             const status = item.status || "Chờ phản hồi";
-              // Xác định nếu là thông báo duyệt thuốc đã approved
-              const isMedicineApproved =
-                (item.notificationType === "Duyệt thuốc" ||
-                  (item.title && item.title.toLowerCase().includes("yêu cầu thuốc"))) &&
-                (status === "Đã đồng ý" || status === "Approved" || (item.title && item.title.toLowerCase().includes("approved")));
+              // Xác định nếu là thông báo thuốc
+              const isMedicineNotification =
+                item.notificationType === "MedicineRequest" ||
+                item.notificationType === "Duyệt thuốc" ||
+                (item.title && (
+                  item.title.toLowerCase().includes("yêu cầu thuốc") ||
+                  item.title.toLowerCase().includes("thuốc") ||
+                  item.title.toLowerCase().includes("medicine")
+                ));
+              
+              console.log("Notification item:", {
+                notificationType: item.notificationType,
+                title: item.title,
+                isMedicineNotification: isMedicineNotification,
+                relatedEntityID: item.relatedEntityID
+              });
               
               // Xác định nếu là thông báo tiêm chủng hoặc sự kiện
               const isEvent = 
@@ -721,9 +759,7 @@ function Event() {
                   <div style={{ flex: 'none' }}>{statusIcon}</div>
                   <div style={{ flex: 1 }}>
                     <span style={{ fontWeight: 700, fontSize: 19, color: '#222' }}>
-                      {isMedicineApproved && item.notificationType === 'MedicineRequest' && item.studentInfo?.studentName
-                        ? `Thông báo: ${item.studentInfo.studentName} đã được phê duyệt sử dụng thuốc/vật dụng y tế`
-                        : item.title}
+                      {item.title}
                     </span>
                     <div style={{ color: '#888', fontSize: 14, marginTop: 4 }}>
                       {item.sentDate
@@ -737,9 +773,6 @@ function Event() {
                   <div style={{ margin: '0 28px 18px 28px', background: '#f8faff', borderRadius: 12, boxShadow: '0 2px 8px #e6f7ff55', padding: 24, border: '1px solid #e6f7ff' }}>
                     <div style={{ fontWeight: 500, marginBottom: 8 }}>
                       <span style={{ color: '#1677ff' }}>Sự kiện:</span> {item.title.includes('tham gia sự kiện') ? item.title.split('tham gia sự kiện ')[1].split(' đã có')[0] : item.title.replace(/^\[[^\]]*\]\s*/, '')}
-                    </div>
-                    <div style={{ fontWeight: 500, marginBottom: 8 }}>
-                      <span style={{ color: '#1677ff' }}>Ngày tổ chức:</span> {item.sentDate ? new Date(item.sentDate).toLocaleDateString('vi-VN') : ''}
                     </div>
                     {/* Hiển thị thông tin học sinh cho sự kiện */}
                     {isEvent && studentInfo.studentName && (
@@ -755,25 +788,46 @@ function Event() {
                     </div>
                     */}
                     {/* Hiển thị chi tiết thuốc nếu có */}
-                    {isMedicineApproved && medicineDetail && (
+                    {console.log("Rendering medicine details:", { isMedicineNotification, medicineDetail })}
+                    {isMedicineNotification && medicineDetail && (
                       <div style={{ marginTop: 8 }}>
-                        <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                          <span style={{ color: '#1677ff' }}>Thuốc:</span> {medicineDetail.medicineName}
-                        </div>
-                        {nurseName && (
+                        {studentName && (
                           <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                            <span style={{ color: '#1677ff' }}>Y tá phê duyệt:</span> {nurseName}
+                            <span style={{ color: '#1677ff' }}>Học sinh:</span> {studentName}
                           </div>
                         )}
                         {studentClass && (
                           <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                            <span style={{ color: '#1677ff' }}>Lớp:</span> {studentClass}
+                            <span style={{ color: '#1677ff' }}></span> {studentClass}
+                          </div>
+                        )}
+                        {medicineDetail.medicineDetails && Array.isArray(medicineDetail.medicineDetails) && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Thông tin đơn thuốc:</span>
+                            <div style={{ marginLeft: 16, marginTop: 4 }}>
+                              {medicineDetail.medicineDetails.map((detail, index) => (
+                                <div key={index} style={{ marginBottom: 2, fontSize: 13 }}>
+                                  • {detail.requestItemName || detail.medicineName} - Số lượng: {detail.quantity}
+                                  {detail.dosageInstructions && ` - Liều dùng: ${detail.dosageInstructions}`}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {nurseName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Nhân viên y tế:</span> {nurseName}
+                          </div>
+                        )}
+                        {nurseNote && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Ghi chú của nhân viên y tế:</span> {nurseNote}
                           </div>
                         )}
                       </div>
                     )}
-                    {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc đã approved */}
-                    {!isMedicineApproved && isEvent && (
+                    {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc */}
+                    {!isMedicineNotification && isEvent && (
                       <Button
                         type="primary"
                         style={{ marginTop: 12 }}

@@ -517,7 +517,7 @@ const ApproveMedicine = () => {
                   loading={approving}
                   onClick={() => handleApprove(detailModal.record.requestID)}
                 >
-                  {approving ? "Đang gửi..." : "Gửi phụ huynh"}
+                  {approving ? "Đang gửi..." : "Xác nhận "}
                 </Button>
               )}
             </div>
