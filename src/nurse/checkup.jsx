@@ -28,6 +28,7 @@ import dayjs from "dayjs";
 import JSZip from "jszip";
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import { saveAs } from 'file-saver';
 pdfMake.vfs = pdfFonts.vfs;
 
 const { Title } = Typography;
@@ -62,6 +63,10 @@ const CheckUp = () => {
   const [viewedCheckup, setViewedCheckup] = useState(null); // Báo cáo đang xem
   const [viewedStudent, setViewedStudent] = useState(null); // Học sinh đang xem báo cáo
   const [hasReport, setHasReport] = useState({}); // Danh sách học sinh đã có báo cáo
+
+  // State cho modal xác nhận xuất PDF
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState('individual'); // 'individual' hoặc 'zip'
 
   // Kiểm tra thời gian bắt đầu sự kiện
   const isEventStarted = (eventDate) => {
@@ -211,8 +216,8 @@ const CheckUp = () => {
     }
   };
 
-  // Hàm xuất PDF cho từng học sinh đã có báo cáo (dùng pdfmake)
-  const exportPDFs = async () => {
+  // Hàm mở modal xác nhận xuất PDF
+  const handleOpenExportModal = () => {
     if (!selectedEvent) {
       message.warning("Vui lòng chọn sự kiện trước khi xuất PDF");
       return;
@@ -222,110 +227,302 @@ const CheckUp = () => {
       message.warning("Không có học sinh nào đã có báo cáo để xuất PDF");
       return;
     }
+    setIsExportModalOpen(true);
+  };
+
+  // Hàm đóng modal xác nhận xuất PDF
+  const handleCloseExportModal = () => {
+    setIsExportModalOpen(false);
+    setExportType('individual');
+  };
+
+  // Hàm xuất PDF cho từng học sinh đã có báo cáo (dùng pdfmake)
+  const exportPDFs = async () => {
+    const reportedStudents = students.filter(s => hasReport[s.studentID]);
     message.loading({ content: "Đang tạo file PDF...", key: "exportPDF" });
-    for (const student of reportedStudents) {
-      try {
-        // Lấy thông tin học sinh từ API /Student/{id}
-        let studentInfo = {};
+    
+    if (exportType === 'individual') {
+      // Xuất từng file riêng lẻ
+      for (const student of reportedStudents) {
         try {
-          const studentRes = await api.get(`/Student/${student.studentID}`);
-          studentInfo = studentRes.data;
-        } catch {
-          studentInfo = {
-            fullName: student.studentName || "",
-            className: student.className || "",
-            parentFullName: student.parentName || ""
-          };
-        }
-        const res = await api.get(
-          `CheckupRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
-        );
-        const report = res.data;
-        const bmi = report.height && report.weight ? ((Number(report.weight) / Math.pow(Number(report.height)/100,2)).toFixed(2)) : "";
-        const infoTable = [
-          [
-            { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
-            { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
-            { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
-            { text: student.studentID || "", margin: [0, 2, 0, 2] }
-          ],
-          [
-            { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
-            { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
-            { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
-            { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] }
-          ],
-          [
-            { text: "Ngày khám:", bold: true, margin: [0, 2, 0, 2] },
-            { text: report.checkupDate ? report.checkupDate.split("T")[0] : "", margin: [0, 2, 0, 2] },
-            { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
-            { text: report.nurseName || "", margin: [0, 2, 0, 2] }
-          ]
-        ];
-        const healthTable = [
-          [ { text: "Chỉ số", style: "tableHeader" }, { text: "Giá trị", style: "tableHeader" } ],
-          [ "Chiều cao (cm)", report.height || "" ],
-          [ "Cân nặng (kg)", report.weight || "" ],
-          [ "BMI", bmi ],
-          [ "Huyết áp", report.bloodPressure || "" ],
-          [ "Thị lực trái", report.visionLeft || "" ],
-          [ "Thị lực phải", report.visionRight || "" ],
-          [ "Thính lực trái", report.hearingLeft || "" ],
-          [ "Thính lực phải", report.hearingRight || "" ],
-          [ "Phát hiện khác", report.otherFindings || "Không có" ],
-          [ "Cần tư vấn thêm", report.consultationRequired ? "Có" : "Không" ]
-        ];
-        const docDefinition = {
-          content: [
-            { text: "BÁO CÁO KHÁM SỨC KHỎE HỌC SINH", style: "mainTitle" },
-            {
-              table: {
-                widths: ["auto", "*", "auto", "*"],
-                body: infoTable
+          // Lấy thông tin học sinh từ API /Student/{id}
+          let studentInfo = {};
+          try {
+            const studentRes = await api.get(`/Student/${student.studentID}`);
+            studentInfo = studentRes.data;
+          } catch {
+            studentInfo = {
+              fullName: student.studentName || "",
+              className: student.className || "",
+              parentFullName: student.parentName || ""
+            };
+          }
+          const res = await api.get(
+            `CheckupRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+          );
+          const report = res.data;
+          const bmi = report.height && report.weight ? ((Number(report.weight) / Math.pow(Number(report.height)/100,2)).toFixed(2)) : "";
+          const infoTable = [
+            [
+              { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
+              { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: student.studentID || "", margin: [0, 2, 0, 2] }
+            ],
+            [
+              { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
+              { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] }
+            ],
+            [
+              { text: "Ngày khám:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.checkupDate ? report.checkupDate.split("T")[0] : "", margin: [0, 2, 0, 2] },
+              { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.nurseName || "", margin: [0, 2, 0, 2] }
+            ]
+          ];
+          const healthTable = [
+            [ { text: "Chỉ số", style: "tableHeader" }, { text: "Giá trị", style: "tableHeader" } ],
+            [ "Chiều cao (cm)", report.height || "" ],
+            [ "Cân nặng (kg)", report.weight || "" ],
+            [ "BMI", bmi ],
+            [ "Huyết áp", report.bloodPressure || "" ],
+            [ "Thị lực trái", report.visionLeft || "" ],
+            [ "Thị lực phải", report.visionRight || "" ],
+            [ "Thính lực trái", report.hearingLeft || "" ],
+            [ "Thính lực phải", report.hearingRight || "" ],
+            [ "Phát hiện khác", report.otherFindings || "Không có" ],
+            [ "Cần tư vấn thêm", report.consultationRequired ? "Có" : "Không" ]
+          ];
+          const docDefinition = {
+            content: [
+              {
+                columns: [
+                  {
+                    width: '*',
+                    stack: [
+                      { text: "TRƯỜNG TIỂU HỌC ABC", style: "schoolName" },
+                      { text: "BÁO CÁO KHÁM SỨC KHỎE HỌC SINH", style: "mainTitle" }
+                    ],
+                    margin: [10, 0, 0, 0]
+                  }
+                ],
+                margin: [0, 0, 0, 20]
               },
-              layout: "noBorders",
-              margin: [0, 0, 0, 16]
-            },
-            {
-              table: {
-                widths: ["40%", "60%"],
-                body: healthTable
+              {
+                table: {
+                  widths: ["auto", "*", "auto", "*"],
+                  body: infoTable
+                },
+                layout: "noBorders",
+                margin: [0, 0, 0, 20]
               },
-              layout: {
-                fillColor: (rowIndex) => rowIndex === 0 ? '#e3f2fd' : null,
-                hLineWidth: () => 0.7,
-                vLineWidth: () => 0.7,
-                hLineColor: () => '#90caf9',
-                vLineColor: () => '#90caf9',
+              {
+                table: {
+                  widths: ["40%", "60%"],
+                  body: healthTable
+                },
+                layout: {
+                  fillColor: (rowIndex) => rowIndex === 0 ? '#e3f2fd' : null,
+                  hLineWidth: () => 0.7,
+                  vLineWidth: () => 0.7,
+                  hLineColor: () => '#90caf9',
+                  vLineColor: () => '#90caf9',
+                },
+                margin: [0, 0, 0, 30]
               },
-              margin: [0, 0, 0, 24]
-            },
-            {
-              columns: [
-                { width: '*', text: '' },
-                {
-                  width: 'auto',
-                  stack: [
-                    { text: "Chữ ký nhân viên y tế", alignment: "center", italics: true, margin: [0, 0, 0, 40] },
-                    { text: "__________________________", alignment: "center" }
+              {
+                columns: [
+                  { width: '*', text: '' },
+                  {
+                    width: 'auto',
+                    stack: [
+                      { text: "Chữ ký nhân viên y tế", alignment: "center", italics: true, margin: [0, 0, 0, 50] },
+                      { text: "__________________________", alignment: "center" }
                   ]
-                }
-              ]
+                  }
+                ]
+              },
+              { text: "\nLưu ý: Kết quả khám sức khỏe chỉ có giá trị tham khảo.", italics: true, color: '#757575', fontSize: 11, alignment: 'center', margin: [0, 30, 0, 0] }
+            ],
+            styles: {
+              schoolName: { fontSize: 16, bold: true, alignment: "center", color: "#004d40", margin: [0, 0, 0, 5] },
+              mainTitle: { fontSize: 22, bold: true, alignment: "center", color: "#1565c0", margin: [0, 0, 0, 15], decoration: "underline", font: "Roboto", characterSpacing: 1 },
+              tableHeader: { bold: true, fillColor: "#e3f2fd", color: "#1976d2", alignment: "center" }
             },
-            { text: "\nLưu ý: Kết quả khám sức khỏe chỉ có giá trị tham khảo.", italics: true, color: '#757575', fontSize: 11, alignment: 'center', margin: [0, 24, 0, 0] }
-          ],
-          styles: {
-            mainTitle: { fontSize: 26, bold: true, alignment: "center", color: "#1565c0", margin: [0, 0, 0, 18], decoration: "underline", font: "Roboto", characterSpacing: 1 },
-            tableHeader: { bold: true, fillColor: "#e3f2fd", color: "#1976d2", alignment: "center" }
-          },
-          defaultStyle: { font: "Roboto", fontSize: 12 }
-        };
-        pdfMake.createPdf(docDefinition).download(`${studentInfo.fullName || student.studentName || student.studentID}.pdf`);
-      } catch (err) {
-        console.error(`Lỗi khi tạo PDF cho học sinh ${student.studentName}:`, err);
+            defaultStyle: { font: "Roboto", fontSize: 12 },
+            pageMargins: [40, 40, 40, 60],
+            footer: function(currentPage, pageCount) { 
+              return { text: 'Trang ' + currentPage.toString() + ' / ' + pageCount, alignment: 'center', margin: [0, 20, 0, 0] };
+            }
+          };
+          
+          // Sử dụng saveAs để có thể chọn vị trí lưu file
+          pdfMake.createPdf(docDefinition).getBlob((blob) => {
+            const fileName = `${studentInfo.fullName || student.studentName || student.studentID}.pdf`;
+            saveAs(blob, fileName);
+          });
+        } catch (err) {
+          console.error(`Lỗi khi tạo PDF cho học sinh ${student.studentName}:`, err);
+        }
       }
+      message.success({ content: "Đã xuất PDF cho tất cả học sinh có báo cáo!", key: "exportPDF" });
+    } else {
+      // Xuất file ZIP chứa tất cả PDF
+      const zip = new JSZip();
+      const event = events.find(e => e.eventID === selectedEvent);
+      const eventName = event ? event.eventName.replace(/[^a-zA-Z0-9]/g, '_') : 'event';
+      
+      // Tạo Promise để xử lý bất đồng bộ
+      const pdfPromises = reportedStudents.map(async (student) => {
+        try {
+          let studentInfo = {};
+          try {
+            const studentRes = await api.get(`/Student/${student.studentID}`);
+            studentInfo = studentRes.data;
+          } catch {
+            studentInfo = {
+              fullName: student.studentName || "",
+              className: student.className || "",
+              parentFullName: student.parentName || ""
+            };
+          }
+          const res = await api.get(
+            `CheckupRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+          );
+          const report = res.data;
+          const bmi = report.height && report.weight ? ((Number(report.weight) / Math.pow(Number(report.height)/100,2)).toFixed(2)) : "";
+          const infoTable = [
+            [
+              { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
+              { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: student.studentID || "", margin: [0, 2, 0, 2] }
+            ],
+            [
+              { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
+              { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] }
+            ],
+            [
+              { text: "Ngày khám:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.checkupDate ? report.checkupDate.split("T")[0] : "", margin: [0, 2, 0, 2] },
+              { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.nurseName || "", margin: [0, 2, 0, 2] }
+            ]
+          ];
+          const healthTable = [
+            [ { text: "Chỉ số", style: "tableHeader" }, { text: "Giá trị", style: "tableHeader" } ],
+            [ "Chiều cao (cm)", report.height || "" ],
+            [ "Cân nặng (kg)", report.weight || "" ],
+            [ "BMI", bmi ],
+            [ "Huyết áp", report.bloodPressure || "" ],
+            [ "Thị lực trái", report.visionLeft || "" ],
+            [ "Thị lực phải", report.visionRight || "" ],
+            [ "Thính lực trái", report.hearingLeft || "" ],
+            [ "Thính lực phải", report.hearingRight || "" ],
+            [ "Phát hiện khác", report.otherFindings || "Không có" ],
+            [ "Cần tư vấn thêm", report.consultationRequired ? "Có" : "Không" ]
+          ];
+          const docDefinition = {
+            content: [
+              {
+                columns: [
+                  {
+                    width: '*',
+                    stack: [
+                      { text: "TRƯỜNG TIỂU HỌC ABC", style: "schoolName" },
+                      { text: "BÁO CÁO KHÁM SỨC KHỎE HỌC SINH", style: "mainTitle" }
+                    ],
+                    margin: [10, 0, 0, 0]
+                  }
+                ],
+                margin: [0, 0, 0, 20]
+              },
+              {
+                table: {
+                  widths: ["auto", "*", "auto", "*"],
+                  body: infoTable
+                },
+                layout: "noBorders",
+                margin: [0, 0, 0, 20]
+              },
+              {
+                table: {
+                  widths: ["40%", "60%"],
+                  body: healthTable
+                },
+                layout: {
+                  fillColor: (rowIndex) => rowIndex === 0 ? '#e3f2fd' : null,
+                  hLineWidth: () => 0.7,
+                  vLineWidth: () => 0.7,
+                  hLineColor: () => '#90caf9',
+                  vLineColor: () => '#90caf9',
+                },
+                margin: [0, 0, 0, 30]
+              },
+              {
+                columns: [
+                  { width: '*', text: '' },
+                  {
+                    width: 'auto',
+                    stack: [
+                      { text: "Chữ ký nhân viên y tế", alignment: "center", italics: true, margin: [0, 0, 0, 50] },
+                      { text: "__________________________", alignment: "center" }
+                  ]
+                  }
+                ]
+              },
+              { text: "\nLưu ý: Kết quả khám sức khỏe chỉ có giá trị tham khảo.", italics: true, color: '#757575', fontSize: 11, alignment: 'center', margin: [0, 30, 0, 0] }
+            ],
+            styles: {
+              schoolName: { fontSize: 16, bold: true, alignment: "center", color: "#004d40", margin: [0, 0, 0, 5] },
+              mainTitle: { fontSize: 22, bold: true, alignment: "center", color: "#1565c0", margin: [0, 0, 0, 15], decoration: "underline", font: "Roboto", characterSpacing: 1 },
+              tableHeader: { bold: true, fillColor: "#e3f2fd", color: "#1976d2", alignment: "center" }
+            },
+            defaultStyle: { font: "Roboto", fontSize: 12 },
+            pageMargins: [40, 40, 40, 60],
+            footer: function(currentPage, pageCount) { 
+              return { text: 'Trang ' + currentPage.toString() + ' / ' + pageCount, alignment: 'center', margin: [0, 20, 0, 0] };
+            }
+          };
+          
+          // Trả về Promise cho việc tạo PDF
+          return new Promise((resolve) => {
+            pdfMake.createPdf(docDefinition).getBlob((blob) => {
+              const fileName = `${studentInfo.fullName || student.studentName || student.studentID}.pdf`;
+              zip.file(fileName, blob);
+              console.log(`Đã thêm file ${fileName} vào ZIP`);
+              resolve();
+            });
+          });
+        } catch (err) {
+          console.error(`Lỗi khi tạo PDF cho học sinh ${student.studentName}:`, err);
+          return Promise.resolve(); // Trả về Promise resolved để không block
+        }
+      });
+      
+      // Đợi tất cả PDF được tạo xong
+      await Promise.all(pdfPromises);
+      
+      console.log(`Đã tạo xong ${reportedStudents.length} file PDF`);
+      
+      // Thêm delay nhỏ để đảm bảo tất cả file đã được thêm vào ZIP
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Tạo và tải file ZIP
+      zip.generateAsync({ type: "blob" }).then((content) => {
+        const zipFileName = `Bao_cao_kham_suc_khoe_${eventName}_${dayjs().format('YYYY-MM-DD')}.zip`;
+        console.log(`Đang tạo file ZIP: ${zipFileName}`);
+        saveAs(content, zipFileName);
+      });
+      
+      message.success({ content: "Đã xuất file ZIP chứa tất cả báo cáo!", key: "exportPDF" });
     }
-    message.success({ content: "Đã xuất PDF cho tất cả học sinh có báo cáo!", key: "exportPDF" });
+    
+    handleCloseExportModal();
   };
 
   // Cấu hình các cột trong bảng
@@ -754,11 +951,51 @@ const CheckUp = () => {
       </Modal>
       {selectedEvent && (
         <Col span={24}>
-          <Button type="primary" onClick={exportPDFs} style={{ marginBottom: 16 }}>
+          <Button type="primary" onClick={handleOpenExportModal} style={{ marginBottom: 16 }}>
             Xuất PDF cho học sinh đã có báo cáo
           </Button>
         </Col>
       )}
+
+      {/* Modal xác nhận xuất PDF */}
+      <Modal
+        open={isExportModalOpen}
+        title="Chọn cách xuất PDF"
+        onCancel={handleCloseExportModal}
+        onOk={exportPDFs}
+        okText="Xuất PDF"
+        cancelText="Huỷ"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>Chọn cách xuất PDF cho {students.filter(s => hasReport[s.studentID]).length} học sinh đã có báo cáo:</p>
+        </div>
+        <Radio.Group 
+          value={exportType} 
+          onChange={(e) => setExportType(e.target.value)}
+          style={{ width: '100%' }}
+        >
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Radio value="individual">
+              <div>
+                <strong>Xuất từng file riêng lẻ</strong>
+                <br />
+                <small style={{ color: '#666' }}>
+                  Mỗi học sinh sẽ có một file PDF riêng. Bạn có thể chọn vị trí lưu cho từng file.
+                </small>
+              </div>
+            </Radio>
+            <Radio value="zip">
+              <div>
+                <strong>Xuất file ZIP</strong>
+                <br />
+                <small style={{ color: '#666' }}>
+                  Tất cả báo cáo sẽ được nén trong một file ZIP. Bạn có thể chọn vị trí lưu file ZIP.
+                </small>
+              </div>
+            </Radio>
+          </Space>
+        </Radio.Group>
+      </Modal>
     </Card>
   );
 };
