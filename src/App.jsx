@@ -37,7 +37,7 @@ import BlogCreateForm from "./components/Blog/BlogCreateForm";
 
 import ConfirmEvent from "./pages/home-pages/ParentForm/ConfirmEvent";
 import VaccineEventReport from "./nurse/VaccineEventReport";
-import CheckUp from "./nurse/CheckUp";
+import CheckUp from "./nurse/checkUp";
 
 import ManagerBlog from "./dashboard/dashboad_element/Manager_blog";
 import BlogDetailDynamic from "./pages/home-pages/blog/BlogDetailDynamic";
