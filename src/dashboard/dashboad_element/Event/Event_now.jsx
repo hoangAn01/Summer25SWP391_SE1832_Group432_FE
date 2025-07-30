@@ -12,20 +12,20 @@ const EVENT_TYPES = [
 
 // Mapping status values to Vietnamese
 const STATUS_MAPPING = {
-  "Pending": "Chờ phản hồi",
-  "Accepted": "Đã đồng ý",
-  "Rejected": "Từ chối",
-  "Completed": "Hoàn thành",
-  "Cancelled": "Đã hủy"
+  Pending: "Chờ phản hồi",
+  Accepted: "Đã đồng ý",
+  Rejected: "Từ chối",
+  Completed: "Hoàn thành",
+  Cancelled: "Đã hủy",
 };
 
 // Status color mapping
 const STATUS_COLORS = {
-  "Pending": "orange",
-  "Accepted": "green",
-  "Rejected": "red",
-  "Completed": "blue",
-  "Cancelled": "gray"
+  Pending: "orange",
+  Accepted: "green",
+  Rejected: "red",
+  Completed: "blue",
+  Cancelled: "gray",
 };
 
 const EventNow = () => {
@@ -43,14 +43,14 @@ const EventNow = () => {
       try {
         const res = await api.get("/Event");
         const allEvents = res.data.$values || [];
-        
+
         // Lọc các sự kiện đang diễn ra (ngày sự kiện là hôm nay hoặc trong tương lai)
         const now = dayjs();
-        const activeEvents = allEvents.filter(event => {
+        const activeEvents = allEvents.filter((event) => {
           const eventDate = dayjs(event.eventDate);
-          return eventDate.isAfter(now.subtract(1, 'day'));
+          return eventDate.isAfter(now.subtract(1, "day"));
         });
-        
+
         setEvents(activeEvents);
       } catch {
         message.error("Không lấy được danh sách sự kiện");
@@ -97,15 +97,15 @@ const EventNow = () => {
 
   const columns = [
     { title: "Học sinh", dataIndex: "studentName", key: "studentName" },
-    { 
-      title: "Trạng thái", 
-      dataIndex: "status", 
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
       key: "status",
       render: (status) => (
         <Tag color={STATUS_COLORS[status] || "default"}>
           {STATUS_MAPPING[status] || status}
         </Tag>
-      )
+      ),
     },
     {
       title: "Ngày phản hồi",
@@ -124,26 +124,33 @@ const EventNow = () => {
 
   // Lọc danh sách học sinh theo trạng thái
   const filteredData = statusFilter
-    ? data.filter(item => item.status === statusFilter)
+    ? data.filter((item) => item.status === statusFilter)
     : data;
 
   // Tạo danh sách các trạng thái từ STATUS_MAPPING để hiển thị trong Select
-  const statusOptions = Object.entries(STATUS_MAPPING).map(([value, label]) => ({
-    value,
-    label: (
-      <span>
-        <Tag color={STATUS_COLORS[value] || "default"} style={{ marginRight: 8 }}>
+  const statusOptions = Object.entries(STATUS_MAPPING).map(
+    ([value, label]) => ({
+      value,
+      label: (
+        <span>
+          <Tag
+            color={STATUS_COLORS[value] || "default"}
+            style={{ marginRight: 8 }}
+          >
+            {label}
+          </Tag>
           {label}
-        </Tag>
-        {label}
-      </span>
-    ),
-  }));
+        </span>
+      ),
+    })
+  );
 
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ marginBottom: 24 }}>Danh sách sự kiện đang diễn ra</h2>
-      <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+      <div
+        style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}
+      >
         <Select
           style={{ width: 200 }}
           placeholder="Chọn loại sự kiện"

@@ -16,7 +16,13 @@ import {
   Card,
   Row,
   Col,
+  Radio,
 } from "antd";
+import JSZip from "jszip";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import { saveAs } from "file-saver";
+pdfMake.vfs = pdfFonts.vfs;
 import api from "../config/axios";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
@@ -49,6 +55,9 @@ const VaccineEventReport = () => {
   const [viewedStudent, setViewedStudent] = useState(null); // Học sinh đang xem báo cáo
   const [viewedLoading, setViewedLoading] = useState(false); // Trạng thái loading khi xem báo cáo
   const [hasReport, setHasReport] = useState({}); // Danh sách học sinh đã có báo cáo
+  const [reportFilter, setReportFilter] = useState("ALL"); // Bộ lọc báo cáo
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false); // Modal xuất PDF
+  const [exportType, setExportType] = useState("individual"); // Kiểu xuất PDF
 
   // Kiểm tra thời gian bắt đầu sự kiện
   const isEventStarted = (eventDate) => {
@@ -225,6 +234,421 @@ const VaccineEventReport = () => {
     }
   };
 
+  // Lọc học sinh theo báo cáo tiêm vaccine
+  const filteredStudents = students.filter((student) => {
+    if (reportFilter === "ALL") return true;
+    if (reportFilter === "REPORTED") return !!hasReport[student.studentID];
+    if (reportFilter === "NOT_REPORTED") return !hasReport[student.studentID];
+    return true;
+  });
+
+  // Hàm mở modal xác nhận xuất PDF
+  const handleOpenExportModal = () => {
+    if (!selectedEvent) {
+      message.warning("Vui lòng chọn sự kiện trước khi xuất PDF");
+      return;
+    }
+    const reportedStudents = students.filter((s) => hasReport[s.studentID]);
+    if (reportedStudents.length === 0) {
+      message.warning("Không có học sinh nào đã có báo cáo để xuất PDF");
+      return;
+    }
+    setIsExportModalOpen(true);
+  };
+
+  // Hàm đóng modal xác nhận xuất PDF
+  const handleCloseExportModal = () => {
+    setIsExportModalOpen(false);
+    setExportType("individual");
+  };
+
+  // Hàm xuất PDF cho từng học sinh đã có báo cáo
+  const exportPDFs = async () => {
+    const reportedStudents = students.filter((s) => hasReport[s.studentID]);
+    message.loading({ content: "Đang tạo file PDF...", key: "exportPDF" });
+
+    if (exportType === "individual") {
+      // Xuất từng file riêng lẻ
+      for (const student of reportedStudents) {
+        try {
+          // Lấy thông tin học sinh từ API /Student/{id}
+          let studentInfo = {};
+          try {
+            const studentRes = await api.get(`/Student/${student.studentID}`);
+            studentInfo = studentRes.data;
+          } catch {
+            studentInfo = {
+              fullName: student.studentName || "",
+              className: student.className || "",
+              parentFullName: student.parentName || "",
+            };
+          }
+          const res = await api.get(
+            `VaccineRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+          );
+          const report = res.data;
+          const infoTable = [
+            [
+              { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
+              { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: student.studentID || "", margin: [0, 2, 0, 2] },
+            ],
+            [
+              { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
+              { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] },
+            ],
+            [
+              { text: "Ngày tiêm:", bold: true, margin: [0, 2, 0, 2] },
+              {
+                text: report.dateAdministered
+                  ? report.dateAdministered.split("T")[0]
+                  : "",
+                margin: [0, 2, 0, 2],
+              },
+              { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.nurseName || "", margin: [0, 2, 0, 2] },
+            ],
+          ];
+          const vaccineTable = [
+            [
+              { text: "Thông tin", style: "tableHeader" },
+              { text: "Chi tiết", style: "tableHeader" },
+            ],
+            ["Tên vaccine", report.vaccineName || ""],
+            [
+              "Ngày tiêm",
+              report.dateAdministered
+                ? dayjs(report.dateAdministered).format("DD/MM/YYYY")
+                : "",
+            ],
+            ["Ghi chú", report.notes || "Không có"],
+          ];
+          const docDefinition = {
+            content: [
+              {
+                columns: [
+                  {
+                    width: "*",
+                    stack: [
+                      { text: "TRƯỜNG TIỂU HỌC ABC", style: "schoolName" },
+                      { text: "BÁO CÁO TIÊM VACCINE", style: "mainTitle" },
+                    ],
+                    margin: [10, 0, 0, 0],
+                  },
+                ],
+                margin: [0, 0, 0, 20],
+              },
+              {
+                table: {
+                  widths: ["auto", "*", "auto", "*"],
+                  body: infoTable,
+                },
+                layout: "noBorders",
+                margin: [0, 0, 0, 20],
+              },
+              {
+                table: {
+                  widths: ["40%", "60%"],
+                  body: vaccineTable,
+                },
+                layout: {
+                  fillColor: (rowIndex) => (rowIndex === 0 ? "#e3f2fd" : null),
+                  hLineWidth: () => 0.7,
+                  vLineWidth: () => 0.7,
+                  hLineColor: () => "#90caf9",
+                  vLineColor: () => "#90caf9",
+                },
+                margin: [0, 0, 0, 30],
+              },
+              {
+                columns: [
+                  { width: "*", text: "" },
+                  {
+                    width: "auto",
+                    stack: [
+                      {
+                        text: "Chữ ký nhân viên y tế",
+                        alignment: "center",
+                        italics: true,
+                        margin: [0, 0, 0, 50],
+                      },
+                      {
+                        text: "__________________________",
+                        alignment: "center",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                text: "\nLưu ý: Kết quả tiêm vaccine chỉ có giá trị tham khảo.",
+                italics: true,
+                color: "#757575",
+                fontSize: 11,
+                alignment: "center",
+                margin: [0, 30, 0, 0],
+              },
+            ],
+            styles: {
+              schoolName: {
+                fontSize: 16,
+                bold: true,
+                alignment: "center",
+                color: "#004d40",
+                margin: [0, 0, 0, 5],
+              },
+              mainTitle: {
+                fontSize: 22,
+                bold: true,
+                alignment: "center",
+                color: "#1565c0",
+                margin: [0, 0, 0, 15],
+                decoration: "underline",
+                font: "Roboto",
+                characterSpacing: 1,
+              },
+              tableHeader: {
+                bold: true,
+                fillColor: "#e3f2fd",
+                color: "#1976d2",
+                alignment: "center",
+              },
+            },
+            defaultStyle: { font: "Roboto", fontSize: 12 },
+            pageMargins: [40, 40, 40, 60],
+            footer: function (currentPage, pageCount) {
+              return {
+                text: "Trang " + currentPage.toString() + " / " + pageCount,
+                alignment: "center",
+                margin: [0, 20, 0, 0],
+              };
+            },
+          };
+
+          pdfMake.createPdf(docDefinition).getBlob((blob) => {
+            const fileName = `${
+              studentInfo.fullName || student.studentName || student.studentID
+            }_vaccine.pdf`;
+            saveAs(blob, fileName);
+          });
+        } catch (err) {
+          console.error(
+            `Lỗi khi tạo PDF cho học sinh ${student.studentName}:`,
+            err
+          );
+        }
+      }
+      message.success({
+        content: "Đã xuất PDF cho tất cả học sinh có báo cáo!",
+        key: "exportPDF",
+      });
+    } else {
+      // Xuất file ZIP chứa tất cả PDF
+      const zip = new JSZip();
+      const event = events.find((e) => e.eventID === selectedEvent);
+      const eventName = event
+        ? event.eventName.replace(/[^a-zA-Z0-9]/g, "_")
+        : "event";
+
+      const pdfPromises = reportedStudents.map(async (student) => {
+        try {
+          let studentInfo = {};
+          try {
+            const studentRes = await api.get(`/Student/${student.studentID}`);
+            studentInfo = studentRes.data;
+          } catch {
+            studentInfo = {
+              fullName: student.studentName || "",
+              className: student.className || "",
+              parentFullName: student.parentName || "",
+            };
+          }
+          const res = await api.get(
+            `VaccineRecord/by-student-event?studentId=${student.studentID}&eventId=${selectedEvent}`
+          );
+          const report = res.data;
+          const infoTable = [
+            [
+              { text: "Họ tên học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.fullName || "", margin: [0, 2, 0, 2] },
+              { text: "Mã học sinh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: student.studentID || "", margin: [0, 2, 0, 2] },
+            ],
+            [
+              { text: "Lớp:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.className || "", margin: [0, 2, 0, 2] },
+              { text: "Phụ huynh:", bold: true, margin: [0, 2, 0, 2] },
+              { text: studentInfo.parentFullName || "", margin: [0, 2, 0, 2] },
+            ],
+            [
+              { text: "Ngày tiêm:", bold: true, margin: [0, 2, 0, 2] },
+              {
+                text: report.dateAdministered
+                  ? report.dateAdministered.split("T")[0]
+                  : "",
+                margin: [0, 2, 0, 2],
+              },
+              { text: "Y tá phụ trách:", bold: true, margin: [0, 2, 0, 2] },
+              { text: report.nurseName || "", margin: [0, 2, 0, 2] },
+            ],
+          ];
+          const vaccineTable = [
+            [
+              { text: "Thông tin", style: "tableHeader" },
+              { text: "Chi tiết", style: "tableHeader" },
+            ],
+            ["Tên vaccine", report.vaccineName || ""],
+            [
+              "Ngày tiêm",
+              report.dateAdministered
+                ? dayjs(report.dateAdministered).format("DD/MM/YYYY")
+                : "",
+            ],
+            ["Ghi chú", report.notes || "Không có"],
+          ];
+          const docDefinition = {
+            content: [
+              {
+                columns: [
+                  {
+                    width: "*",
+                    stack: [
+                      { text: "TRƯỜNG TIỂU HỌC ABC", style: "schoolName" },
+                      { text: "BÁO CÁO TIÊM VACCINE", style: "mainTitle" },
+                    ],
+                    margin: [10, 0, 0, 0],
+                  },
+                ],
+                margin: [0, 0, 0, 20],
+              },
+              {
+                table: {
+                  widths: ["auto", "*", "auto", "*"],
+                  body: infoTable,
+                },
+                layout: "noBorders",
+                margin: [0, 0, 0, 20],
+              },
+              {
+                table: {
+                  widths: ["40%", "60%"],
+                  body: vaccineTable,
+                },
+                layout: {
+                  fillColor: (rowIndex) => (rowIndex === 0 ? "#e3f2fd" : null),
+                  hLineWidth: () => 0.7,
+                  vLineWidth: () => 0.7,
+                  hLineColor: () => "#90caf9",
+                  vLineColor: () => "#90caf9",
+                },
+                margin: [0, 0, 0, 30],
+              },
+              {
+                columns: [
+                  { width: "*", text: "" },
+                  {
+                    width: "auto",
+                    stack: [
+                      {
+                        text: "Chữ ký nhân viên y tế",
+                        alignment: "center",
+                        italics: true,
+                        margin: [0, 0, 0, 50],
+                      },
+                      {
+                        text: "__________________________",
+                        alignment: "center",
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                text: "\nLưu ý: Kết quả tiêm vaccine chỉ có giá trị tham khảo.",
+                italics: true,
+                color: "#757575",
+                fontSize: 11,
+                alignment: "center",
+                margin: [0, 30, 0, 0],
+              },
+            ],
+            styles: {
+              schoolName: {
+                fontSize: 16,
+                bold: true,
+                alignment: "center",
+                color: "#004d40",
+                margin: [0, 0, 0, 5],
+              },
+              mainTitle: {
+                fontSize: 22,
+                bold: true,
+                alignment: "center",
+                color: "#1565c0",
+                margin: [0, 0, 0, 15],
+                decoration: "underline",
+                font: "Roboto",
+                characterSpacing: 1,
+              },
+              tableHeader: {
+                bold: true,
+                fillColor: "#e3f2fd",
+                color: "#1976d2",
+                alignment: "center",
+              },
+            },
+            defaultStyle: { font: "Roboto", fontSize: 12 },
+            pageMargins: [40, 40, 40, 60],
+            footer: function (currentPage, pageCount) {
+              return {
+                text: "Trang " + currentPage.toString() + " / " + pageCount,
+                alignment: "center",
+                margin: [0, 20, 0, 0],
+              };
+            },
+          };
+
+          return new Promise((resolve) => {
+            pdfMake.createPdf(docDefinition).getBlob((blob) => {
+              const fileName = `${
+                studentInfo.fullName || student.studentName || student.studentID
+              }_vaccine.pdf`;
+              zip.file(fileName, blob);
+              resolve();
+            });
+          });
+        } catch (err) {
+          console.error(
+            `Lỗi khi tạo PDF cho học sinh ${student.studentName}:`,
+            err
+          );
+          return Promise.resolve();
+        }
+      });
+
+      await Promise.all(pdfPromises);
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      zip.generateAsync({ type: "blob" }).then((content) => {
+        const zipFileName = `Bao_cao_tiem_vaccine_${eventName}_${dayjs().format(
+          "YYYY-MM-DD"
+        )}.zip`;
+        saveAs(content, zipFileName);
+      });
+
+      message.success({
+        content: "Đã xuất file ZIP chứa tất cả báo cáo!",
+        key: "exportPDF",
+      });
+    }
+
+    handleCloseExportModal();
+  };
+
   // Cấu hình các cột trong bảng
   const columns = [
     {
@@ -322,6 +746,11 @@ const VaccineEventReport = () => {
       {error && (
         <Alert type="error" message={error} style={{ marginBottom: 24 }} />
       )}
+      <Alert
+        type="info"
+        message="Lưu ý: Báo cáo vaccine chỉ có thể thực hiện trong vòng 24 giờ kể từ thời gian bắt đầu sự kiện. Sau thời gian này sẽ không được báo cáo."
+        style={{ marginTop: 8 }}
+      />
 
       <Row gutter={[16, 24]}>
         {/* Phần chọn sự kiện */}
@@ -362,14 +791,6 @@ const VaccineEventReport = () => {
                         ? dayjs(event.eventDate).format("DD/MM/YYYY HH:mm")
                         : "Chưa có thời gian"}
                     </div>
-                    <div>
-                      <b>Thời gian kết thúc:</b>{" "}
-                      {event.eventDate
-                        ? dayjs(event.eventDate)
-                            .add(EVENT_DURATION_HOURS, "hour")
-                            .format("DD/MM/YYYY HH:mm")
-                        : "Chưa có thời gian"}
-                    </div>
                     {!isStarted && !hasEnded && (
                       <Alert
                         type="warning"
@@ -395,22 +816,41 @@ const VaccineEventReport = () => {
         <Col span={24}>
           <Spin spinning={loading}>
             {selectedEvent && (
-              <Table
-                columns={columns}
-                dataSource={students}
-                rowKey="studentID"
-                pagination={{
-                  pageSize: 10,
-                  showTotal: (total) => `Tổng số ${total} học sinh`,
-                }}
-                bordered
-                style={{
-                  background: "#fff",
-                  borderRadius: 8,
-                  overflow: "hidden",
-                }}
-                locale={{ emptyText: "Không có học sinh nào" }}
-              />
+              <>
+                <Card
+                  size="small"
+                  title="Lọc theo báo cáo tiêm vaccine"
+                  style={{ marginBottom: 16 }}
+                >
+                  <Radio.Group
+                    value={reportFilter}
+                    onChange={(e) => setReportFilter(e.target.value)}
+                    buttonStyle="solid"
+                  >
+                    <Radio.Button value="ALL">Tất cả học sinh</Radio.Button>
+                    <Radio.Button value="REPORTED">Đã có báo cáo</Radio.Button>
+                    <Radio.Button value="NOT_REPORTED">
+                      Chưa có báo cáo
+                    </Radio.Button>
+                  </Radio.Group>
+                </Card>
+                <Table
+                  columns={columns}
+                  dataSource={filteredStudents}
+                  rowKey="studentID"
+                  pagination={{
+                    pageSize: 10,
+                    showTotal: (total) => `Tổng số ${total} học sinh`,
+                  }}
+                  bordered
+                  style={{
+                    background: "#fff",
+                    borderRadius: 8,
+                    overflow: "hidden",
+                  }}
+                  locale={{ emptyText: "Không có học sinh nào" }}
+                />
+              </>
             )}
           </Spin>
         </Col>
@@ -515,6 +955,65 @@ const VaccineEventReport = () => {
             </Col>
           </Row>
         ) : null}
+      </Modal>
+
+      {/* Nút xuất PDF */}
+      {selectedEvent && (
+        <Col span={24}>
+          <Button
+            type="primary"
+            onClick={handleOpenExportModal}
+            style={{ marginBottom: 16 }}
+          >
+            Xuất PDF cho học sinh đã có báo cáo
+          </Button>
+        </Col>
+      )}
+
+      {/* Modal xác nhận xuất PDF */}
+      <Modal
+        open={isExportModalOpen}
+        title="Chọn cách xuất PDF"
+        onCancel={handleCloseExportModal}
+        onOk={exportPDFs}
+        okText="Xuất PDF"
+        cancelText="Huỷ"
+      >
+        <div style={{ marginBottom: 16 }}>
+          <p>
+            Chọn cách xuất PDF cho{" "}
+            {students.filter((s) => hasReport[s.studentID]).length} học sinh đã
+            có báo cáo:
+          </p>
+        </div>
+        <Radio.Group
+          value={exportType}
+          onChange={(e) => setExportType(e.target.value)}
+          style={{ width: "100%" }}
+        >
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <Radio value="individual">
+              <div>
+                <strong>Xuất từng file riêng lẻ</strong>
+                <br />
+                <small style={{ color: "#666" }}>
+                  Mỗi học sinh sẽ có một file PDF riêng. Bạn có thể chọn vị trí
+                  lưu cho từng file.
+                </small>
+              </div>
+            </Radio>
+            <Radio value="zip">
+              <div>
+                <strong>Xuất file ZIP</strong>
+                <br />
+                <small style={{ color: "#666" }}>
+                  Tất cả báo cáo sẽ được nén trong một file ZIP. Bạn có thể chọn
+                  vị trí lưu file ZIP.
+                </small>
+              </div>
+            </Radio>
+          </Space>
+        </Radio.Group>
       </Modal>
     </Card>
   );
