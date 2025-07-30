@@ -11,9 +11,9 @@ import HomePage from "./pages/home-pages/HomePage";
 
 import Dashboard from "./dashboard/dashboard";
 
-import Export_pdf from "./dashboard/dashboard_element/Export_pdf";
-import Manage_account from "./dashboard/dashboard_element/Manager_Account/Manage_account";
-import Report from "./dashboard/dashboard_element/Report";
+import Export_pdf from "./dashboard/dashboad_element/Export_pdf";
+import Manage_account from "./dashboard/dashboad_element/Manager_Account/Manage_account";
+import Report from "./dashboard/dashboad_element/Report";
 
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
