@@ -11,7 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import Header from "../../../components/Header/Header";
+import Header from "../../../components/header/Header";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import TimerIcon from "@mui/icons-material/Timer";
 import PersonIcon from "@mui/icons-material/Person";
