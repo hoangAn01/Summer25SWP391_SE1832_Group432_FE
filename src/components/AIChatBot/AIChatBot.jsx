@@ -173,7 +173,7 @@ const AIChatBot = () => {
             <Space>
               <RobotOutlined style={{ color: '#1890ff', fontSize: '18px' }} />
               <Text strong style={{ color: 'white', fontSize: '16px' }}>
-                AI Tư Vấn Sức Khỏe
+                Y TẾ HỌC ĐƯỜNG 
               </Text>
             </Space>
             <Space>

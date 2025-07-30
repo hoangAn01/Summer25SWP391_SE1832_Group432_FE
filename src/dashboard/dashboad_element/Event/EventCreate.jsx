@@ -43,6 +43,8 @@ function EventCreate() {
   const [selectedEventType, setSelectedEventType] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [classData, setClassData] = useState([]); // Thêm state cho dữ liệu lớp
+  const [gradeOptions, setGradeOptions] = useState([]); // Thêm state cho options khối
 
   // Lấy danh sách loại sự kiện
   const fetchEventTypes = async () => {
@@ -52,6 +54,27 @@ function EventCreate() {
     } catch (error) {
       message.error(
         "Không thể tải loại sự kiện: " + (error.message || "Lỗi không xác định")
+      );
+    }
+  };
+
+  // Lấy danh sách lớp học để tạo options khối
+  const fetchClassData = async () => {
+    try {
+      const res = await api.get("Class");
+      const classes = res.data.$values || res.data;
+      setClassData(classes);
+      
+      // Tạo options khối từ dữ liệu lớp học
+      const uniqueGrades = [...new Set(classes.map(cls => cls.grade))].sort();
+      const options = uniqueGrades.map(grade => ({
+        label: grade,
+        value: grade
+      }));
+      setGradeOptions(options);
+    } catch (error) {
+      message.error(
+        "Không thể tải dữ liệu lớp học: " + (error.message || "Lỗi không xác định")
       );
     }
   };
@@ -83,6 +106,7 @@ function EventCreate() {
 
   useEffect(() => {
     fetchEventTypes();
+    fetchClassData(); // Thêm fetch dữ liệu lớp học
     fetchEvents();
   }, []);
 
@@ -111,16 +135,78 @@ function EventCreate() {
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
+      
+      // Chuyển đổi từ grade sang classID để gửi lên API
+      let targetClassIds = [];
+      if (Array.isArray(values.targetClass)) {
+        // Lấy tất cả classID của các grade được chọn
+        values.targetClass.forEach(grade => {
+          const classesInGrade = classData.filter(cls => cls.grade === grade);
+          const classIds = classesInGrade.map(cls => cls.classID.toString());
+          targetClassIds = [...targetClassIds, ...classIds];
+        });
+      } else if (values.targetClass) {
+        // Trường hợp chỉ chọn 1 grade
+        const classesInGrade = classData.filter(cls => cls.grade === values.targetClass);
+        targetClassIds = classesInGrade.map(cls => cls.classID.toString());
+      }
+
       const newEvent = {
         eventTypeID: values.eventTypeID,
         eventName: values.eventName,
         eventDate: values.eventDate.toISOString(),
         description: values.description,
-        targetClass: Array.isArray(values.targetClass)
-          ? values.targetClass.join(",")
-          : values.targetClass,
+        targetClass: targetClassIds.join(","),
       };
-      await api.post("Event", newEvent);
+      
+      const eventResponse = await api.post("Event", newEvent);
+      const createdEvent = eventResponse.data;
+      
+      // Tự động tạo thông báo ConsentRequest cho tất cả học sinh trong các lớp được chọn
+      if (createdEvent && createdEvent.eventID) {
+        try {
+          // Lấy danh sách học sinh từ các lớp được chọn
+          const allStudents = [];
+          for (const classId of targetClassIds) {
+            const studentsResponse = await api.get(`Student/by-class/${classId}`);
+            const students = studentsResponse.data.$values || studentsResponse.data;
+            if (Array.isArray(students)) {
+              allStudents.push(...students);
+            }
+          }
+          
+          // Tạo thông báo ConsentRequest cho từng học sinh
+          for (const student of allStudents) {
+            try {
+              // Lấy thông tin phụ huynh của học sinh
+              const parentResponse = await api.get(`Parent/${student.parentID}`);
+              const parent = parentResponse.data;
+              
+              if (parent && parent.accountID) {
+                const notificationData = {
+                  notificationType: "ConsentRequest",
+                  title: `Thông báo xác nhận học sinh ${student.fullName} tham gia sự kiện: ${values.eventName}`,
+                  content: `Phụ huynh vui lòng xác nhận cho học sinh ${student.fullName} tham gia sự kiện "${values.eventName}" vào ngày ${new Date(values.eventDate).toLocaleDateString('vi-VN')}`,
+                  sentDate: new Date().toISOString(),
+                  status: "Pending",
+                  relatedEntityID: createdEvent.eventID,
+                  accountID: parent.accountID
+                };
+                
+                await api.post("Notifications", notificationData);
+              }
+            } catch (parentError) {
+              console.error(`Lỗi khi lấy thông tin phụ huynh cho học sinh ${student.fullName}:`, parentError);
+            }
+          }
+          
+          console.log(`Đã tạo ${allStudents.length} thông báo xác nhận sự kiện`);
+        } catch (notificationError) {
+          console.error("Lỗi khi tạo thông báo:", notificationError);
+          // Không hiển thị lỗi cho user vì sự kiện đã tạo thành công
+        }
+      }
+      
       toast.success("Tạo sự kiện thành công!");
       fetchEvents();
       form.resetFields();
@@ -162,10 +248,19 @@ function EventCreate() {
   const formatTargetClass = (targetClass) => {
     if (!targetClass) return "Tất cả";
 
-    const classes = targetClass.split(",");
-    return classes.map((cls) => (
-      <Tag key={cls} color="blue" style={{ marginBottom: "5px" }}>
-        Khối {cls}
+    const classIds = targetClass.split(",");
+    const grades = [];
+    
+    classIds.forEach(classId => {
+      const classInfo = classData.find(cls => cls.classID.toString() === classId);
+      if (classInfo && !grades.includes(classInfo.grade)) {
+        grades.push(classInfo.grade);
+      }
+    });
+    
+    return grades.map((grade) => (
+      <Tag key={grade} color="blue" style={{ marginBottom: "5px" }}>
+        {grade}
       </Tag>
     ));
   };
@@ -463,13 +558,8 @@ function EventCreate() {
                       placeholder="Chọn khối áp dụng"
                       size="large"
                       style={{ width: "100%", borderRadius: "6px" }}
-                      options={[
-                        { label: "Khối 1", value: "1" },
-                        { label: "Khối 2", value: "2" },
-                        { label: "Khối 3", value: "3" },
-                        { label: "Khối 4", value: "4" },
-                        { label: "Khối 5", value: "5" },
-                      ]}
+                      options={gradeOptions}
+                      loading={gradeOptions.length === 0}
                     />
                   </Form.Item>
                 </Col>
@@ -494,12 +584,10 @@ function EventCreate() {
                       disabledDate={(current) => {
                         // Lấy thời điểm hiện tại
                         const now = new Date();
-                        // Thêm 3 ngày vào thời điểm hiện tại
-                        const minDate = new Date(
-                          now.getTime() + 3 * 24 * 60 * 60 * 1000
-                        );
-                        // Disable các ngày trước minDate
-                        return current && current < minDate;
+                        // Tạo ngày bắt đầu của hôm nay (00:00:00)
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        // Chỉ cho phép chọn từ hôm nay trở đi
+                        return current && current < today;
                       }}
                     />
                   </Form.Item>

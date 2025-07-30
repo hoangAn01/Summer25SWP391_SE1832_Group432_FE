@@ -86,6 +86,12 @@ function Event() {
   const [checkupDetail, setCheckupDetail] = useState(null);
   const [checkupStudentName, setCheckupStudentName] = useState("");
   const [checkupNurseName, setCheckupNurseName] = useState("");
+  // Thêm state cho thông báo sự cố y tế
+  const [medicalEventDetail, setMedicalEventDetail] = useState(null);
+  const [medicalEventStudentName, setMedicalEventStudentName] = useState("");
+  const [medicalEventNurseName, setMedicalEventNurseName] = useState("");
+  const [medicalEventsLoaded, setMedicalEventsLoaded] = useState(false);
+  const [currentParentId, setCurrentParentId] = useState(null);
 
   const mapStatusToVietnamese = (status) => {
     if (!status) return "Chờ phản hồi";
@@ -215,13 +221,16 @@ function Event() {
       }
       
       // Thêm các thông báo không phải sự kiện vào danh sách
+      // Loại bỏ thông báo sự cố y tế từ API này để tránh trùng lặp với fetchMedicalEventNotifications
       const nonEventNotifications = mappedData.filter(
         item => !(item.notificationType === "Thông báo tiêm vaccine" || 
                 item.notificationType === "ConsentRequest" ||
                 (item.title && (
                   item.title.toLowerCase().includes("vaccine") || 
                   item.title.toLowerCase().includes("tiêm") || 
-                  item.title.toLowerCase().includes("tham gia sự kiện")
+                  item.title.toLowerCase().includes("tham gia sự kiện") ||
+                  item.title.toLowerCase().includes("sự cố y tế") ||
+                  item.title.toLowerCase().includes("medical event")
                 )))
       );
       
@@ -241,6 +250,84 @@ function Event() {
     }
   };
 
+  // Thêm hàm để fetch thông báo sự cố y tế cho học sinh của phụ huynh
+  const fetchMedicalEventNotifications = async (parentId) => {
+    try {
+      console.log("Fetching medical event notifications for parent ID:", parentId);
+      
+      // Lấy danh sách học sinh của phụ huynh
+      const studentsResponse = await api.get(`Student/by-parent/${parentId}`);
+      const students = studentsResponse.data.$values || studentsResponse.data;
+      
+      console.log("Students found:", students.length);
+      
+      if (!Array.isArray(students) || students.length === 0) {
+        console.log("No students found for this parent");
+        return [];
+      }
+      
+      // Lấy tất cả sự cố y tế
+      const medicalEventsResponse = await api.get("MedicalEvents");
+      const allMedicalEvents = medicalEventsResponse.data.$values || medicalEventsResponse.data;
+      
+      console.log("Total medical events found:", allMedicalEvents.length);
+      
+      // Lọc sự cố y tế của học sinh thuộc phụ huynh này
+      const parentStudentIds = students.map(student => student.studentID);
+      const relevantMedicalEvents = allMedicalEvents.filter(event => 
+        parentStudentIds.includes(event.studentID)
+      );
+      
+      console.log("Relevant medical events for parent's students:", relevantMedicalEvents.length);
+      
+      // Tạo thông báo cho từng sự cố y tế
+      const medicalEventNotifications = [];
+      
+      for (const medicalEvent of relevantMedicalEvents) {
+        // Tìm thông tin học sinh
+        const student = students.find(s => s.studentID === medicalEvent.studentID);
+        
+        // Chỉ tạo thông báo nếu có đầy đủ thông tin học sinh và sự cố
+        if (student && student.fullName && medicalEvent.eventType) {
+          // Tạo thông báo sự cố y tế
+          const notification = {
+            notificationID: `medical_event_${medicalEvent.medicalEventID}`,
+            notificationType: "MedicalEvent",
+            title: `Thông báo học sinh ${student.fullName} đã bị gặp Sự cố y tế - ${medicalEvent.eventType}`,
+            content: `Học sinh ${student.fullName} đã gặp sự cố y tế loại "${medicalEvent.eventType}" và đã được nhân viên y tế xử lý.`,
+            sentDate: new Date(new Date(medicalEvent.eventTime).getTime() + 60 * 1000).toISOString(), // Thời gian nhận = thời gian sự kiện + 1 phút
+            status: "Đã xử lý",
+            relatedEntityID: medicalEvent.medicalEventID,
+            studentInfo: {
+              studentID: medicalEvent.studentID,
+              studentName: student.fullName,
+              eventType: medicalEvent.eventType,
+              description: medicalEvent.description,
+              outcome: medicalEvent.outcome,
+              nurseID: medicalEvent.nurseID,
+              status: medicalEvent.status
+            }
+          };
+          
+          medicalEventNotifications.push(notification);
+          console.log("Created medical event notification:", notification.title);
+        } else {
+          console.log("Skipping medical event due to incomplete information:", {
+            studentName: student?.fullName,
+            eventType: medicalEvent.eventType,
+            medicalEventID: medicalEvent.medicalEventID
+          });
+        }
+      }
+      
+      console.log("Created medical event notifications:", medicalEventNotifications.length);
+      return medicalEventNotifications;
+    } catch (error) {
+      console.error("Lỗi khi tải thông báo sự cố y tế:", error);
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (parent?.accountID) {
       console.log("User ID:", parent.accountID);
@@ -252,27 +339,63 @@ function Event() {
             `Parent/ByAccount/${parent.accountID}`
           );
           if (parentResponse.data && parentResponse.data.parentID) {
-            // Lấy danh sách học sinh theo parentID
-            try {
-              const res = await api.get(`Student/by-parent/${parentResponse.data.parentID}`);
-              const list = res.data.$values || res.data;
-              console.log("Danh sách học sinh:", list);
-              setStudentsOfParent(Array.isArray(list) ? list : []);
-              if (list && list.length > 0) setSelectedStudentId(list[0].studentID);
-            } catch (err) {
-              console.error("Lỗi khi lấy danh sách học sinh:", err);
-              setStudentsOfParent([]);
+            const newParentId = parentResponse.data.parentID;
+            
+            // Reset state nếu parent thay đổi
+            if (currentParentId !== newParentId) {
+              setCurrentParentId(newParentId);
+              setMedicalEventsLoaded(false);
+              setData([]); // Reset data khi parent thay đổi
             }
             
-            // Lấy thông báo
-            fetchDataNotificationOfParent(parent.accountID);
+            // Chỉ tải dữ liệu nếu chưa tải hoặc parent thay đổi
+            if (!medicalEventsLoaded || currentParentId !== newParentId) {
+              // Lấy danh sách học sinh theo parentID
+              try {
+                const res = await api.get(`Student/by-parent/${newParentId}`);
+                const list = res.data.$values || res.data;
+                console.log("Danh sách học sinh:", list);
+                setStudentsOfParent(Array.isArray(list) ? list : []);
+                if (list && list.length > 0) setSelectedStudentId(list[0].studentID);
+              } catch (err) {
+                console.error("Lỗi khi lấy danh sách học sinh:", err);
+                setStudentsOfParent([]);
+              }
+              
+              // Lấy thông báo thông thường
+              await fetchDataNotificationOfParent(parent.accountID);
+              
+              // Lấy thông báo sự cố y tế
+              const medicalEventNotifications = await fetchMedicalEventNotifications(newParentId);
+              
+              // Thêm thông báo sự cố y tế vào danh sách với kiểm tra trùng lặp
+              if (medicalEventNotifications.length > 0) {
+                setData(prevData => {
+                  // Tạo Set để theo dõi các notificationID đã tồn tại
+                  const existingNotificationIds = new Set(prevData.map(item => item.notificationID));
+                  
+                  // Lọc ra các thông báo sự cố y tế chưa tồn tại
+                  const newMedicalEventNotifications = medicalEventNotifications.filter(
+                    notification => !existingNotificationIds.has(notification.notificationID)
+                  );
+                  
+                  console.log(`Found ${medicalEventNotifications.length} medical event notifications, adding ${newMedicalEventNotifications.length} new ones`);
+                  
+                  // Chỉ thêm các thông báo mới
+                  return [...newMedicalEventNotifications, ...prevData];
+                });
+              }
+              
+              // Đánh dấu đã tải xong thông báo sự cố y tế
+              setMedicalEventsLoaded(true);
+            }
           }
         } catch (err) {
           console.error("Lỗi khi lấy thông tin phụ huynh:", err);
         }
       })();
     }
-  }, []);
+  }, [parent?.accountID, medicalEventsLoaded, currentParentId]);
 
   const filteredData = useMemo(() => {
     console.log("Filtering data:", {
@@ -283,14 +406,35 @@ function Event() {
       searchQuery
     });
     
+    // Bước 0: Loại bỏ thông báo sự cố y tế không đầy đủ thông tin
+    let filtered = data.filter(item => {
+      // Nếu là thông báo sự cố y tế, kiểm tra xem có đầy đủ thông tin không
+      if (item.notificationType === "MedicalEvent" || 
+          (item.title && item.title.toLowerCase().includes("sự cố y tế"))) {
+        // Loại bỏ thông báo có title chỉ là "Thông báo sự cố y tế" (không đầy đủ)
+        if (item.title === "Thông báo sự cố y tế" || 
+            item.title === "Sự cố y tế" ||
+            item.title === "Medical Event") {
+          console.log("Removing incomplete medical event notification:", item.title);
+          return false;
+        }
+        // Kiểm tra xem có thông tin học sinh không
+        if (!item.studentInfo || !item.studentInfo.studentName || item.studentInfo.studentName === 'Không xác định') {
+          console.log("Removing medical event notification without student info:", item.title);
+          return false;
+        }
+      }
+      return true;
+    });
+    
     // Bước 1: Lọc theo loại thông báo
-    let filtered = data;
     if (typeFilter !== "ALL") {
       if (typeFilter === "OTHER") {
         filtered = data.filter(item => 
           item.notificationType !== "ConsentRequest" && 
           item.notificationType !== "MedicineRequest" &&
-          item.notificationType !== "CheckupRecord"
+          item.notificationType !== "CheckupRecord" &&
+          item.notificationType !== "MedicalEvent"
         );
       } else {
         filtered = data.filter(item => {
@@ -347,7 +491,7 @@ function Event() {
         
         // Nếu không có studentInfo, kiểm tra xem có phải thông báo thuốc hoặc khám sức khỏe không
         // và lấy thông tin học sinh từ relatedEntityID
-        if ((item.notificationType === "MedicineRequest" || item.notificationType === "CheckupRecord") && item.relatedEntityID) {
+        if ((item.notificationType === "MedicineRequest" || item.notificationType === "CheckupRecord" || item.notificationType === "MedicalEvent") && item.relatedEntityID) {
           // Tạm thời bỏ qua lọc theo học sinh cho thông báo thuốc và khám sức khỏe
           // vì cần fetch thêm dữ liệu từ API
           return true;
@@ -408,6 +552,14 @@ function Event() {
         item.title.toLowerCase().includes("khám sức khỏe") ||
         item.title.toLowerCase().includes("kết quả khám") ||
         item.title.toLowerCase().includes("checkup")
+      ));
+    
+    // Nếu là thông báo sự cố y tế thì fetch chi tiết sự cố
+    const isMedicalEventNotification =
+      item.notificationType === "MedicalEvent" ||
+      (item.title && (
+        item.title.toLowerCase().includes("sự cố y tế") ||
+        item.title.toLowerCase().includes("medical event")
       ));
     
     if (isMedicineNotification && item.relatedEntityID) {
@@ -498,6 +650,43 @@ function Event() {
         setCheckupStudentName("");
         setCheckupNurseName("");
       }
+    } else if (isMedicalEventNotification && item.relatedEntityID) {
+      try {
+        console.log("Fetching medical event details for:", item.relatedEntityID);
+        const res = await api.get(`/MedicalEvents/${item.relatedEntityID}`);
+        const medicalEventData = res.data;
+        console.log("Medical event data received:", medicalEventData);
+        
+        setMedicalEventDetail(medicalEventData);
+        
+        // Lấy tên học sinh
+        if (medicalEventData.studentID) {
+          try {
+            const studentRes = await api.get(`/Student/${medicalEventData.studentID}`);
+            setMedicalEventStudentName(studentRes.data.fullName || "");
+          } catch {
+            setMedicalEventStudentName("");
+          }
+        } else {
+          setMedicalEventStudentName("");
+        }
+        
+        // Lấy tên y tá
+        if (medicalEventData.nurseID) {
+          try {
+            const nurseRes = await api.get(`/Nurse/${medicalEventData.nurseID}`);
+            setMedicalEventNurseName(nurseRes.data.fullName || "");
+          } catch {
+            setMedicalEventNurseName("");
+          }
+        } else {
+          setMedicalEventNurseName("");
+        }
+      } catch {
+        setMedicalEventDetail(null);
+        setMedicalEventStudentName("");
+        setMedicalEventNurseName("");
+      }
     } else {
       setMedicineDetail(null);
       setNurseName("");
@@ -507,6 +696,9 @@ function Event() {
       setCheckupDetail(null);
       setCheckupStudentName("");
       setCheckupNurseName("");
+      setMedicalEventDetail(null);
+      setMedicalEventStudentName("");
+      setMedicalEventNurseName("");
     }
   };
 
@@ -733,6 +925,7 @@ function Event() {
                 { value: "ConsentRequest", label: <span style={{ color: '#52c41a' }}>📅 Xác nhận sự kiện</span> },
                 { value: "MedicineRequest", label: <span style={{ color: '#1677ff' }}>💊 Gửi thuốc</span> },
                 { value: "CheckupRecord", label: <span style={{ color: '#fa8c16' }}>🏥 Khám sức khỏe</span> },
+                { value: "MedicalEvent", label: <span style={{ color: '#ff4d4f' }}>🚨 Sự cố y tế</span> },
                 { value: "OTHER", label: <span style={{ color: '#b37feb' }}>🔔 Khác</span> },
               ]}
             />
@@ -811,10 +1004,19 @@ function Event() {
                   item.title.toLowerCase().includes("checkup")
                 ));
               
+              // Xác định nếu là thông báo sự cố y tế
+              const isMedicalEventNotification =
+                item.notificationType === "MedicalEvent" ||
+                (item.title && (
+                  item.title.toLowerCase().includes("sự cố y tế") ||
+                  item.title.toLowerCase().includes("medical event")
+                ));
+              
               console.log("Notification item:", {
                 notificationType: item.notificationType,
                 title: item.title,
                 isMedicineNotification: isMedicineNotification,
+                isMedicalEventNotification: isMedicalEventNotification,
                 relatedEntityID: item.relatedEntityID
               });
               
@@ -836,6 +1038,7 @@ function Event() {
             if (status === 'Đã đồng ý') statusIcon = <CheckCircleTwoTone twoToneColor="#52c41a" style={{ fontSize: 22 }} />;
             else if (status === 'Đã từ chối') statusIcon = <CloseCircleTwoTone twoToneColor="#ff4d4f" style={{ fontSize: 22 }} />;
             else if (status === 'Chờ phản hồi') statusIcon = <ExclamationCircleTwoTone twoToneColor="#faad14" style={{ fontSize: 22 }} />;
+            else if (status === 'Đã xử lý') statusIcon = <CheckCircleTwoTone twoToneColor="#52c41a" style={{ fontSize: 22 }} />;
 
             return (
               <Card
@@ -951,8 +1154,47 @@ function Event() {
                         )}
                       </div>
                     )}
+                    {/* Hiển thị chi tiết sự cố y tế */}
+                    {console.log("Rendering medical event details:", { isMedicalEventNotification, medicalEventDetail })}
+                    {isMedicalEventNotification && medicalEventDetail && (
+                      <div style={{ marginTop: 8 }}>
+                        {medicalEventStudentName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Học sinh:</span> {medicalEventStudentName}
+                          </div>
+                        )}
+                        <div style={{ fontWeight: 500, marginBottom: 4, color: '#52c41a' }}>
+                          ✅ <strong>Đã được nhân viên y tế xử lý</strong>
+                        </div>
+                        {medicalEventDetail.eventType && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Loại sự cố:</span> {medicalEventDetail.eventType}
+                          </div>
+                        )}
+                        {medicalEventDetail.description && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Mô tả:</span> {medicalEventDetail.description}
+                          </div>
+                        )}
+                        {medicalEventDetail.outcome && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Kết quả xử lý:</span> {medicalEventDetail.outcome}
+                          </div>
+                        )}
+                        {medicalEventNurseName && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Nhân viên y tế:</span> {medicalEventNurseName}
+                          </div>
+                        )}
+                        {medicalEventDetail.eventTime && (
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            <span style={{ color: '#1677ff' }}>Thời gian xảy ra:</span> {new Date(medicalEventDetail.eventTime).toLocaleString('vi-VN')}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Nút xác nhận sự kiện cho các thông báo không phải gửi thuốc */}
-                    {!isMedicineNotification && !isCheckupNotification && isEvent && (
+                    {!isMedicineNotification && !isCheckupNotification && !isMedicalEventNotification && isEvent && (
                       <Button
                         type="primary"
                         style={{ marginTop: 12 }}
