@@ -11,9 +11,9 @@ import HomePage from "./pages/home-pages/HomePage";
 
 import Dashboard from "./dashboard/dashboard";
 
-import Export_pdf from "./dashboard/dashboad_element/Export_pdf";
+import Export_pdf from "./dashboard/dashboad_element/export_pdf";
 import Manage_account from "./dashboard/dashboad_element/Manager_Account/Manage_account";
-import Report from "./dashboard/dashboad_element/Report";
+import Report from "./dashboard/dashboad_element/report";
 
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
@@ -21,7 +21,7 @@ import Detail2 from "./pages/home-pages/Detail/Detail2";
 
 import RegisterForm from "./components/register-form/RegisterForm";
 import LoginForm from "./components/login-form/LoginForm";
-import Header from "./components/header/Header";
+import Header from "./components/Header/Header";
 import MedicationForm from "./pages/home-pages/ParentForm/MedicineRequest/MedicationForm";
 import Nurse from "./nurse";
 import MedicalEvent from "./nurse/medical-event";

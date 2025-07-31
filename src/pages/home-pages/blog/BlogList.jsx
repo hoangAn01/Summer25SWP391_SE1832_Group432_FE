@@ -26,7 +26,7 @@ import {
   ArrowForward, 
   Bookmark 
 } from '@mui/icons-material';
-import Header from "../../../components/header/Header";
+import Header from "../../../components/Header/Header";
 import { Footer } from "../../../components/Footer/Footer";
 
 const BlogList = () => {

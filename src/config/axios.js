@@ -2,7 +2,7 @@ import axios from "axios";
 import { message } from "antd";
 
 const api = axios.create({
-  baseURL: " https://schoolmedicalmanagement-f8d8cmb8fgdwfvg7.canadacentral-01.azurewebsites.net/api",
+  baseURL: "https://localhost:7178/api",
 });
 
 // Hàm đăng nhập lại
@@ -15,7 +15,7 @@ const reLogin = async () => {
       throw new Error("Không tìm thấy thông tin đăng nhập");
     }
 
-    const response = await axios.post("https://schoolmedicalmanagement-f8d8cmb8fgdwfvg7.canadacentral-01.azurewebsites.net/", {
+    const response = await axios.post("https://localhost:7178/api/Auth/login", {
       username,
       password
     });

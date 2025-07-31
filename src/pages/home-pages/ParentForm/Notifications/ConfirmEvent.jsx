@@ -249,13 +249,13 @@ const ConfirmEvent = () => {
                 <>
                   <Divider className="confirm-event-divider" />
                   <Space direction="vertical" style={{ width: '100%' }}>
-                    <Input.TextArea
+                    {/* <Input.TextArea
                       rows={4}
                       value={note}
                       onChange={e => setNote(e.target.value)}
                       placeholder="Ghi chú cho nhà trường (tuỳ chọn)"
                       className="confirm-event-textarea"
-                    />
+                    /> */}
                     <Flex justify="center" gap={24} className="confirm-event-button-container">
                       <Button
                         type="primary"
