@@ -2,7 +2,7 @@ import axios from "axios";
 import { message } from "antd";
 
 const api = axios.create({
-  baseURL: "https://localhost:7178/api",
+  baseURL: " https://schoolmedicalmanagement-f8d8cmb8fgdwfvg7.canadacentral-01.azurewebsites.net/api",
 });
 
 // Hàm đăng nhập lại
