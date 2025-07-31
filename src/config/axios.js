@@ -15,7 +15,7 @@ const reLogin = async () => {
       throw new Error("Không tìm thấy thông tin đăng nhập");
     }
 
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/Auth/login`, {
+            const response = await axios.post("https://schoolmedicalmanagement-f8d8cmb8fgdwfvg7.canadacentral-01.azurewebsites.net/api/Auth/login", {
       username,
       password
     });
