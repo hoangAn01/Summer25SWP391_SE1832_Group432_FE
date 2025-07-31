@@ -13,7 +13,7 @@ import Dashboard from "./dashboard/dashboard";
 
 import Export_pdf from "./dashboard/dashboad_element/Export_pdf";
 import Manage_account from "./dashboard/dashboad_element/Manager_Account/Manage_account";
-import Report from "./dashboard/dashboad_element/report";
+import Report from "./dashboard/dashboad_element/Report";
 
 import BlogDetail from "./pages/home-pages/Detail/Detail1";
 import Detail3 from "./pages/home-pages/Detail/Detail3";
