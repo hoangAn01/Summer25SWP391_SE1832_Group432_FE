@@ -14,17 +14,5 @@ export default defineConfig({
         }
       }
     }
-  },
-  server: {
-    port: 3000,
-    host: true,
-    proxy: {
-      '/api': {
-        target: 'https://schoolmedicalmanagement-f8d8cmb8fgdwfvg7.canadacentral-01.azurewebsites.net',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api')
-      }
-    }
   }
 })
